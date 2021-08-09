@@ -11,5 +11,5 @@ module Make = (Dimension : Schema_intf.S,
   }
 
   let validate = (t) =>
-      t.explicit === !Belt.Option.isNone(t.graphic)
+      t.explicit === !Option.isNone(t.graphic)
 }

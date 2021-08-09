@@ -6,7 +6,7 @@ let rec of_list = (xs) => {
   switch xs {
       | list{} => None
       | list{x} => Some(Singleton(x))
-      | list{x, ...rest} => Some(Cons(x, Belt.Option.getExn(of_list(rest))))
+      | list{x, ...rest} => Some(Cons(x, Option.getExn(of_list(rest))))
   }
 }
 
