@@ -5,10 +5,10 @@
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "re:build": "./node_modules/rescript/rescript",
-        "re:clean": "./node_modules/rescript/rescript clean",
-        "re:start": "./node_modules/rescript/rescript build -w",
-        "re:format": "./node_modules/rescript/rescript format -all"
+        "build": "./node_modules/rescript/rescript",
+        "clean": "./node_modules/rescript/rescript clean",
+        "start": "./node_modules/rescript/rescript build -w",
+        "format": "./node_modules/rescript/rescript format -all"
     },
     "author": "rep2rep",
     "devDependencies": {
