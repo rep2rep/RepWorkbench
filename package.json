@@ -1,17 +1,17 @@
 {
-  "name": "repworkbench",
-  "version": "0.1.0",
-  "description": "A tool to allow representational system analysts to build RepNotation models",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "re:build": "./node_modules/rescript/rescript",
-    "re:clean": "./node_modules/rescript/rescript clean",
-    "re:start": "./node_modules/rescript/rescript build -w"
-  },
-  "author": "rep2rep",
-  "license": "ISC",
-  "devDependencies": {
-    "rescript": "^9.1.4"
-  }
+    "name": "repworkbench",
+    "version": "0.1.0",
+    "description": "A tool to allow representational system analysts to build RepNotation models",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "re:build": "./node_modules/rescript/rescript",
+        "re:clean": "./node_modules/rescript/rescript clean",
+        "re:start": "./node_modules/rescript/rescript build -w",
+        "re:format": "./node_modules/rescript/rescript format -all"
+    },
+    "author": "rep2rep",
+    "devDependencies": {
+        "rescript": "^9.1.4"
+    }
 }
