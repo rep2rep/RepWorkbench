@@ -13,6 +13,8 @@
     }
   ],
   "suffix": ".bs.js",
-  "bsc-flags": ["-open Belt"],
+  "bsc-flags": [
+    "-open Belt"
+  ],
   "bs-dependencies": []
 }

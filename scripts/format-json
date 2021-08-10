@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+rg --files --type json | xargs -I file sh -c 'jq . file > file.tmp && mv file.tmp file && echo "Formatted file"'

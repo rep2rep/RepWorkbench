@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+"$(npm root)"/rescript/rescript format -all
