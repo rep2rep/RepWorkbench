@@ -40,3 +40,11 @@ let rec reduce = (t, f) =>
   | Singleton(x) => x
   | Cons(x, xs) => f(x, xs->reduce(f))
   }
+
+let rec foldr = (t, b, f) =>
+  switch t {
+  | Singleton(x) => f(x, b)
+  | Cons(x, xs) => f(x, xs->foldr(b, f))
+  }
+
+let every = (t, p) => t->foldr(true, (x, b) => p(x) && b)

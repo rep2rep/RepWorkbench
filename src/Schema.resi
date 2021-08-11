@@ -15,9 +15,11 @@ and Dimension: {
   type rec t = {
     concept: string,
     concept_scale: Quantity_scale.t,
+    concept_type: string,
     concept_attributes: list<Concept_attribute.t>,
     graphic: option<Graphic.t>,
     graphic_scale: Quantity_scale.t,
+    graphic_type: string,
     graphic_attributes: list<Graphic_attribute.t>,
     function: Function.t,
     scope: Scope.t,
@@ -32,12 +34,14 @@ and Dimension: {
 and Scheme: {
   type rec t = {
     concept_structure: string,
+    concept_type: string,
     graphic_structure: option<Graphic.t>,
+    graphic_type: string,
     function: Function.t,
     explicit: bool,
     scope: Scope.t,
     tokens: list<Token.t>,
-    dimensions: list<Dimension.t>,
+    dimensions: Non_empty_list.t<Dimension.t>,
     schemes: list<t>,
     organisation: string,
   }
@@ -46,14 +50,22 @@ and Scheme: {
 }
 
 and Token: {
+  module Level: {
+    type t = Atomic | Expression
+  }
+
   type rec t = {
     concept: string,
+    concept_type: string,
     graphic: option<Graphic.t>,
+    graphic_type: string,
+    level: Level.t,
     function: Function.t,
     explicit: bool,
-    tokens: list<t>,
-    dimensions: list<Dimension.t>,
-    schemes: list<Scheme.t>,
+    sub_tokens: list<t>,
+    anchored_tokens: list<t>,
+    anchored_dimensions: list<Dimension.t>,
+    anchored_schemes: list<Scheme.t>,
   }
 
   let validate: t => bool

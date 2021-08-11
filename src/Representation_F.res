@@ -8,7 +8,11 @@ module Make = (Token: Schema_intf.S, Dimension: Schema_intf.S, Scheme: Schema_in
     subrepresentations: list<t>,
   }
 
-  let validate = t => {
-    List.length(t.tokens) > 0 || List.length(t.dimensions) > 0 || List.length(t.schemes) > 0
+  let rec validate = t => {
+    (List.length(t.tokens) > 0 || List.length(t.dimensions) > 0 || List.length(t.schemes) > 0) &&
+    t.tokens->List.every(Token.validate) &&
+    t.dimensions->List.every(Dimension.validate) &&
+    t.schemes->List.every(Scheme.validate) &&
+    t.subrepresentations->List.every(validate)
   }
 }

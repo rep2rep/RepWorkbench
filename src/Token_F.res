@@ -1,13 +1,26 @@
 module Make = (Dimension: Schema_intf.S, Scheme: Schema_intf.S) => {
-  type rec t = {
-    concept: string,
-    graphic: option<Graphic.t>,
-    function: Function.t,
-    explicit: bool,
-    tokens: list<t>,
-    dimensions: list<Dimension.t>,
-    schemes: list<Scheme.t>,
+  module Level = {
+    type t = Atomic | Expression
   }
 
-  let validate = t => t.explicit === !Option.isNone(t.graphic)
+  type rec t = {
+    concept: string,
+    concept_type: string,
+    graphic: option<Graphic.t>,
+    graphic_type: string,
+    level: Level.t,
+    function: Function.t,
+    explicit: bool,
+    sub_tokens: list<t>,
+    anchored_tokens: list<t>,
+    anchored_dimensions: list<Dimension.t>,
+    anchored_schemes: list<Scheme.t>,
+  }
+
+  let rec validate = t =>
+    t.explicit === !Option.isNone(t.graphic) &&
+    t.sub_tokens->List.every(validate) &&
+    t.anchored_tokens->List.every(validate) &&
+    t.anchored_dimensions->List.every(Dimension.validate) &&
+    t.anchored_schemes->List.every(Scheme.validate)
 }
