@@ -48,3 +48,7 @@ let rec foldr = (t, b, f) =>
   }
 
 let every = (t, p) => t->foldr(true, (x, b) => p(x) && b)
+
+let to_JSON = (t, jsonify) => t->to_list->List_rep2rep.to_JSON(jsonify)
+
+let of_JSON = (json, decode) => json->List_rep2rep.of_JSON(decode)->Option.flatMap(of_list)

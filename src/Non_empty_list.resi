@@ -1,5 +1,8 @@
 type t<'a>
 
+let to_JSON: (t<'a>, 'a => Js.Json.t) => Js.Json.t
+let of_JSON: (Js.Json.t, Js.Json.t => option<'a>) => option<t<'a>>
+
 let of_list: list<'a> => option<t<'a>>
 let to_list: t<'a> => list<'a>
 
