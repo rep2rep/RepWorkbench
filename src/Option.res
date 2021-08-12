@@ -12,3 +12,9 @@ let of_JSON = (json, decode) =>
   } else {
     decode(json)->map(x => Some(x))
   }
+
+let jsx = (t, render) =>
+  switch t {
+  | None => React.null
+  | Some(x) => render(x)
+  }

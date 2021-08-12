@@ -106,4 +106,9 @@ module Make = (Token: Schema_intf.S) => {
       | _ => None
       }
     })
+
+  let jsx = t =>
+    <div className="schema dimension">
+      <span className="concept"> {React.string(t.concept)} </span>
+    </div>
 }

@@ -21,3 +21,11 @@ let of_JSON = json =>
   | Some(_) => None
   | None => None
   }
+
+let jsx = t =>
+  <select className="quantity-scale">
+    <option default={t === Nominal}> {React.string("Nominal")} </option>
+    <option default={t === Ordinal}> {React.string("Ordinal")} </option>
+    <option default={t === Interval}> {React.string("Interval")} </option>
+    <option default={t === Ratio}> {React.string("Ratio")} </option>
+  </select>

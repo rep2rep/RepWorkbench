@@ -14,5 +14,8 @@
   "author": "rep2rep",
   "devDependencies": {
     "rescript": "^9.1.4"
+  },
+  "dependencies": {
+    "@rescript/react": "^0.10.3"
   }
 }
