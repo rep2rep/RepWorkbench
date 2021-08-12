@@ -9,6 +9,8 @@ module rec Representation: {
   }
 
   let validate: t => bool
+  let to_JSON: t => Js.Json.t
+  let of_JSON: Js.Json.t => option<t>
 }
 
 and Dimension: {
@@ -29,6 +31,8 @@ and Dimension: {
   }
 
   let validate: t => bool
+  let to_JSON: t => Js.Json.t
+  let of_JSON: Js.Json.t => option<t>
 }
 
 and Scheme: {
@@ -47,11 +51,15 @@ and Scheme: {
   }
 
   let validate: t => bool
+  let to_JSON: t => Js.Json.t
+  let of_JSON: Js.Json.t => option<t>
 }
 
 and Token: {
   module Level: {
     type t = Atomic | Expression
+    let to_JSON: t => Js.Json.t
+    let of_JSON: Js.Json.t => option<t>
   }
 
   type rec t = {
@@ -69,6 +77,8 @@ and Token: {
   }
 
   let validate: t => bool
+  let to_JSON: t => Js.Json.t
+  let of_JSON: Js.Json.t => option<t>
 }
 
 type t =
@@ -78,3 +88,5 @@ type t =
   | Token(Token.t)
 
 let validate: t => bool
+let to_JSON: t => Js.Json.t
+let of_JSON: Js.Json.t => option<t>

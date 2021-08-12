@@ -9,6 +9,8 @@ module rec Representation: {
   }
 
   let validate: t => bool
+  let to_JSON: t => Js.Json.t
+  let of_JSON: Js.Json.t => option<t>
 } = Representation_F.Make(Token, Dimension, Scheme)
 
 and Dimension: {
@@ -29,6 +31,8 @@ and Dimension: {
   }
 
   let validate: t => bool
+  let to_JSON: t => Js.Json.t
+  let of_JSON: Js.Json.t => option<t>
 } = Dimension_F.Make(Token)
 
 and Scheme: {
@@ -47,11 +51,15 @@ and Scheme: {
   }
 
   let validate: t => bool
+  let to_JSON: t => Js.Json.t
+  let of_JSON: Js.Json.t => option<t>
 } = Scheme_F.Make(Dimension, Token)
 
 and Token: {
   module Level: {
     type t = Atomic | Expression
+    let to_JSON: t => Js.Json.t
+    let of_JSON: Js.Json.t => option<t>
   }
 
   type rec t = {
@@ -69,6 +77,8 @@ and Token: {
   }
 
   let validate: t => bool
+  let to_JSON: t => Js.Json.t
+  let of_JSON: Js.Json.t => option<t>
 } = Token_F.Make(Dimension, Scheme)
 
 type t =
@@ -77,11 +87,52 @@ type t =
   | Dimension(Dimension.t)
   | Token(Token.t)
 
-let validate = t => {
+let validate = t =>
   switch t {
   | Representation(r) => Representation.validate(r)
   | Scheme(s) => Scheme.validate(s)
   | Dimension(d) => Dimension.validate(d)
   | Token(t) => Token.validate(t)
   }
+
+let to_JSON = t => {
+  let d = Js.Dict.empty()
+  let set = (key, value) => Js.Dict.set(d, key, value)
+  switch t {
+  | Representation(r) => {
+      set("type", Js.Json.string("Representation"))
+      set("value", Representation.to_JSON(r))
+    }
+  | Scheme(s) => {
+      set("type", Js.Json.string("Scheme"))
+      set("value", Scheme.to_JSON(s))
+    }
+  | Dimension(d) => {
+      set("type", Js.Json.string("Dimension"))
+      set("value", Dimension.to_JSON(d))
+    }
+  | Token(t) => {
+      set("type", Js.Json.string("Token"))
+      set("value", Token.to_JSON(t))
+    }
+  }
+  Js.Json.object_(d)
+}
+
+let of_JSON = json => {
+  Js.Json.decodeObject(json)->Option.flatMap(dict => {
+    let read_value = decode => dict->Js.Dict.get("value")->Option.flatMap(decode)
+    dict
+    ->Js.Dict.get("type")
+    ->Option.flatMap(s =>
+      switch Js.Json.decodeString(s) {
+      | Some("Representation") =>
+        read_value(Representation.of_JSON)->Option.map(r => Representation(r))
+      | Some("Scheme") => read_value(Scheme.of_JSON)->Option.map(s => Scheme(s))
+      | Some("Dimension") => read_value(Dimension.of_JSON)->Option.map(d => Dimension(d))
+      | Some("Token") => read_value(Token.of_JSON)->Option.map(t => Token(t))
+      | _ => None
+      }
+    )
+  })
 }
