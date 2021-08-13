@@ -13,9 +13,3 @@ let of_JSON = json =>
   | Some(_) => None
   | None => None
   }
-
-let jsx = t =>
-  <select className="scope">
-    <option default={t === Global}> {React.string("Global")} </option>
-    <option default={t === Local}> {React.string("Local")} </option>
-  </select>

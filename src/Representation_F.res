@@ -55,9 +55,4 @@ module Make = (Token: Schema_intf.S, Dimension: Schema_intf.S, Scheme: Schema_in
       | _ => None
       }
     })
-
-  let jsx = t =>
-    <div className="schema representation">
-      <span className="domain"> {React.string(t.domain)} </span>
-    </div>
 }

@@ -11,7 +11,6 @@ module rec Representation: {
   let validate: t => bool
   let to_JSON: t => Js.Json.t
   let of_JSON: Js.Json.t => option<t>
-  let jsx: t => React.element
 } = Representation_F.Make(Token, Dimension, Scheme)
 
 and Dimension: {
@@ -34,7 +33,6 @@ and Dimension: {
   let validate: t => bool
   let to_JSON: t => Js.Json.t
   let of_JSON: Js.Json.t => option<t>
-  let jsx: t => React.element
 } = Dimension_F.Make(Token)
 
 and Scheme: {
@@ -55,7 +53,6 @@ and Scheme: {
   let validate: t => bool
   let to_JSON: t => Js.Json.t
   let of_JSON: Js.Json.t => option<t>
-  let jsx: t => React.element
 } = Scheme_F.Make(Dimension, Token)
 
 and Token: {
@@ -63,7 +60,6 @@ and Token: {
     type t = Atomic | Expression
     let to_JSON: t => Js.Json.t
     let of_JSON: Js.Json.t => option<t>
-    let jsx: t => React.element
   }
 
   type rec t = {
@@ -83,7 +79,6 @@ and Token: {
   let validate: t => bool
   let to_JSON: t => Js.Json.t
   let of_JSON: Js.Json.t => option<t>
-  let jsx: t => React.element
 } = Token_F.Make(Dimension, Scheme)
 
 type t =
@@ -141,11 +136,3 @@ let of_JSON = json => {
     )
   })
 }
-
-let jsx = t =>
-  switch t {
-  | Representation(r) => Representation.jsx(r)
-  | Scheme(s) => Scheme.jsx(s)
-  | Dimension(d) => Dimension.jsx(d)
-  | Token(t) => Token.jsx(t)
-  }

@@ -11,7 +11,6 @@ module rec Representation: {
   let validate: t => bool
   let to_JSON: t => Js.Json.t
   let of_JSON: Js.Json.t => option<t>
-  let jsx: t => React.element
 }
 
 and Dimension: {
@@ -34,7 +33,6 @@ and Dimension: {
   let validate: t => bool
   let to_JSON: t => Js.Json.t
   let of_JSON: Js.Json.t => option<t>
-  let jsx: t => React.element
 }
 
 and Scheme: {
@@ -55,7 +53,6 @@ and Scheme: {
   let validate: t => bool
   let to_JSON: t => Js.Json.t
   let of_JSON: Js.Json.t => option<t>
-  let jsx: t => React.element
 }
 
 and Token: {
@@ -63,7 +60,6 @@ and Token: {
     type t = Atomic | Expression
     let to_JSON: t => Js.Json.t
     let of_JSON: Js.Json.t => option<t>
-    let jsx: t => React.element
   }
 
   type rec t = {
@@ -83,7 +79,6 @@ and Token: {
   let validate: t => bool
   let to_JSON: t => Js.Json.t
   let of_JSON: Js.Json.t => option<t>
-  let jsx: t => React.element
 }
 
 type t =
@@ -95,4 +90,3 @@ type t =
 let validate: t => bool
 let to_JSON: t => Js.Json.t
 let of_JSON: Js.Json.t => option<t>
-let jsx: t => React.element

@@ -52,5 +52,3 @@ let every = (t, p) => t->foldr(true, (x, b) => p(x) && b)
 let to_JSON = (t, jsonify) => t->to_list->List.to_JSON(jsonify)
 
 let of_JSON = (json, decode) => json->List.of_JSON(decode)->Option.flatMap(of_list)
-
-let jsx = (t, render) => t->to_list->List.jsx(render)

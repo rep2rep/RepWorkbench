@@ -19,5 +19,3 @@ let of_JSON = (json, decode) =>
       }
     )
   )
-
-let jsx = (t, render) => <div className="list"> {t->map(render)->toArray->React.array} </div>

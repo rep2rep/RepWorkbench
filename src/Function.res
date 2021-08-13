@@ -18,10 +18,3 @@ let of_JSON = json =>
   | Some(_) => None
   | None => None
   }
-
-let jsx = t =>
-  <select className="function">
-    <option selected={t === Semantic}> {React.string("Semantic")} </option>
-    <option selected={t === Auxiliary}> {React.string("Auxiliary")} </option>
-    <option selected={t === Arbitrary}> {React.string("Arbitrary")} </option>
-  </select>

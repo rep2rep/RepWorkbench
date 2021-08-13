@@ -14,12 +14,6 @@ module Make = (Dimension: Schema_intf.S, Scheme: Schema_intf.S) => {
       | Some("Expression") => Some(Expression)
       | _ => None
       }
-
-    let jsx = t =>
-      <select className="level">
-        <option default={t === Atomic}> {React.string("Atomic")} </option>
-        <option default={t === Expression}> {React.string("Expression")} </option>
-      </select>
   }
 
   type rec t = {
@@ -116,9 +110,4 @@ module Make = (Dimension: Schema_intf.S, Scheme: Schema_intf.S) => {
       | _ => None
       }
     })
-
-  let jsx = t =>
-    <div className="schema token">
-      <span className="concept"> {React.string(t.concept)} </span>
-    </div>
 }
