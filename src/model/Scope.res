@@ -1,12 +1,12 @@
 type t = Global | Local
 
-let to_JSON = t =>
+let toJson = t =>
   switch t {
   | Global => Js.Json.string("Global")
   | Local => Js.Json.string("Local")
   }
 
-let of_JSON = json =>
+let fromJson = json =>
   switch Js.Json.decodeString(json) {
   | Some("Global") => Some(Global)
   | Some("Local") => Some(Local)

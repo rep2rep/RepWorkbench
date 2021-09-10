@@ -30,8 +30,8 @@ Testing.equal(
     "JSON round-tripping",
     () => {
       l
-      ->List.to_JSON(x => Int.toFloat(x)->Js.Json.number)
-      ->List.of_JSON(j => Js.Json.decodeNumber(j)->Option.map(Int.fromFloat))
+      ->List.toJson(x => Int.toFloat(x)->Js.Json.number)
+      ->List.fromJson(j => Js.Json.decodeNumber(j)->Option.map(Int.fromFloat))
       ->Option.getExn
     },
     l,

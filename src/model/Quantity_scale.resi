@@ -4,5 +4,5 @@ type t =
   | Interval
   | Ratio
 
-let to_JSON: t => Js.Json.t
-let of_JSON: Js.Json.t => option<t>
+let toJson: t => Js.Json.t
+let fromJson: Js.Json.t => option<t>

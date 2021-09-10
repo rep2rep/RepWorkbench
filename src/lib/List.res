@@ -10,7 +10,15 @@ let mapPartial = (t, f) =>
     }
   )
 
-let to_JSON = (t, jsonify) => t->map(jsonify)->toArray->Js.Json.array
+let toJson = (t, jsonify) => t->map(jsonify)->toArray->Js.Json.array
 
-let of_JSON = (json, decode) =>
-  json->Js.Json.decodeArray->Option.map(arr => arr->fromArray->mapPartial(decode))
+let fromJson = (json, decode) =>
+  json
+  ->Js.Json.decodeArray
+  ->Option.flatMap(arr =>
+    arr
+    ->fromArray
+    ->reduceReverse(Some(list{}), (xs, x) =>
+      xs->Option.flatMap(xs => decode(x)->Option.map(x => xs->add(x)))
+    )
+  )

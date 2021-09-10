@@ -16,25 +16,25 @@ module Make = (Token: Schema_intf.S, Dimension: Schema_intf.S, Scheme: Schema_in
     t.subrepresentations->List.every(validate)
   }
 
-  let rec to_JSON = t =>
+  let rec toJson = t =>
     Js.Dict.fromList(list{
       ("domain", Js.Json.string(t.domain)),
-      ("display", Graphic.to_JSON(t.display)),
-      ("tokens", t.tokens->List.to_JSON(Token.to_JSON)),
-      ("dimensions", t.dimensions->List.to_JSON(Dimension.to_JSON)),
-      ("schemes", t.schemes->List.to_JSON(Scheme.to_JSON)),
-      ("subrepresentations", t.subrepresentations->List.to_JSON(to_JSON)),
+      ("display", Graphic.toJson(t.display)),
+      ("tokens", t.tokens->List.toJson(Token.toJson)),
+      ("dimensions", t.dimensions->List.toJson(Dimension.toJson)),
+      ("schemes", t.schemes->List.toJson(Scheme.toJson)),
+      ("subrepresentations", t.subrepresentations->List.toJson(toJson)),
     })->Js.Json.object_
 
-  let rec of_JSON = json =>
+  let rec fromJson = json =>
     Js.Json.decodeObject(json)->Option.flatMap(dict => {
       let get_value = (key, decode) => dict->Js.Dict.get(key)->Option.flatMap(decode)
       let domain = get_value("domain", Js.Json.decodeString)
-      let display = get_value("display", Graphic.of_JSON)
-      let tokens = get_value("tokens", j => j->List.of_JSON(Token.of_JSON))
-      let dimensions = get_value("dimensions", j => j->List.of_JSON(Dimension.of_JSON))
-      let schemes = get_value("schemes", j => j->List.of_JSON(Scheme.of_JSON))
-      let subrepresentations = get_value("subrepresentations", j => j->List.of_JSON(of_JSON))
+      let display = get_value("display", Graphic.fromJson)
+      let tokens = get_value("tokens", j => j->List.fromJson(Token.fromJson))
+      let dimensions = get_value("dimensions", j => j->List.fromJson(Dimension.fromJson))
+      let schemes = get_value("schemes", j => j->List.fromJson(Scheme.fromJson))
+      let subrepresentations = get_value("subrepresentations", j => j->List.fromJson(fromJson))
       switch (domain, display, tokens, dimensions, schemes, subrepresentations) {
       | (
           Some(domain),

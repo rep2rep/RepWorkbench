@@ -3,14 +3,14 @@ type t =
   | Auxiliary
   | Arbitrary
 
-let to_JSON = t =>
+let toJson = t =>
   switch t {
   | Semantic => Js.Json.string("Semantic")
   | Auxiliary => Js.Json.string("Auxiliary")
   | Arbitrary => Js.Json.string("Arbitrary")
   }
 
-let of_JSON = json =>
+let fromJson = json =>
   switch Js.Json.decodeString(json) {
   | Some("Semantic") => Some(Semantic)
   | Some("Auxiliary") => Some(Auxiliary)

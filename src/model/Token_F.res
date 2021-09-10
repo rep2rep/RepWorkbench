@@ -2,13 +2,13 @@ module Make = (Dimension: Schema_intf.S, Scheme: Schema_intf.S) => {
   module Level = {
     type t = Atomic | Expression
 
-    let to_JSON = t =>
+    let toJson = t =>
       switch t {
       | Atomic => Js.Json.string("Atomic")
       | Expression => Js.Json.string("Expression")
       }
 
-    let of_JSON = json =>
+    let fromJson = json =>
       switch Js.Json.decodeString(json) {
       | Some("Atomic") => Some(Atomic)
       | Some("Expression") => Some(Expression)
@@ -37,37 +37,37 @@ module Make = (Dimension: Schema_intf.S, Scheme: Schema_intf.S) => {
     t.anchored_dimensions->List.every(Dimension.validate) &&
     t.anchored_schemes->List.every(Scheme.validate)
 
-  let rec to_JSON = t =>
+  let rec toJson = t =>
     Js.Dict.fromList(list{
       ("concept", Js.Json.string(t.concept)),
       ("concept_type", Js.Json.string(t.concept_type)),
-      ("graphic", Option.to_JSON(t.graphic, Graphic.to_JSON)),
+      ("graphic", Option.toJson(t.graphic, Graphic.toJson)),
       ("graphic_type", Js.Json.string(t.graphic_type)),
-      ("level", Level.to_JSON(t.level)),
-      ("function", Function.to_JSON(t.function)),
+      ("level", Level.toJson(t.level)),
+      ("function", Function.toJson(t.function)),
       ("explicit", Js.Json.boolean(t.explicit)),
-      ("sub_tokens", t.sub_tokens->List.to_JSON(to_JSON)),
-      ("anchored_tokens", t.anchored_tokens->List.to_JSON(to_JSON)),
-      ("anchored_dimensions", t.anchored_dimensions->List.to_JSON(Dimension.to_JSON)),
-      ("anchored_schemes", t.anchored_schemes->List.to_JSON(Scheme.to_JSON)),
+      ("sub_tokens", t.sub_tokens->List.toJson(toJson)),
+      ("anchored_tokens", t.anchored_tokens->List.toJson(toJson)),
+      ("anchored_dimensions", t.anchored_dimensions->List.toJson(Dimension.toJson)),
+      ("anchored_schemes", t.anchored_schemes->List.toJson(Scheme.toJson)),
     })->Js.Json.object_
 
-  let rec of_JSON = json =>
+  let rec fromJson = json =>
     Js.Json.decodeObject(json)->Option.flatMap(dict => {
       let get_value = (key, decode) => dict->Js.Dict.get(key)->Option.flatMap(decode)
       let concept = get_value("concept", Js.Json.decodeString)
       let concept_type = get_value("concept_type", Js.Json.decodeString)
-      let graphic = get_value("graphic", j => j->Option.of_JSON(Graphic.of_JSON))
+      let graphic = get_value("graphic", j => j->Option.fromJson(Graphic.fromJson))
       let graphic_type = get_value("graphic_type", Js.Json.decodeString)
-      let level = get_value("level", Level.of_JSON)
-      let function = get_value("function", Function.of_JSON)
+      let level = get_value("level", Level.fromJson)
+      let function = get_value("function", Function.fromJson)
       let explicit = get_value("explicit", Js.Json.decodeBoolean)
-      let sub_tokens = get_value("sub_tokens", j => j->List.of_JSON(of_JSON))
-      let anchored_tokens = get_value("anchored_tokens", j => j->List.of_JSON(of_JSON))
+      let sub_tokens = get_value("sub_tokens", j => j->List.fromJson(fromJson))
+      let anchored_tokens = get_value("anchored_tokens", j => j->List.fromJson(fromJson))
       let anchored_dimensions = get_value("anchored_dimensions", j =>
-        j->List.of_JSON(Dimension.of_JSON)
+        j->List.fromJson(Dimension.fromJson)
       )
-      let anchored_schemes = get_value("anchored_schemes", j => j->List.of_JSON(Scheme.of_JSON))
+      let anchored_schemes = get_value("anchored_schemes", j => j->List.fromJson(Scheme.fromJson))
       switch (
         concept,
         concept_type,

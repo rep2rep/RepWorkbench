@@ -4,7 +4,7 @@ type t =
   | Interval
   | Ratio
 
-let to_JSON = t =>
+let toJson = t =>
   switch t {
   | Nominal => Js.Json.string("Nominal")
   | Ordinal => Js.Json.string("Ordinal")
@@ -12,7 +12,7 @@ let to_JSON = t =>
   | Ratio => Js.Json.string("Ratio")
   }
 
-let of_JSON = json =>
+let fromJson = json =>
   switch Js.Json.decodeString(json) {
   | Some("Nominal") => Some(Nominal)
   | Some("Ordinal") => Some(Ordinal)

@@ -19,17 +19,17 @@ let reverse = t => {
   }
 }
 
-let rec of_list = xs =>
+let rec fromList = xs =>
   switch xs {
   | list{} => None
   | list{x} => Some(Singleton(x))
-  | list{x, ...rest} => Some(Cons(x, Option.getExn(of_list(rest))))
+  | list{x, ...rest} => Some(Cons(x, Option.getExn(fromList(rest))))
   }
 
-let rec to_list = t =>
+let rec toList = t =>
   switch t {
   | Singleton(x) => list{x}
-  | Cons(x, xs) => list{x, ...to_list(xs)}
+  | Cons(x, xs) => list{x, ...toList(xs)}
   }
 
 let rec length = t =>
@@ -64,6 +64,6 @@ let rec foldr = (t, b, f) =>
 
 let every = (t, p) => t->foldr(true, (x, b) => p(x) && b)
 
-let to_JSON = (t, jsonify) => t->to_list->List.to_JSON(jsonify)
+let toJson = (t, jsonify) => t->toList->List.toJson(jsonify)
 
-let of_JSON = (json, decode) => json->List.of_JSON(decode)->Option.flatMap(of_list)
+let fromJson = (json, decode) => json->List.fromJson(decode)->Option.flatMap(fromList)
