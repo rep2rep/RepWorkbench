@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
-cd "$(npm root)" && cd ../ && \
-rg --files | rg '.*\.resi?' | \
-entr -s 'npm run format && npm run build && npm run test'
+echo "Watching directory. Press ^C twice rapidly to exit."
+
+while sleep 0.1; do
+    cd "$(npm root)" && cd ../ && \
+        rg --files | rg '.*\.resi?$' | \
+        entr -p -d -s 'npm run format && npm run build && npm run test'
+done

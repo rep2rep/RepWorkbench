@@ -12,7 +12,6 @@ let json = %raw(`{
 "anchored_schemes": []
 }`)
 
-
 let t = {
   Schema.Token.concept: "Some concept",
   concept_type: "Concept type",

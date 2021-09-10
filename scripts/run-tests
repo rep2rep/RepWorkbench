@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TEST_FILE=$(mktemp ./test-XXXXX.js)
+TEST_FILE=$(mktemp ./test-XXXXX.tmp.js)
 
 rm -f $TEST_FILE
 echo 'import * as Testing from "./test/Testing.bs.js"' > $TEST_FILE

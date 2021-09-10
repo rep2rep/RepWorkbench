@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
-"$(npm root)"/rescript/rescript format -all
+NPM_ROOT=$(npm root)
+
+rg --files | rg '.*\.resi?$' | \
+    xargs -P 8 -I file sh -c \
+    'export f=file; "$1"/rescript/bsc -format file > $f.tmp && if cmp --silent $f $f.tmp ; then rm $f.tmp; else mv $f.tmp $f; echo "Formatted $f"; fi' -- "$NPM_ROOT"
