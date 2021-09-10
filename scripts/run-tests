@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+TEST_FILE=$(mktemp ./test-XXXXX.js)
+
+rm -f $TEST_FILE
+echo 'import * as Testing from "./test/Testing.bs.js"' > $TEST_FILE
+ls test/test_*.bs.js | sed 's/\(.*\)/import "\.\/\1"/g' >>  $TEST_FILE
+echo "Testing.runAll()" >> $TEST_FILE
+node $TEST_FILE
+rm -f $TEST_FILE
