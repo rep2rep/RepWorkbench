@@ -1,5 +1,7 @@
 include Belt.Option
 
+let some = x => Some(x)
+
 let to_JSON = (t, jsonify) =>
   switch t {
   | None => Js.Json.null
