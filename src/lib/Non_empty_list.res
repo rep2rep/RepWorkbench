@@ -4,6 +4,21 @@ type rec t<'a> =
 
 let cons = (t, a) => Cons(a, t)
 
+let singleton = a => Singleton(a)
+
+let reverse = t => {
+  let rec rev_helper = (t, t') => {
+    switch t {
+    | Singleton(x) => Cons(x, t')
+    | Cons(x, xs) => rev_helper(xs, Cons(x, t'))
+    }
+  }
+  switch t {
+  | Singleton(x) => Singleton(x)
+  | Cons(x, xs) => rev_helper(xs, Singleton(x))
+  }
+}
+
 let rec of_list = xs =>
   switch xs {
   | list{} => None
