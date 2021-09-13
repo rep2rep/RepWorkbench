@@ -1,27 +1,27 @@
+module Token_level = {
+  type t = Atomic | Expression
+
+  let toJson = t =>
+    switch t {
+    | Atomic => Js.Json.string("Atomic")
+    | Expression => Js.Json.string("Expression")
+    }
+
+  let fromJson = json =>
+    switch Js.Json.decodeString(json) {
+    | Some("Atomic") => Some(Atomic)
+    | Some("Expression") => Some(Expression)
+    | _ => None
+    }
+}
+
 module Make = (Dimension: Schema_intf.S, Scheme: Schema_intf.S) => {
-  module Level = {
-    type t = Atomic | Expression
-
-    let toJson = t =>
-      switch t {
-      | Atomic => Js.Json.string("Atomic")
-      | Expression => Js.Json.string("Expression")
-      }
-
-    let fromJson = json =>
-      switch Js.Json.decodeString(json) {
-      | Some("Atomic") => Some(Atomic)
-      | Some("Expression") => Some(Expression)
-      | _ => None
-      }
-  }
-
   type rec t = {
     concept: string,
     concept_type: string,
     graphic: option<Graphic.t>,
     graphic_type: string,
-    level: Level.t,
+    level: Token_level.t,
     function: Function.t,
     explicit: bool,
     sub_tokens: list<t>,
@@ -43,7 +43,7 @@ module Make = (Dimension: Schema_intf.S, Scheme: Schema_intf.S) => {
       ("concept_type", Js.Json.string(t.concept_type)),
       ("graphic", Option.toJson(t.graphic, Graphic.toJson)),
       ("graphic_type", Js.Json.string(t.graphic_type)),
-      ("level", Level.toJson(t.level)),
+      ("level", Token_level.toJson(t.level)),
       ("function", Function.toJson(t.function)),
       ("explicit", Js.Json.boolean(t.explicit)),
       ("sub_tokens", t.sub_tokens->List.toJson(toJson)),
@@ -59,7 +59,7 @@ module Make = (Dimension: Schema_intf.S, Scheme: Schema_intf.S) => {
       let concept_type = get_value("concept_type", Js.Json.decodeString)
       let graphic = get_value("graphic", j => j->Option.fromJson(Graphic.fromJson))
       let graphic_type = get_value("graphic_type", Js.Json.decodeString)
-      let level = get_value("level", Level.fromJson)
+      let level = get_value("level", Token_level.fromJson)
       let function = get_value("function", Function.fromJson)
       let explicit = get_value("explicit", Js.Json.decodeBoolean)
       let sub_tokens = get_value("sub_tokens", j => j->List.fromJson(fromJson))

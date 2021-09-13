@@ -2,7 +2,7 @@ module rec Representation: {
   type rec t = {
     domain: string,
     display: Graphic.t,
-    tokens: list<Token.t>,
+    tokens: list<Token_.t>,
     dimensions: list<Dimension.t>,
     schemes: list<Scheme.t>,
     subrepresentations: list<t>,
@@ -11,7 +11,7 @@ module rec Representation: {
   let validate: t => bool
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => option<t>
-} = Representation_F.Make(Token, Dimension, Scheme)
+} = Representation_F.Make(Token_, Dimension, Scheme)
 
 and Dimension: {
   type rec t = {
@@ -27,13 +27,13 @@ and Dimension: {
     scope: Scope.t,
     explicit: bool,
     dimensions: list<t>,
-    tokens: Non_empty_list.t<Token.t>,
+    tokens: Non_empty_list.t<Token_.t>,
   }
 
   let validate: t => bool
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => option<t>
-} = Dimension_F.Make(Token)
+} = Dimension_F.Make(Token_)
 
 and Scheme: {
   type rec t = {
@@ -44,7 +44,7 @@ and Scheme: {
     function: Function.t,
     explicit: bool,
     scope: Scope.t,
-    tokens: list<Token.t>,
+    tokens: list<Token_.t>,
     dimensions: Non_empty_list.t<Dimension.t>,
     schemes: list<t>,
     organisation: string,
@@ -53,16 +53,39 @@ and Scheme: {
   let validate: t => bool
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => option<t>
-} = Scheme_F.Make(Dimension, Token)
+} = Scheme_F.Make(Dimension, Token_)
 
-and Token: {
+and Token_: {
+  type rec t = {
+    concept: string,
+    concept_type: string,
+    graphic: option<Graphic.t>,
+    graphic_type: string,
+    level: Token_F.Token_level.t,
+    function: Function.t,
+    explicit: bool,
+    sub_tokens: list<t>,
+    anchored_tokens: list<t>,
+    anchored_dimensions: list<Dimension.t>,
+    anchored_schemes: list<Scheme.t>,
+  }
+
+  let validate: t => bool
+  let toJson: t => Js.Json.t
+  let fromJson: Js.Json.t => option<t>
+} = Token_F.Make(Dimension, Scheme)
+
+// Codegen is broken for nested modules, so we split it.
+module Token: {
   module Level: {
     type t = Atomic | Expression
+
     let toJson: t => Js.Json.t
     let fromJson: Js.Json.t => option<t>
   }
+    with type t = Token_F.Token_level.t
 
-  type rec t = {
+  type rec t = Token_.t = {
     concept: string,
     concept_type: string,
     graphic: option<Graphic.t>,
@@ -79,7 +102,11 @@ and Token: {
   let validate: t => bool
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => option<t>
-} = Token_F.Make(Dimension, Scheme)
+} = {
+  include Token_
+
+  module Level = Token_F.Token_level
+}
 
 type t =
   | Representation(Representation.t)
