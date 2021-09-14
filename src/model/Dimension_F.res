@@ -23,13 +23,13 @@ module Make = (Token: Schema_intf.S) => {
 
   let rec toJson = t =>
     Js.Dict.fromList(list{
-      ("concept", Js.Json.string(t.concept)),
+      ("concept", String.toJson(t.concept)),
       ("concept_scale", Quantity_scale.toJson(t.concept_scale)),
-      ("concept_type", Js.Json.string(t.concept_type)),
+      ("concept_type", String.toJson(t.concept_type)),
       ("concept_attributes", t.concept_attributes->List.toJson(Concept_attribute.toJson)),
       ("graphic", t.graphic->Option.toJson(Graphic.toJson)),
       ("graphic_scale", Quantity_scale.toJson(t.graphic_scale)),
-      ("graphic_type", Js.Json.string(t.graphic_type)),
+      ("graphic_type", String.toJson(t.graphic_type)),
       ("graphic_attributes", t.graphic_attributes->List.toJson(Graphic_attribute.toJson)),
       ("function", Function.toJson(t.function)),
       ("scope", Scope.toJson(t.scope)),
@@ -41,15 +41,15 @@ module Make = (Token: Schema_intf.S) => {
   let rec fromJson = json =>
     Js.Json.decodeObject(json)->Option.flatMap(dict => {
       let get_value = (key, decode) => dict->Js.Dict.get(key)->Option.flatMap(decode)
-      let concept = get_value("concept", Js.Json.decodeString)
+      let concept = get_value("concept", String.fromJson)
       let concept_scale = get_value("concept_scale", Quantity_scale.fromJson)
-      let concept_type = get_value("concept_type", Js.Json.decodeString)
+      let concept_type = get_value("concept_type", String.fromJson)
       let concept_attributes = get_value("concept_attributes", j =>
         j->List.fromJson(Concept_attribute.fromJson)
       )
       let graphic = get_value("graphic", j => j->Option.fromJson(Graphic.fromJson))
       let graphic_scale = get_value("graphic_scale", Quantity_scale.fromJson)
-      let graphic_type = get_value("graphic_type", Js.Json.decodeString)
+      let graphic_type = get_value("graphic_type", String.fromJson)
       let graphic_attributes = get_value("graphic_attributes", j =>
         j->List.fromJson(Graphic_attribute.fromJson)
       )

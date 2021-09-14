@@ -5,13 +5,13 @@ type t =
 
 let toJson = t =>
   switch t {
-  | Semantic => Js.Json.string("Semantic")
-  | Auxiliary => Js.Json.string("Auxiliary")
-  | Arbitrary => Js.Json.string("Arbitrary")
+  | Semantic => String.toJson("Semantic")
+  | Auxiliary => String.toJson("Auxiliary")
+  | Arbitrary => String.toJson("Arbitrary")
   }
 
 let fromJson = json =>
-  switch Js.Json.decodeString(json) {
+  switch String.fromJson(json) {
   | Some("Semantic") => Some(Semantic)
   | Some("Auxiliary") => Some(Auxiliary)
   | Some("Arbitrary") => Some(Arbitrary)

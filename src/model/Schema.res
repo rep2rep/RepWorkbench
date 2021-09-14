@@ -127,19 +127,19 @@ let toJson = t => {
   let set = (key, value) => Js.Dict.set(d, key, value)
   switch t {
   | Representation(r) => {
-      set("type", Js.Json.string("Representation"))
+      set("type", String.toJson("Representation"))
       set("value", Representation.toJson(r))
     }
   | Scheme(s) => {
-      set("type", Js.Json.string("Scheme"))
+      set("type", String.toJson("Scheme"))
       set("value", Scheme.toJson(s))
     }
   | Dimension(d) => {
-      set("type", Js.Json.string("Dimension"))
+      set("type", String.toJson("Dimension"))
       set("value", Dimension.toJson(d))
     }
   | Token(t) => {
-      set("type", Js.Json.string("Token"))
+      set("type", String.toJson("Token"))
       set("value", Token.toJson(t))
     }
   }
@@ -152,7 +152,7 @@ let fromJson = json => {
     dict
     ->Js.Dict.get("type")
     ->Option.flatMap(s =>
-      switch Js.Json.decodeString(s) {
+      switch String.fromJson(s) {
       | Some("Representation") =>
         read_value(Representation.fromJson)->Option.map(r => Representation(r))
       | Some("Scheme") => read_value(Scheme.fromJson)->Option.map(s => Scheme(s))

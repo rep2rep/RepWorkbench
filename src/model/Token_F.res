@@ -3,12 +3,12 @@ module Token_level = {
 
   let toJson = t =>
     switch t {
-    | Atomic => Js.Json.string("Atomic")
-    | Expression => Js.Json.string("Expression")
+    | Atomic => String.toJson("Atomic")
+    | Expression => String.toJson("Expression")
     }
 
   let fromJson = json =>
-    switch Js.Json.decodeString(json) {
+    switch String.fromJson(json) {
     | Some("Atomic") => Some(Atomic)
     | Some("Expression") => Some(Expression)
     | _ => None
@@ -39,10 +39,10 @@ module Make = (Dimension: Schema_intf.S, Scheme: Schema_intf.S) => {
 
   let rec toJson = t =>
     Js.Dict.fromList(list{
-      ("concept", Js.Json.string(t.concept)),
-      ("concept_type", Js.Json.string(t.concept_type)),
+      ("concept", String.toJson(t.concept)),
+      ("concept_type", String.toJson(t.concept_type)),
       ("graphic", Option.toJson(t.graphic, Graphic.toJson)),
-      ("graphic_type", Js.Json.string(t.graphic_type)),
+      ("graphic_type", String.toJson(t.graphic_type)),
       ("level", Token_level.toJson(t.level)),
       ("function", Function.toJson(t.function)),
       ("explicit", Js.Json.boolean(t.explicit)),
@@ -55,10 +55,10 @@ module Make = (Dimension: Schema_intf.S, Scheme: Schema_intf.S) => {
   let rec fromJson = json =>
     Js.Json.decodeObject(json)->Option.flatMap(dict => {
       let get_value = (key, decode) => dict->Js.Dict.get(key)->Option.flatMap(decode)
-      let concept = get_value("concept", Js.Json.decodeString)
-      let concept_type = get_value("concept_type", Js.Json.decodeString)
+      let concept = get_value("concept", String.fromJson)
+      let concept_type = get_value("concept_type", String.fromJson)
       let graphic = get_value("graphic", j => j->Option.fromJson(Graphic.fromJson))
-      let graphic_type = get_value("graphic_type", Js.Json.decodeString)
+      let graphic_type = get_value("graphic_type", String.fromJson)
       let level = get_value("level", Token_level.fromJson)
       let function = get_value("function", Function.fromJson)
       let explicit = get_value("explicit", Js.Json.decodeBoolean)

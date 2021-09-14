@@ -6,14 +6,14 @@ type t =
 
 let toJson = t =>
   switch t {
-  | Nominal => Js.Json.string("Nominal")
-  | Ordinal => Js.Json.string("Ordinal")
-  | Interval => Js.Json.string("Interval")
-  | Ratio => Js.Json.string("Ratio")
+  | Nominal => String.toJson("Nominal")
+  | Ordinal => String.toJson("Ordinal")
+  | Interval => String.toJson("Interval")
+  | Ratio => String.toJson("Ratio")
   }
 
 let fromJson = json =>
-  switch Js.Json.decodeString(json) {
+  switch String.fromJson(json) {
   | Some("Nominal") => Some(Nominal)
   | Some("Ordinal") => Some(Ordinal)
   | Some("Interval") => Some(Interval)

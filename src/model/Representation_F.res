@@ -18,7 +18,7 @@ module Make = (Token: Schema_intf.S, Dimension: Schema_intf.S, Scheme: Schema_in
 
   let rec toJson = t =>
     Js.Dict.fromList(list{
-      ("domain", Js.Json.string(t.domain)),
+      ("domain", String.toJson(t.domain)),
       ("display", Graphic.toJson(t.display)),
       ("tokens", t.tokens->List.toJson(Token.toJson)),
       ("dimensions", t.dimensions->List.toJson(Dimension.toJson)),
@@ -29,7 +29,7 @@ module Make = (Token: Schema_intf.S, Dimension: Schema_intf.S, Scheme: Schema_in
   let rec fromJson = json =>
     Js.Json.decodeObject(json)->Option.flatMap(dict => {
       let get_value = (key, decode) => dict->Js.Dict.get(key)->Option.flatMap(decode)
-      let domain = get_value("domain", Js.Json.decodeString)
+      let domain = get_value("domain", String.fromJson)
       let display = get_value("display", Graphic.fromJson)
       let tokens = get_value("tokens", j => j->List.fromJson(Token.fromJson))
       let dimensions = get_value("dimensions", j => j->List.fromJson(Dimension.fromJson))

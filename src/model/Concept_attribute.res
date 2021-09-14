@@ -1,4 +1,4 @@
 type t = string
 
-let toJson = Js.Json.string
-let fromJson = Js.Json.decodeString
+let toJson = String.toJson
+let fromJson = String.fromJson
