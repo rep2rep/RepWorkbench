@@ -33,7 +33,7 @@ module Make = (Token: Schema_intf.S) => {
       ("graphic_attributes", t.graphic_attributes->List.toJson(Graphic_attribute.toJson)),
       ("function", Function.toJson(t.function)),
       ("scope", Scope.toJson(t.scope)),
-      ("explicit", Js.Json.boolean(t.explicit)),
+      ("explicit", Bool.toJson(t.explicit)),
       ("dimensions", t.dimensions->List.toJson(toJson)),
       ("tokens", t.tokens->Non_empty_list.toJson(Token.toJson)),
     })->Js.Json.object_
@@ -55,7 +55,7 @@ module Make = (Token: Schema_intf.S) => {
       )
       let function = get_value("function", Function.fromJson)
       let scope = get_value("scope", Scope.fromJson)
-      let explicit = get_value("explicit", Js.Json.decodeBoolean)
+      let explicit = get_value("explicit", Bool.fromJson)
       let dimensions = get_value("dimensions", j => j->List.fromJson(fromJson))
       let tokens = get_value("tokens", j => j->Non_empty_list.fromJson(Token.fromJson))
       switch (

@@ -26,7 +26,7 @@ module Make = (Dimension: Schema_intf.S, Token: Schema_intf.S) => {
       ("graphic_structure", t.graphic_structure->Option.toJson(Graphic.toJson)),
       ("graphic_type", String.toJson(t.graphic_type)),
       ("function", Function.toJson(t.function)),
-      ("explicit", Js.Json.boolean(t.explicit)),
+      ("explicit", Bool.toJson(t.explicit)),
       ("scope", Scope.toJson(t.scope)),
       ("tokens", t.tokens->List.toJson(Token.toJson)),
       ("dimensions", t.dimensions->Non_empty_list.toJson(Dimension.toJson)),
@@ -44,7 +44,7 @@ module Make = (Dimension: Schema_intf.S, Token: Schema_intf.S) => {
       )
       let graphic_type = get_value("graphic_type", String.fromJson)
       let function = get_value("function", Function.fromJson)
-      let explicit = get_value("explicit", Js.Json.decodeBoolean)
+      let explicit = get_value("explicit", Bool.fromJson)
       let scope = get_value("scope", Scope.fromJson)
       let tokens = get_value("tokens", j => j->List.fromJson(Token.fromJson))
       let dimensions = get_value("dimensions", j => j->Non_empty_list.fromJson(Dimension.fromJson))

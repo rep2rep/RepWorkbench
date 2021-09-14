@@ -45,7 +45,7 @@ module Make = (Dimension: Schema_intf.S, Scheme: Schema_intf.S) => {
       ("graphic_type", String.toJson(t.graphic_type)),
       ("level", Token_level.toJson(t.level)),
       ("function", Function.toJson(t.function)),
-      ("explicit", Js.Json.boolean(t.explicit)),
+      ("explicit", Bool.toJson(t.explicit)),
       ("sub_tokens", t.sub_tokens->List.toJson(toJson)),
       ("anchored_tokens", t.anchored_tokens->List.toJson(toJson)),
       ("anchored_dimensions", t.anchored_dimensions->List.toJson(Dimension.toJson)),
@@ -61,7 +61,7 @@ module Make = (Dimension: Schema_intf.S, Scheme: Schema_intf.S) => {
       let graphic_type = get_value("graphic_type", String.fromJson)
       let level = get_value("level", Token_level.fromJson)
       let function = get_value("function", Function.fromJson)
-      let explicit = get_value("explicit", Js.Json.decodeBoolean)
+      let explicit = get_value("explicit", Bool.fromJson)
       let sub_tokens = get_value("sub_tokens", j => j->List.fromJson(fromJson))
       let anchored_tokens = get_value("anchored_tokens", j => j->List.fromJson(fromJson))
       let anchored_dimensions = get_value("anchored_dimensions", j =>
