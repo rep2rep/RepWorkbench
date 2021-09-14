@@ -39,7 +39,7 @@ module Make = (Dimension: Schema_intf.S, Token: Schema_intf.S) => {
       let get_value = (key, decode) => dict->Js.Dict.get(key)->Option.flatMap(decode)
       let concept_structure = get_value("concept_structure", Js.Json.decodeString)
       let concept_type = get_value("concept_type", Js.Json.decodeString)
-      let graphic_structure = get_value("graphic_strucutre", j =>
+      let graphic_structure = get_value("graphic_structure", j =>
         j->Option.fromJson(Graphic.fromJson)
       )
       let graphic_type = get_value("graphic_type", Js.Json.decodeString)
