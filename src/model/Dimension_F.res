@@ -136,7 +136,10 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
               Some(((dimensions, tokens), (representations2, schemes2, dimensions2, tokens2)))
             })
           )
-          ->Option.getExn
+          ->Option.getWithDefault((
+            (None, None),
+            (representations0, schemes0, dimensions0, tokens0),
+          ))
 
         switch (
           concept,

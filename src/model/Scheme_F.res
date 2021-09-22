@@ -155,7 +155,10 @@ module Make = (
               })
             )
           )
-          ->Option.getExn
+          ->Option.getWithDefault((
+            (None, None, None),
+            (representations0, schemes0, dimensions0, tokens0),
+          ))
 
         switch (
           concept_structure,
