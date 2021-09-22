@@ -4,6 +4,6 @@ echo "Watching directory. Press ^C twice rapidly to exit."
 
 while sleep 0.1; do
     cd "$(npm root)" && cd ../ && \
-        rg --files | rg '.*\.resi?$' | \
+        rg --files | rg '(.*\.resi?$)|(.*\.json$)' | \
         entr -d -s 'npm run format && npm run build && npm run test'
 done
