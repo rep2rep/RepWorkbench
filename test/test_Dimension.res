@@ -1,4 +1,6 @@
 let json = %raw(`{
+"start": "2",
+"2": {
 "concept": "Concept",
 "concept_scale": "Interval",
 "concept_type": "Concept type",
@@ -11,11 +13,14 @@ let json = %raw(`{
 "scope": "Local",
 "explicit": false,
 "dimensions": [],
-"tokens": [ Test_Token.json ]
+"tokens": [ "1" ]
+},
+"1": Test_Token.json["1"]
 }`)
 
 let d = {
-  Schema.Dimension.concept: "Concept",
+  Schema.Dimension.uuid: Uuid.fromString("2"),
+  concept: "Concept",
   concept_scale: Quantity_scale.Interval,
   concept_type: "Concept type",
   concept_attributes: list{"attribute"},
@@ -32,10 +37,10 @@ let d = {
 
 Testing.assertTrue("Valid dimension", () => Schema.Dimension.validate(d))
 
-Testing.equal("JSON is as expected", () => Schema.Dimension.toJson(d), json)
+Testing.equal("Dimension JSON is as expected", () => Schema.Dimension.toJson(d), json)
 
 Testing.equal(
-  "JSON round-tripping",
-  () => Schema.Dimension.toJson(d)->Schema.Dimension.fromJson->Option.getExn,
-  d,
+  "Dimension JSON round-tripping",
+  () => Schema.Dimension.toJson(d)->Schema.Dimension.fromJson,
+  Some(d),
 )

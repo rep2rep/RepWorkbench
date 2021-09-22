@@ -1,14 +1,17 @@
 let json = %raw(`{
+"start": "4",
+"4": {
 "domain": "The domain",
 "display": "Graphic reference",
 "tokens": [],
 "dimensions": [],
 "schemes": [],
 "subrepresentations": []
-} `)
+}} `)
 
 let r = {
-  Schema.Representation.domain: "The domain",
+  Schema.Representation.uuid: Uuid.fromString("4"),
+  domain: "The domain",
   display: "Graphic reference",
   tokens: list{},
   dimensions: list{},
@@ -24,7 +27,7 @@ Testing.equal("JSON is as expected", () => Schema.Representation.toJson(r), json
 Testing.equal(
   "JSON round-tripping",
   () => {
-    Schema.Representation.toJson(r)->Schema.Representation.fromJson->Option.getExn
+    Schema.Representation.toJson(r)->Schema.Representation.fromJson
   },
-  r,
+  Some(r),
 )

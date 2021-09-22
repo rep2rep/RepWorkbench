@@ -1,20 +1,24 @@
 module rec Representation: {
-  type rec t = {
+  type rec t = Schema_intf.representation = {
+    uuid: Uuid.t,
     domain: string,
     display: Graphic.t,
-    tokens: list<Token_.t>,
-    dimensions: list<Dimension.t>,
-    schemes: list<Scheme.t>,
+    tokens: list<Schema_intf.token>,
+    dimensions: list<Schema_intf.dimension>,
+    schemes: list<Schema_intf.scheme>,
     subrepresentations: list<t>,
   }
 
   let validate: t => bool
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => option<t>
+  let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
+  let _fromJsonHelper: Schema_intf.fromJsonHelper
 } = Representation_F.Make(Token_, Dimension, Scheme)
 
 and Dimension: {
-  type rec t = {
+  type rec t = Schema_intf.dimension = {
+    uuid: Uuid.t,
     concept: string,
     concept_scale: Quantity_scale.t,
     concept_type: string,
@@ -27,16 +31,20 @@ and Dimension: {
     scope: Scope.t,
     explicit: bool,
     dimensions: list<t>,
-    tokens: Non_empty_list.t<Token_.t>,
+    tokens: Non_empty_list.t<Schema_intf.token>,
   }
 
+  let uuid: t => Uuid.t
   let validate: t => bool
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => option<t>
+  let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
+  let _fromJsonHelper: Schema_intf.fromJsonHelper
 } = Dimension_F.Make(Token_)
 
 and Scheme: {
-  type rec t = {
+  type rec t = Schema_intf.scheme = {
+    uuid: Uuid.t,
     concept_structure: string,
     concept_type: string,
     graphic_structure: option<Graphic.t>,
@@ -44,35 +52,42 @@ and Scheme: {
     function: Function.t,
     explicit: bool,
     scope: Scope.t,
-    tokens: list<Token_.t>,
-    dimensions: Non_empty_list.t<Dimension.t>,
+    tokens: list<Schema_intf.token>,
+    dimensions: Non_empty_list.t<Schema_intf.dimension>,
     schemes: list<t>,
     organisation: string,
   }
 
+  let uuid: t => Uuid.t
   let validate: t => bool
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => option<t>
+  let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
+  let _fromJsonHelper: Schema_intf.fromJsonHelper
 } = Scheme_F.Make(Dimension, Token_)
 
 and Token_: {
-  type rec t = {
+  type rec t = Schema_intf.token = {
+    uuid: Uuid.t,
     concept: string,
     concept_type: string,
     graphic: option<Graphic.t>,
     graphic_type: string,
-    level: Token_F.Token_level.t,
+    level: Token_level.t,
     function: Function.t,
     explicit: bool,
     sub_tokens: list<t>,
     anchored_tokens: list<t>,
-    anchored_dimensions: list<Dimension.t>,
-    anchored_schemes: list<Scheme.t>,
+    anchored_dimensions: list<Schema_intf.dimension>,
+    anchored_schemes: list<Schema_intf.scheme>,
   }
 
+  let uuid: t => Uuid.t
   let validate: t => bool
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => option<t>
+  let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
+  let _fromJsonHelper: Schema_intf.fromJsonHelper
 } = Token_F.Make(Dimension, Scheme)
 
 // Codegen is broken for nested modules, so we split it.
@@ -83,9 +98,10 @@ module Token: {
     let toJson: t => Js.Json.t
     let fromJson: Js.Json.t => option<t>
   }
-    with type t = Token_F.Token_level.t
+    with type t = Token_level.t
 
   type rec t = Token_.t = {
+    uuid: Uuid.t,
     concept: string,
     concept_type: string,
     graphic: option<Graphic.t>,
@@ -105,7 +121,7 @@ module Token: {
 } = {
   include Token_
 
-  module Level = Token_F.Token_level
+  module Level = Token_level
 }
 
 type t =

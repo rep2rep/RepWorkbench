@@ -1,10 +1,11 @@
 module rec Representation: {
-  type rec t = {
+  type rec t = Schema_intf.representation = {
+    uuid: Uuid.t,
     domain: string,
     display: Graphic.t,
-    tokens: list<Token.t>,
-    dimensions: list<Dimension.t>,
-    schemes: list<Scheme.t>,
+    tokens: list<Schema_intf.token>,
+    dimensions: list<Schema_intf.dimension>,
+    schemes: list<Schema_intf.scheme>,
     subrepresentations: list<t>,
   }
 
@@ -14,7 +15,8 @@ module rec Representation: {
 }
 
 and Dimension: {
-  type rec t = {
+  type rec t = Schema_intf.dimension = {
+    uuid: Uuid.t,
     concept: string,
     concept_scale: Quantity_scale.t,
     concept_type: string,
@@ -27,7 +29,7 @@ and Dimension: {
     scope: Scope.t,
     explicit: bool,
     dimensions: list<t>,
-    tokens: Non_empty_list.t<Token.t>,
+    tokens: Non_empty_list.t<Schema_intf.token>,
   }
 
   let validate: t => bool
@@ -36,7 +38,8 @@ and Dimension: {
 }
 
 and Scheme: {
-  type rec t = {
+  type rec t = Schema_intf.scheme = {
+    uuid: Uuid.t,
     concept_structure: string,
     concept_type: string,
     graphic_structure: option<Graphic.t>,
@@ -44,8 +47,8 @@ and Scheme: {
     function: Function.t,
     explicit: bool,
     scope: Scope.t,
-    tokens: list<Token.t>,
-    dimensions: Non_empty_list.t<Dimension.t>,
+    tokens: list<Schema_intf.token>,
+    dimensions: Non_empty_list.t<Schema_intf.dimension>,
     schemes: list<t>,
     organisation: string,
   }
@@ -57,13 +60,14 @@ and Scheme: {
 
 and Token: {
   module Level: {
-    type t = Atomic | Expression
+    type t = Token_level.t = Atomic | Expression
 
     let toJson: t => Js.Json.t
     let fromJson: Js.Json.t => option<t>
   }
 
-  type rec t = {
+  type rec t = Schema_intf.token = {
+    uuid: Uuid.t,
     concept: string,
     concept_type: string,
     graphic: option<Graphic.t>,
@@ -73,8 +77,8 @@ and Token: {
     explicit: bool,
     sub_tokens: list<t>,
     anchored_tokens: list<t>,
-    anchored_dimensions: list<Dimension.t>,
-    anchored_schemes: list<Scheme.t>,
+    anchored_dimensions: list<Schema_intf.dimension>,
+    anchored_schemes: list<Schema_intf.scheme>,
   }
 
   let validate: t => bool

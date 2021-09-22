@@ -5,10 +5,10 @@ type t =
 
 let toJson = t =>
   switch t {
-  | Semantic => String.toJson("Semantic")
-  | Auxiliary => String.toJson("Auxiliary")
-  | Arbitrary => String.toJson("Arbitrary")
-  }
+  | Semantic => "Semantic"
+  | Auxiliary => "Auxiliary"
+  | Arbitrary => "Arbitrary"
+  }->String.toJson
 
 let fromJson = json =>
   switch String.fromJson(json) {

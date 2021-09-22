@@ -1,4 +1,6 @@
 let json = %raw(`{
+"start": "1",
+"1": {
 "concept": "Some concept",
 "concept_type": "Concept type",
 "graphic": "Graphic reference",
@@ -10,10 +12,11 @@ let json = %raw(`{
 "anchored_tokens": [],
 "anchored_dimensions": [],
 "anchored_schemes": []
-}`)
+}}`)
 
 let t = {
-  Schema.Token.concept: "Some concept",
+  Schema.Token.uuid: Uuid.fromString("1"),
+  concept: "Some concept",
   concept_type: "Concept type",
   graphic: Some("Graphic reference"),
   graphic_type: "Graphic type",
@@ -28,10 +31,14 @@ let t = {
 
 Testing.assertTrue("Valid token", () => Schema.Token.validate(t))
 
-Testing.equal("JSON is as expected", () => Schema.Token.toJson(t), json)
+Testing.equal(
+  "Token JSON is as expected",
+  () => Schema.Token.toJson(t)->Js.Json.stringify,
+  json->Js.Json.stringify,
+)
 
 Testing.equal(
-  "JSON round-tripping",
-  () => Schema.Token.toJson(t)->Schema.Token.fromJson->Option.getExn,
-  t,
+  "Token JSON round-tripping",
+  () => Schema.Token.toJson(t)->Schema.Token.fromJson,
+  Some(t),
 )
