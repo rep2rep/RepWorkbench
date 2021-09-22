@@ -32,6 +32,12 @@ let rec toList = t =>
   | Cons(x, xs) => list{x, ...toList(xs)}
   }
 
+let rec toArray = t =>
+  switch t {
+  | Singleton(x) => [x]
+  | Cons(x, xs) => Array.concat([x], toArray(xs))
+  }
+
 let rec length = t =>
   switch t {
   | Singleton(_) => 1
@@ -50,10 +56,16 @@ let rec map = (t, f) =>
   | Cons(x, xs) => Cons(f(x), xs->map(f))
   }
 
-let rec reduce = (t, f) =>
+let rec reduce' = (t, f) =>
   switch t {
   | Singleton(x) => x
-  | Cons(x, xs) => f(x, xs->reduce(f))
+  | Cons(x, xs) => f(xs->reduce'(f), x)
+  }
+
+let rec reduce = (t, z, f) =>
+  switch t {
+  | Singleton(x) => z(x)
+  | Cons(x, xs) => f(xs->reduce(z, f), x)
   }
 
 let rec foldr = (t, b, f) =>
@@ -63,6 +75,17 @@ let rec foldr = (t, b, f) =>
   }
 
 let every = (t, p) => t->foldr(true, (x, b) => p(x) && b)
+
+let allSome = t =>
+  t->reduce(
+    (a: option<'a>): option<t<'a>> =>
+      switch a {
+      | None => None
+      | Some(a) => Some(Singleton(a))
+      },
+    (xs: option<t<'a>>, x: option<'a>): option<t<'a>> =>
+      xs->Option.flatMap(xs => x->Option.map(x => xs->cons(x))),
+  )
 
 let toJson = (t, jsonify) => t->toList->List.toJson(jsonify)
 

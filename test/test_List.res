@@ -24,6 +24,14 @@ Testing.equal(
   list{2, 4, 6, 8},
 )
 
+Testing.equal(
+  "AllSome some",
+  () => list{Some(1), Some(2), Some(3)}->List.allSome,
+  Some(list{1, 2, 3}),
+)
+
+Testing.equal("AllSome none", () => list{Some(1), Some(2), Some(3), None}->List.allSome, None)
+
 {
   let l = list{3, 2, 4, 100, 7}
   Testing.equal(
