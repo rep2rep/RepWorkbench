@@ -72,6 +72,7 @@ and Token: {
     concept_type: string,
     graphic: option<Graphic.t>,
     graphic_type: string,
+    is_class: bool,
     level: Level.t,
     function: Function.t,
     explicit: bool,

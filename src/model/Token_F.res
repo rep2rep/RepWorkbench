@@ -8,6 +8,7 @@ module Make = (
     concept_type: string,
     graphic: option<Graphic.t>,
     graphic_type: string,
+    is_class: bool,
     level: Token_level.t,
     function: Function.t,
     explicit: bool,
@@ -54,6 +55,7 @@ module Make = (
           ("concept_type", String.toJson(t.concept_type)),
           ("graphic", Option.toJson(t.graphic, Graphic.toJson)),
           ("graphic_type", String.toJson(t.graphic_type)),
+          ("is_class", Bool.toJson(t.is_class)),
           ("level", Token_level.toJson(t.level)),
           ("function", Function.toJson(t.function)),
           ("explicit", Bool.toJson(t.explicit)),
@@ -96,6 +98,7 @@ module Make = (
         let concept_type = get_value("concept_type", String.fromJson)
         let graphic = get_value("graphic", j => j->Option.fromJson(Graphic.fromJson))
         let graphic_type = get_value("graphic_type", String.fromJson)
+        let is_class = get_value("is_class", Bool.fromJson)
         let level = get_value("level", Token_level.fromJson)
         let function = get_value("function", Function.fromJson)
         let explicit = get_value("explicit", Bool.fromJson)
@@ -198,6 +201,7 @@ module Make = (
           concept_type,
           graphic,
           graphic_type,
+          is_class,
           level,
           function,
           explicit,
@@ -211,6 +215,7 @@ module Make = (
             Some(concept_type),
             Some(graphic),
             Some(graphic_type),
+            Some(is_class),
             Some(level),
             Some(function),
             Some(explicit),
@@ -225,6 +230,7 @@ module Make = (
               concept_type: concept_type,
               graphic: graphic,
               graphic_type: graphic_type,
+              is_class: is_class,
               level: level,
               function: function,
               explicit: explicit,

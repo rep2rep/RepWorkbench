@@ -45,6 +45,7 @@ and token = {
   concept_type: string,
   graphic: option<Graphic.t>,
   graphic_type: string,
+  is_class: bool,
   level: Token_level.t,
   function: Function.t,
   explicit: bool,
