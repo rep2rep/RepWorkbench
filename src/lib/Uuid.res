@@ -16,7 +16,7 @@ let toString = t => Int.baseEncode(t, base)
 let fromString = s => Int.baseDecode(s, base)
 
 let toJson = t => toString(t)->String.toJson
-let fromJson = j => String.fromJson(j)->Option.map(s => fromString(s))
+let fromJson = j => String.fromJson(j)->Or_error.map(s => fromString(s))
 
 module Cmp = Belt.Id.MakeComparable({
   type t = t
@@ -47,7 +47,7 @@ module Set = {
 
   let toJson = t => toList(t)->List.toJson(toJson)
 
-  let fromJson = json => json->List.fromJson(fromJson)->Option.map(fromList)
+  let fromJson = json => json->List.fromJson(fromJson)->Or_error.map(fromList)
 }
 
 module Map = {
@@ -70,11 +70,13 @@ module Map = {
     toList(t)->List.map(((k, v)) => (toString(k), encode(v)))->Js.Dict.fromList->Js.Json.object_
 
   let fromJson = (json, decode) =>
-    Js.Json.decodeObject(json)->Option.flatMap(dict =>
+    Js.Json.decodeObject(json)
+    ->Or_error.fromOption(Error.fromString("JSON is not an object (reading UUID)"))
+    ->Or_error.flatMap(dict =>
       Js.Dict.entries(dict)
-      ->Array.map(((k, v)) => decode(v)->Option.map(v => (fromString(k), v)))
+      ->Array.map(((k, v)) => decode(v)->Or_error.map(v => (fromString(k), v)))
       ->List.fromArray
-      ->List.allSome
-      ->Option.map(fromList)
+      ->Or_error.all
+      ->Or_error.map(fromList)
     )
 }

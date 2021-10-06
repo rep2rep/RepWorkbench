@@ -4,4 +4,7 @@ include Belt.Int
 @val external baseDecode: (string, int) => int = "parseInt"
 
 let toJson = t => toFloat(t)->Js.Json.number
-let fromJson = j => Js.Json.decodeNumber(j)->Option.map(fromFloat)
+let fromJson = j =>
+  Js.Json.decodeNumber(j)
+  ->Or_error.fromOption(Error.fromString("JSON is not a number (reading Int)"))
+  ->Or_error.map(fromFloat)

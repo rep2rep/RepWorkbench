@@ -10,7 +10,7 @@ let toJson = (t, jsonify) =>
 
 let fromJson = (json, decode) =>
   if json === Js.Json.null {
-    Some(None)
+    Or_error.create(None)
   } else {
-    decode(json)->map(x => Some(x))
+    decode(json)->Or_error.map(x => Some(x))
   }

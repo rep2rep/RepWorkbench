@@ -87,6 +87,27 @@ let allSome = t =>
       xs->Option.flatMap(xs => x->Option.map(x => xs->cons(x))),
   )
 
+let rec or_error_all = ts =>
+  switch ts {
+  | Singleton(a) =>
+    switch a {
+    | Or_error.Ok(a) => Or_error.Ok(Singleton(a))
+    | Or_error.Err(e) => Or_error.Err(e)
+    }
+  | Cons(a, rest) =>
+    switch (a, or_error_all(rest)) {
+    | (Or_error.Ok(a), Or_error.Ok(rest)) => Or_error.Ok(Cons(a, rest))
+    | (Err(e), Ok(_)) => Err(e)
+    | (Ok(_), Err(e)) => Err(e)
+    | (Err(e), Err(e')) => Err(Error.join(e, e'))
+    }
+  }
+
 let toJson = (t, jsonify) => t->toList->List.toJson(jsonify)
 
-let fromJson = (json, decode) => json->List.fromJson(decode)->Option.flatMap(fromList)
+let fromJson = (json, decode) =>
+  json
+  ->List.fromJson(decode)
+  ->Or_error.flatMap(l =>
+    l->fromList->Or_error.fromOption(Error.fromString("Non-empty list is empty when reading JSON"))
+  )

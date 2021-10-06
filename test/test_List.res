@@ -37,11 +37,8 @@ Testing.equal("AllSome none", () => list{Some(1), Some(2), Some(3), None}->List.
   Testing.equal(
     "JSON round-tripping",
     () => {
-      l
-      ->List.toJson(x => Int.toFloat(x)->Js.Json.number)
-      ->List.fromJson(j => Js.Json.decodeNumber(j)->Option.map(Int.fromFloat))
-      ->Option.getExn
+      l->List.toJson(Int.toJson)->List.fromJson(Int.fromJson)->Or_error.valOf
     },
-    l,
+    Some(l),
   )
 }

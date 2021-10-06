@@ -1,7 +1,7 @@
 type t<'a>
 
 let toJson: (t<'a>, 'a => Js.Json.t) => Js.Json.t
-let fromJson: (Js.Json.t, Js.Json.t => option<'a>) => option<t<'a>>
+let fromJson: (Js.Json.t, Js.Json.t => Or_error.t<'a>) => Or_error.t<t<'a>>
 
 let toList: t<'a> => list<'a>
 let fromList: list<'a> => option<t<'a>>
@@ -19,3 +19,5 @@ let reduce: (t<'a>, 'a => 'b, ('b, 'a) => 'b) => 'b
 let allSome: t<option<'a>> => option<t<'a>>
 let foldr: (t<'a>, 'b, ('a, 'b) => 'b) => 'b
 let every: (t<'a>, 'a => bool) => bool
+
+let or_error_all: t<Or_error.t<'a>> => Or_error.t<t<'a>>

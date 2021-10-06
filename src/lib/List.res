@@ -30,4 +30,7 @@ let allSome = t => {
 let toJson = (t, jsonify) => t->map(jsonify)->toArray->Js.Json.array
 
 let fromJson = (json, decode) =>
-  json->Js.Json.decodeArray->Option.flatMap(arr => arr->fromArray->map(decode)->allSome)
+  json
+  ->Js.Json.decodeArray
+  ->Or_error.fromOption(Error.fromString("JSON is not a valid array (reading list)"))
+  ->Or_error.flatMap(arr => arr->fromArray->map(decode)->Or_error.all)

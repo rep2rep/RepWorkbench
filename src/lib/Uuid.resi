@@ -6,14 +6,14 @@ let toString: t => string
 let fromString: string => t
 
 let toJson: t => Js.Json.t
-let fromJson: Js.Json.t => option<t>
+let fromJson: Js.Json.t => Or_error.t<t>
 
 module Set: {
   type key = t
   type t
 
   let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => option<t>
+  let fromJson: Js.Json.t => Or_error.t<t>
 
   let empty: t
   let isEmpty: t => bool
@@ -30,7 +30,7 @@ module Map: {
   type t<'v>
 
   let toJson: (t<'v>, 'v => Js.Json.t) => Js.Json.t
-  let fromJson: (Js.Json.t, Js.Json.t => option<'v>) => option<t<'v>>
+  let fromJson: (Js.Json.t, Js.Json.t => Or_error.t<'v>) => Or_error.t<t<'v>>
 
   let empty: unit => t<'v>
   let isEmpty: t<'v> => bool

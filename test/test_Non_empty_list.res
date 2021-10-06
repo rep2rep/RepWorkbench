@@ -31,8 +31,8 @@ Testing.equal(
   Testing.equal(
     "JSON round-tripping",
     () => {
-      l->Non_empty_list.toJson(Int.toJson)->Non_empty_list.fromJson(Int.fromJson)->Option.getExn
+      l->Non_empty_list.toJson(Int.toJson)->Non_empty_list.fromJson(Int.fromJson)->Or_error.valOf
     },
-    l,
+    Some(l),
   )
 }
