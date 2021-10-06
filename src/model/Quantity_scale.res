@@ -13,11 +13,11 @@ let toJson = t =>
   }
 
 let fromJson = json =>
-  switch String.fromJson(json) {
-  | Some("Nominal") => Some(Nominal)
-  | Some("Ordinal") => Some(Ordinal)
-  | Some("Interval") => Some(Interval)
-  | Some("Ratio") => Some(Ratio)
-  | Some(_) => None
-  | None => None
+  switch String.fromJson(json)->Or_error.valOf {
+  | Some("Nominal") => Or_error.create(Nominal)
+  | Some("Ordinal") => Or_error.create(Ordinal)
+  | Some("Interval") => Or_error.create(Interval)
+  | Some("Ratio") => Or_error.create(Ratio)
+  | Some(_) => Or_error.error_s("Quantity scale is not one of Nominal, Ordinal, Interval, or Ratio")
+  | None => Or_error.error_s("Unable to decode string (reading Quantity_scale.t)")
   }

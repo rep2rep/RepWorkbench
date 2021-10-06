@@ -11,7 +11,7 @@ module rec Representation: {
 
   let validate: t => bool
   let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => option<t>
+  let fromJson: Js.Json.t => Or_error.t<t>
 }
 
 and Dimension: {
@@ -34,7 +34,7 @@ and Dimension: {
 
   let validate: t => bool
   let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => option<t>
+  let fromJson: Js.Json.t => Or_error.t<t>
 }
 
 and Scheme: {
@@ -55,7 +55,7 @@ and Scheme: {
 
   let validate: t => bool
   let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => option<t>
+  let fromJson: Js.Json.t => Or_error.t<t>
 }
 
 and Token: {
@@ -63,7 +63,7 @@ and Token: {
     type t = Token_level.t = Atomic | Expression
 
     let toJson: t => Js.Json.t
-    let fromJson: Js.Json.t => option<t>
+    let fromJson: Js.Json.t => Or_error.t<t>
   }
 
   type rec t = Schema_intf.token = {
@@ -84,7 +84,7 @@ and Token: {
 
   let validate: t => bool
   let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => option<t>
+  let fromJson: Js.Json.t => Or_error.t<t>
 }
 
 type t =
@@ -95,4 +95,4 @@ type t =
 
 let validate: t => bool
 let toJson: t => Js.Json.t
-let fromJson: Js.Json.t => option<t>
+let fromJson: Js.Json.t => Or_error.t<t>

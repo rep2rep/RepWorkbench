@@ -68,7 +68,7 @@ type fromJsonHelper = (
   Uuid.Map.t<scheme>,
   Uuid.Map.t<dimension>,
   Uuid.Map.t<token>,
-) => option<(
+) => Or_error.t<(
   Uuid.Map.t<representation>,
   Uuid.Map.t<scheme>,
   Uuid.Map.t<dimension>,
@@ -80,7 +80,7 @@ module type S = {
   let uuid: t => Uuid.t
   let validate: t => bool
   let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => option<t>
+  let fromJson: Js.Json.t => Or_error.t<t>
 
   let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
   let _fromJsonHelper: fromJsonHelper
@@ -103,7 +103,7 @@ let collapse: (
   })
 
 let recurse: (
-  option<list<Uuid.t>>,
+  Or_error.t<list<Uuid.t>>,
   (
     Js.Dict.t<Js.Json.t>,
     Uuid.t,
@@ -111,14 +111,14 @@ let recurse: (
     Uuid.Map.t<'sch>,
     Uuid.Map.t<'dim>,
     Uuid.Map.t<'tok>,
-  ) => option<(Uuid.Map.t<'rep>, Uuid.Map.t<'sch>, Uuid.Map.t<'dim>, Uuid.Map.t<'tok>)>,
+  ) => Or_error.t<(Uuid.Map.t<'rep>, Uuid.Map.t<'sch>, Uuid.Map.t<'dim>, Uuid.Map.t<'tok>)>,
   Js.Dict.t<Js.Json.t>,
   schema,
   Uuid.Map.t<'rep>,
   Uuid.Map.t<'sch>,
   Uuid.Map.t<'dim>,
   Uuid.Map.t<'tok>,
-) => option<(Uuid.Map.t<'rep>, Uuid.Map.t<'sch>, Uuid.Map.t<'dim>, Uuid.Map.t<'tok>)> = (
+) => Or_error.t<(Uuid.Map.t<'rep>, Uuid.Map.t<'sch>, Uuid.Map.t<'dim>, Uuid.Map.t<'tok>)> = (
   lst,
   fromJsonHelper,
   global_dict,
@@ -128,8 +128,11 @@ let recurse: (
   dimensions,
   tokens,
 ) =>
-  lst->Option.flatMap(lst =>
-    lst->List.reduce(Some((representations, schemes, dimensions, tokens)), (maps, uuid) => {
+  lst->Or_error.flatMap(lst =>
+    lst->List.reduce(Or_error.create((representations, schemes, dimensions, tokens)), (
+      maps,
+      uuid,
+    ) => {
       let keep_fst = (_, v1, v2) => {
         switch (v1, v2) {
         | (None, None) => None
@@ -137,28 +140,25 @@ let recurse: (
         | (Some(v), _) => Some(v)
         }
       }
-      switch maps {
-      | None => None
-      | Some((representations, schemes, dimensions, tokens)) => {
-          let alreadyExists = switch schema {
-          | Representation => representations->Uuid.Map.has(uuid)
-          | Scheme => schemes->Uuid.Map.has(uuid)
-          | Dimension => dimensions->Uuid.Map.has(uuid)
-          | Token => tokens->Uuid.Map.has(uuid)
-          }
-          if alreadyExists {
-            Some((representations, schemes, dimensions, tokens))
-          } else {
-            global_dict
-            ->fromJsonHelper(uuid, representations, schemes, dimensions, tokens)
-            ->Option.map(((representations', schemes', dimensions', tokens')) => (
-              Uuid.Map.merge(representations, representations', keep_fst),
-              Uuid.Map.merge(schemes, schemes', keep_fst),
-              Uuid.Map.merge(dimensions, dimensions', keep_fst),
-              Uuid.Map.merge(tokens, tokens', keep_fst),
-            ))
-          }
+      maps->Or_error.flatMap(((representations, schemes, dimensions, tokens)) => {
+        let alreadyExists = switch schema {
+        | Representation => representations->Uuid.Map.has(uuid)
+        | Scheme => schemes->Uuid.Map.has(uuid)
+        | Dimension => dimensions->Uuid.Map.has(uuid)
+        | Token => tokens->Uuid.Map.has(uuid)
         }
-      }
+        if alreadyExists {
+          Or_error.create((representations, schemes, dimensions, tokens))
+        } else {
+          global_dict
+          ->fromJsonHelper(uuid, representations, schemes, dimensions, tokens)
+          ->Or_error.map(((representations', schemes', dimensions', tokens')) => (
+            Uuid.Map.merge(representations, representations', keep_fst),
+            Uuid.Map.merge(schemes, schemes', keep_fst),
+            Uuid.Map.merge(dimensions, dimensions', keep_fst),
+            Uuid.Map.merge(tokens, tokens', keep_fst),
+          ))
+        }
+      })
     })
   )

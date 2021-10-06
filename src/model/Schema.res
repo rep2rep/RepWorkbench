@@ -11,7 +11,7 @@ module rec Representation: {
 
   let validate: t => bool
   let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => option<t>
+  let fromJson: Js.Json.t => Or_error.t<t>
   let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
   let _fromJsonHelper: Schema_intf.fromJsonHelper
 } = Representation_F.Make(Token_, Dimension, Scheme)
@@ -37,7 +37,7 @@ and Dimension: {
   let uuid: t => Uuid.t
   let validate: t => bool
   let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => option<t>
+  let fromJson: Js.Json.t => Or_error.t<t>
   let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
   let _fromJsonHelper: Schema_intf.fromJsonHelper
 } = Dimension_F.Make(Token_)
@@ -61,7 +61,7 @@ and Scheme: {
   let uuid: t => Uuid.t
   let validate: t => bool
   let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => option<t>
+  let fromJson: Js.Json.t => Or_error.t<t>
   let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
   let _fromJsonHelper: Schema_intf.fromJsonHelper
 } = Scheme_F.Make(Dimension, Token_)
@@ -86,7 +86,7 @@ and Token_: {
   let uuid: t => Uuid.t
   let validate: t => bool
   let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => option<t>
+  let fromJson: Js.Json.t => Or_error.t<t>
   let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
   let _fromJsonHelper: Schema_intf.fromJsonHelper
 } = Token_F.Make(Dimension, Scheme)
@@ -97,7 +97,7 @@ module Token: {
     type t = Atomic | Expression
 
     let toJson: t => Js.Json.t
-    let fromJson: Js.Json.t => option<t>
+    let fromJson: Js.Json.t => Or_error.t<t>
   }
     with type t = Token_level.t
 
@@ -119,7 +119,7 @@ module Token: {
 
   let validate: t => bool
   let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => option<t>
+  let fromJson: Js.Json.t => Or_error.t<t>
 } = {
   include Token_
 
@@ -165,18 +165,29 @@ let toJson = t => {
 }
 
 let fromJson = json => {
-  Js.Json.decodeObject(json)->Option.flatMap(dict => {
-    let read_value = decode => dict->Js.Dict.get("value")->Option.flatMap(decode)
+  Js.Json.decodeObject(json)
+  ->Or_error.fromOption(Error.fromString("JSON is not a valid object (reading Schema.t)"))
+  ->Or_error.flatMap(dict => {
+    let read_value = decode =>
+      dict
+      ->Js.Dict.get("value")
+      ->Or_error.fromOption(Error.fromString("Cannot find schema value to read (reading Schema.t)"))
+      ->Or_error.flatMap(decode)
+
     dict
     ->Js.Dict.get("type")
-    ->Option.flatMap(s =>
-      switch String.fromJson(s) {
+    ->Or_error.fromOption(Error.fromString("Unable to determine schema type (reading Schema.t)"))
+    ->Or_error.flatMap(s =>
+      switch String.fromJson(s)->Or_error.valOf {
       | Some("Representation") =>
-        read_value(Representation.fromJson)->Option.map(r => Representation(r))
-      | Some("Scheme") => read_value(Scheme.fromJson)->Option.map(s => Scheme(s))
-      | Some("Dimension") => read_value(Dimension.fromJson)->Option.map(d => Dimension(d))
-      | Some("Token") => read_value(Token.fromJson)->Option.map(t => Token(t))
-      | _ => None
+        read_value(Representation.fromJson)->Or_error.map(r => Representation(r))
+      | Some("Scheme") => read_value(Scheme.fromJson)->Or_error.map(s => Scheme(s))
+      | Some("Dimension") => read_value(Dimension.fromJson)->Or_error.map(d => Dimension(d))
+      | Some("Token") => read_value(Token.fromJson)->Or_error.map(t => Token(t))
+      | _ =>
+        Or_error.error_s(
+          "Schema type is not one of Representation, Scheme, Dimension, or Token (reading Scheme.t)",
+        )
       }
     )
   })

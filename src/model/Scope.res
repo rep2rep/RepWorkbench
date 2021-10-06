@@ -7,9 +7,9 @@ let toJson = t =>
   }
 
 let fromJson = json =>
-  switch String.fromJson(json) {
-  | Some("Global") => Some(Global)
-  | Some("Local") => Some(Local)
-  | Some(_) => None
-  | None => None
+  switch String.fromJson(json)->Or_error.valOf {
+  | Some("Global") => Or_error.create(Global)
+  | Some("Local") => Or_error.create(Local)
+  | Some(_) => Or_error.error_s("Scope is not one of Global or Local")
+  | None => Or_error.error_s("Unable to decode string (reading Scope.t)")
   }

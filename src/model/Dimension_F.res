@@ -75,9 +75,26 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
   ) => {
     global_dict
     ->Js.Dict.get(uuid->Uuid.toString)
-    ->Option.flatMap(json =>
-      Js.Json.decodeObject(json)->Option.flatMap(dict => {
-        let get_value = (key, decode) => dict->Js.Dict.get(key)->Option.flatMap(decode)
+    ->Or_error.fromOption(
+      Error.fromStrings([
+        "Cannot find object matching UUID '",
+        uuid->Uuid.toString,
+        "' (reading Schema.Dimension.t)",
+      ]),
+    )
+    ->Or_error.flatMap(json =>
+      Js.Json.decodeObject(json)
+      ->Or_error.fromOption(
+        Error.fromString("JSON is not a valid object (reading Scheme.Dimension.t)"),
+      )
+      ->Or_error.flatMap(dict => {
+        let get_value = (key, decode) =>
+          dict
+          ->Js.Dict.get(key)
+          ->Or_error.fromOption(
+            Error.fromStrings(["Unable to find key '", key, "' (reading Schema.Dimension.t)"]),
+          )
+          ->Or_error.flatMap(decode)
 
         let concept = get_value("concept", String.fromJson)
         let concept_scale = get_value("concept_scale", Quantity_scale.fromJson)
@@ -98,108 +115,122 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
         let dimension_ids = get_value("dimensions", j => j->List.fromJson(Uuid.fromJson))
         let token_ids = get_value("tokens", j => j->Non_empty_list.fromJson(Uuid.fromJson))
 
-        let ((dimensions, tokens), (representations1, schemes1, dimensions1, tokens1)) =
-          dimension_ids
+        dimension_ids
+        ->Schema_intf.recurse(
+          _fromJsonHelper,
+          global_dict,
+          Schema_intf.Dimension,
+          representations0,
+          schemes0,
+          dimensions0,
+          tokens0,
+        )
+        ->Or_error.flatMap(((representations1, schemes1, dimensions1, tokens1)) =>
+          token_ids
+          ->Or_error.map(Non_empty_list.toList)
           ->Schema_intf.recurse(
-            _fromJsonHelper,
+            Token._fromJsonHelper,
             global_dict,
-            Schema_intf.Dimension,
-            representations0,
-            schemes0,
-            dimensions0,
-            tokens0,
+            Schema_intf.Token,
+            representations1,
+            schemes1,
+            dimensions1,
+            tokens1,
           )
-          ->Option.flatMap(((representations1, schemes1, dimensions1, tokens1)) =>
-            token_ids
-            ->Option.map(Non_empty_list.toList)
-            ->Schema_intf.recurse(
-              Token._fromJsonHelper,
-              global_dict,
-              Schema_intf.Token,
-              representations1,
-              schemes1,
-              dimensions1,
-              tokens1,
-            )
-            ->Option.flatMap(((representations2, schemes2, dimensions2, tokens2)) => {
-              let dimensions =
-                dimension_ids->Option.flatMap(dimension_ids =>
-                  dimension_ids->List.map(uuid => dimensions2->Uuid.Map.get(uuid))->List.allSome
-                )
-              let tokens =
-                token_ids->Option.flatMap(token_ids =>
-                  token_ids
-                  ->Non_empty_list.map(uuid => tokens2->Uuid.Map.get(uuid))
-                  ->Non_empty_list.allSome
-                )
+          ->Or_error.flatMap(((representations2, schemes2, dimensions2, tokens2)) => {
+            let uuid_get = (map, uuid) =>
+              Uuid.Map.get(map, uuid)->Or_error.fromOption(
+                Error.fromStrings([
+                  "Unable to find value with UUID '",
+                  Uuid.toString(uuid),
+                  "' (reading Schema.Scheme.t)",
+                ]),
+              )
 
-              Some(((dimensions, tokens), (representations2, schemes2, dimensions2, tokens2)))
+            let dimensions =
+              dimension_ids->Or_error.flatMap(dimension_ids =>
+                dimension_ids->List.map(uuid => dimensions2->uuid_get(uuid))->Or_error.all
+              )
+            let tokens =
+              token_ids->Or_error.flatMap(token_ids =>
+                token_ids
+                ->Non_empty_list.map(uuid => tokens2->uuid_get(uuid))
+                ->Non_empty_list.or_error_all
+              )
+
+            Or_error.both13((
+              concept,
+              concept_scale,
+              concept_type,
+              concept_attributes,
+              graphic,
+              graphic_scale,
+              graphic_type,
+              graphic_attributes,
+              function,
+              scope,
+              explicit,
+              dimensions,
+              tokens,
+            ))->Or_error.flatMap(((
+              concept,
+              concept_scale,
+              concept_type,
+              concept_attributes,
+              graphic,
+              graphic_scale,
+              graphic_type,
+              graphic_attributes,
+              function,
+              scope,
+              explicit,
+              dimensions,
+              tokens,
+            )) => {
+              let t = {
+                uuid: uuid,
+                concept: concept,
+                concept_scale: concept_scale,
+                concept_type: concept_type,
+                concept_attributes: concept_attributes,
+                graphic: graphic,
+                graphic_scale: graphic_scale,
+                graphic_type: graphic_type,
+                graphic_attributes: graphic_attributes,
+                function: function,
+                scope: scope,
+                explicit: explicit,
+                dimensions: dimensions,
+                tokens: tokens,
+              }
+
+              Or_error.create((
+                representations2,
+                schemes2,
+                dimensions2->Uuid.Map.set(uuid, t),
+                tokens2,
+              ))
             })
-          )
-          ->Option.getWithDefault((
-            (None, None),
-            (representations0, schemes0, dimensions0, tokens0),
-          ))
-
-        switch (
-          concept,
-          concept_scale,
-          concept_type,
-          concept_attributes,
-          graphic,
-          graphic_scale,
-          graphic_type,
-          graphic_attributes,
-          function,
-          scope,
-          explicit,
-          dimensions,
-          tokens,
-        ) {
-        | (
-            Some(concept),
-            Some(concept_scale),
-            Some(concept_type),
-            Some(concept_attributes),
-            Some(graphic),
-            Some(graphic_scale),
-            Some(graphic_type),
-            Some(graphic_attributes),
-            Some(function),
-            Some(scope),
-            Some(explicit),
-            Some(dimensions),
-            Some(tokens),
-          ) => {
-            let t = {
-              uuid: uuid,
-              concept: concept,
-              concept_scale: concept_scale,
-              concept_type: concept_type,
-              concept_attributes: concept_attributes,
-              graphic: graphic,
-              graphic_scale: graphic_scale,
-              graphic_type: graphic_type,
-              graphic_attributes: graphic_attributes,
-              function: function,
-              scope: scope,
-              explicit: explicit,
-              dimensions: dimensions,
-              tokens: tokens,
-            }
-
-            Some((representations1, schemes1, dimensions1->Uuid.Map.set(uuid, t), tokens1))
-          }
-        | _ => None
-        }
+          })
+        )
       })
     )
   }
 
   let fromJson = json =>
-    Js.Json.decodeObject(json)->Option.flatMap(dict => {
-      let uuid = dict->Js.Dict.get("start")->Option.flatMap(Uuid.fromJson)
-      uuid->Option.flatMap(uuid =>
+    Js.Json.decodeObject(json)
+    ->Or_error.fromOption(
+      Error.fromString("JSON is not a valid object (reading Schema.Dimension.t)"),
+    )
+    ->Or_error.flatMap(dict => {
+      let uuid =
+        dict
+        ->Js.Dict.get("start")
+        ->Or_error.fromOption(
+          Error.fromString("Unable to find start of model (reading Schema.Dimension.t)"),
+        )
+        ->Or_error.flatMap(Uuid.fromJson)
+      uuid->Or_error.flatMap(uuid =>
         _fromJsonHelper(
           dict,
           uuid,
@@ -207,7 +238,13 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
           Uuid.Map.empty(),
           Uuid.Map.empty(),
           Uuid.Map.empty(),
-        )->Option.flatMap(((_, _, dimensions, _)) => dimensions->Uuid.Map.get(uuid))
+        )->Or_error.flatMap(((_, _, dimensions, _)) =>
+          dimensions
+          ->Uuid.Map.get(uuid)
+          ->Or_error.fromOption(
+            Error.fromString("Missing start of model (reading Schema.Dimension.t)"),
+          )
+        )
       )
     })
 }

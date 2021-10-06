@@ -41,6 +41,6 @@ Testing.equal(
 
 Testing.equal(
   "Token JSON round-tripping",
-  () => Schema.Token.toJson(t)->Schema.Token.fromJson,
+  () => Schema.Token.toJson(t)->Schema.Token.fromJson->Or_error.valOf,
   Some(t),
 )

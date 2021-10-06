@@ -40,10 +40,10 @@ Testing.equal(
   json->Js.Json.stringify,
 )
 
-Testing.equal("Can read Scheme JSON", () => Schema.Scheme.fromJson(json), Some(s))
+Testing.equal("Can read Scheme JSON", () => Schema.Scheme.fromJson(json)->Or_error.valOf, Some(s))
 
 Testing.equal(
   "Scheme JSON round-tripping",
-  () => Schema.Scheme.toJson(s)->Schema.Scheme.fromJson,
+  () => Schema.Scheme.toJson(s)->Schema.Scheme.fromJson->Or_error.valOf,
   Some(s),
 )

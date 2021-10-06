@@ -41,6 +41,6 @@ Testing.equal("Dimension JSON is as expected", () => Schema.Dimension.toJson(d),
 
 Testing.equal(
   "Dimension JSON round-tripping",
-  () => Schema.Dimension.toJson(d)->Schema.Dimension.fromJson,
+  () => Schema.Dimension.toJson(d)->Schema.Dimension.fromJson->Or_error.valOf,
   Some(d),
 )

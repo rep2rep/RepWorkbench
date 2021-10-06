@@ -27,7 +27,7 @@ Testing.equal("JSON is as expected", () => Schema.Representation.toJson(r), json
 Testing.equal(
   "JSON round-tripping",
   () => {
-    Schema.Representation.toJson(r)->Schema.Representation.fromJson
+    Schema.Representation.toJson(r)->Schema.Representation.fromJson->Or_error.valOf
   },
   Some(r),
 )

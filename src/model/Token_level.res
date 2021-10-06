@@ -8,7 +8,7 @@ let toJson = t =>
 
 let fromJson = json =>
   switch Js.Json.decodeString(json) {
-  | Some("Atomic") => Some(Atomic)
-  | Some("Expression") => Some(Expression)
-  | _ => None
+  | Some("Atomic") => Or_error.create(Atomic)
+  | Some("Expression") => Or_error.create(Expression)
+  | _ => Or_error.error_s("Token level is not one of Atomic or Expression")
   }
