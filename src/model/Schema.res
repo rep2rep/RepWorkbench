@@ -166,17 +166,17 @@ let toJson = t => {
 
 let fromJson = json => {
   Js.Json.decodeObject(json)
-  ->Or_error.fromOption(Error.fromString("JSON is not a valid object (reading Schema.t)"))
+  ->Or_error.fromOption_s("JSON is not a valid object (reading Schema.t)")
   ->Or_error.flatMap(dict => {
     let read_value = decode =>
       dict
       ->Js.Dict.get("value")
-      ->Or_error.fromOption(Error.fromString("Cannot find schema value to read (reading Schema.t)"))
+      ->Or_error.fromOption_s("Cannot find schema value to read (reading Schema.t)")
       ->Or_error.flatMap(decode)
 
     dict
     ->Js.Dict.get("type")
-    ->Or_error.fromOption(Error.fromString("Unable to determine schema type (reading Schema.t)"))
+    ->Or_error.fromOption_s("Unable to determine schema type (reading Schema.t)")
     ->Or_error.flatMap(s =>
       switch String.fromJson(s)->Or_error.valOf {
       | Some("Representation") =>

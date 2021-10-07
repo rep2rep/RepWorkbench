@@ -75,19 +75,17 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
   ) => {
     global_dict
     ->Js.Dict.get(uuid->Uuid.toString)
-    ->Or_error.fromOption(
-      Error.fromStrings(["Cannot find object matching UUID '", uuid->Uuid.toString, "'"]),
-    )
+    ->Or_error.fromOption_ss(["Cannot find object matching UUID '", uuid->Uuid.toString, "'"])
     ->Or_error.tag("Reading Schema.Dimension.t")
     ->Or_error.tag(String.concat("Reading UUID ", uuid->Uuid.toString))
     ->Or_error.flatMap(json =>
       Js.Json.decodeObject(json)
-      ->Or_error.fromOption(Error.fromString("JSON is not a valid object"))
+      ->Or_error.fromOption_s("JSON is not a valid object")
       ->Or_error.flatMap(dict => {
         let get_value = (key, decode) =>
           dict
           ->Js.Dict.get(key)
-          ->Or_error.fromOption(Error.fromStrings(["Unable to find key '", key, "'"]))
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
           ->Or_error.flatMap(decode)
 
         let concept = get_value("concept", String.fromJson)
@@ -135,13 +133,11 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
           )
           ->Or_error.flatMap(((representations2, schemes2, dimensions2, tokens2)) => {
             let uuid_get = (map, uuid) =>
-              Uuid.Map.get(map, uuid)->Or_error.fromOption(
-                Error.fromStrings([
-                  "Unable to find value with UUID '",
-                  Uuid.toString(uuid),
-                  "' (reading Schema.Scheme.t)",
-                ]),
-              )
+              Uuid.Map.get(map, uuid)->Or_error.fromOption_ss([
+                "Unable to find value with UUID '",
+                Uuid.toString(uuid),
+                "' (reading Schema.Scheme.t)",
+              ])
 
             let dimensions =
               dimension_ids
@@ -221,16 +217,12 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
 
   let fromJson = json =>
     Js.Json.decodeObject(json)
-    ->Or_error.fromOption(
-      Error.fromString("JSON is not a valid object (reading Schema.Dimension.t)"),
-    )
+    ->Or_error.fromOption_s("JSON is not a valid object (reading Schema.Dimension.t)")
     ->Or_error.flatMap(dict => {
       let uuid =
         dict
         ->Js.Dict.get("start")
-        ->Or_error.fromOption(
-          Error.fromString("Unable to find start of model (reading Schema.Dimension.t)"),
-        )
+        ->Or_error.fromOption_s("Unable to find start of model (reading Schema.Dimension.t)")
         ->Or_error.flatMap(Uuid.fromJson)
       uuid->Or_error.flatMap(uuid =>
         _fromJsonHelper(
@@ -243,9 +235,7 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
         )->Or_error.flatMap(((_, _, dimensions, _)) =>
           dimensions
           ->Uuid.Map.get(uuid)
-          ->Or_error.fromOption(
-            Error.fromString("Missing start of model (reading Schema.Dimension.t)"),
-          )
+          ->Or_error.fromOption_s("Missing start of model (reading Schema.Dimension.t)")
         )
       )
     })

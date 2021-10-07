@@ -74,19 +74,17 @@ module Make = (
   ) => {
     global_dict
     ->Js.Dict.get(uuid->Uuid.toString)
-    ->Or_error.fromOption(
-      Error.fromStrings(["Cannot find object matching UUID '", uuid->Uuid.toString, "'"]),
-    )
+    ->Or_error.fromOption_ss(["Cannot find object matching UUID '", uuid->Uuid.toString, "'"])
     ->Or_error.tag("Reading Schema.Representation.t")
     ->Or_error.tag(String.concat("Reading UUID ", uuid->Uuid.toString))
     ->Or_error.flatMap(json =>
       Js.Json.decodeObject(json)
-      ->Or_error.fromOption(Error.fromString("JSON is not a valid object"))
+      ->Or_error.fromOption_s("JSON is not a valid object")
       ->Or_error.flatMap(dict => {
         let get_value = (key, decode) =>
           dict
           ->Js.Dict.get(key)
-          ->Or_error.fromOption(Error.fromStrings(["Unable to find key '", key, "'"]))
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
           ->Or_error.flatMap(decode)
 
         let domain = get_value("domain", String.fromJson)
@@ -148,13 +146,11 @@ module Make = (
               )
               ->Or_error.flatMap(((representations4, schemes4, dimensions4, tokens4)) => {
                 let uuid_get = (map, uuid) =>
-                  Uuid.Map.get(map, uuid)->Or_error.fromOption(
-                    Error.fromStrings([
-                      "Unable to find value with UUID '",
-                      Uuid.toString(uuid),
-                      "'",
-                    ]),
-                  )
+                  Uuid.Map.get(map, uuid)->Or_error.fromOption_ss([
+                    "Unable to find value with UUID '",
+                    Uuid.toString(uuid),
+                    "'",
+                  ])
 
                 let tokens =
                   token_ids
@@ -229,16 +225,12 @@ module Make = (
 
   let fromJson = json =>
     Js.Json.decodeObject(json)
-    ->Or_error.fromOption(
-      Error.fromString("JSON is not a valid object (reading Schema.Representation.t)"),
-    )
+    ->Or_error.fromOption_s("JSON is not a valid object (reading Schema.Representation.t)")
     ->Or_error.flatMap(dict => {
       let uuid =
         dict
         ->Js.Dict.get("start")
-        ->Or_error.fromOption(
-          Error.fromString("Unable to find start of model (reading Schema.Representation.t)"),
-        )
+        ->Or_error.fromOption_s("Unable to find start of model (reading Schema.Representation.t)")
         ->Or_error.flatMap(Uuid.fromJson)
       uuid->Or_error.flatMap(uuid =>
         _fromJsonHelper(
@@ -251,9 +243,7 @@ module Make = (
         )->Or_error.flatMap(((representations, _, _, _)) =>
           representations
           ->Uuid.Map.get(uuid)
-          ->Or_error.fromOption(
-            Error.fromString("Missing start of model (reading Schema.Representation.t)"),
-          )
+          ->Or_error.fromOption_s("Missing start of model (reading Schema.Representation.t)")
         )
       )
     })

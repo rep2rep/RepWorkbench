@@ -15,6 +15,7 @@ let fromJson = json =>
   | Some("Semantic") => Or_error.create(Semantic)
   | Some("Auxiliary") => Or_error.create(Auxiliary)
   | Some("Arbitrary") => Or_error.create(Arbitrary)
-  | Some(_) => Or_error.error_s("Function is not one of Sematic, Auxiliary, or Arbitrary")
+  | Some(s) =>
+    Or_error.error_ss(["Function '", s, "' is not one of Sematic, Auxiliary, or Arbitrary"])
   | None => Or_error.error_s("Unable to decode string (reading Function.t)")
   }

@@ -71,7 +71,7 @@ module Map = {
 
   let fromJson = (json, decode) =>
     Js.Json.decodeObject(json)
-    ->Or_error.fromOption(Error.fromString("JSON is not an object (reading UUID)"))
+    ->Or_error.fromOption_s("JSON is not an object (reading UUID)")
     ->Or_error.flatMap(dict =>
       Js.Dict.entries(dict)
       ->Array.map(((k, v)) => decode(v)->Or_error.map(v => (fromString(k), v)))

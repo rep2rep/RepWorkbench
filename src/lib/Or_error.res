@@ -1,19 +1,28 @@
 type t<'a> =
-  | Ok('a, array<string>)
+  | Ok('a, array<Error.Tag.t>)
   | Err(Error.t)
 
 let create = a => Ok(a, [])
 let error = err => Err(err)
 let error_s = s => Err(Error.fromString(s))
+let error_ss = ss => Err(Error.fromStrings(ss))
+
 let pretag = (t, tags') =>
   switch t {
   | Ok(a, tags) => Ok(a, Js.Array2.concat(tags', tags))
   | Err(e) => Error._pretag(e, tags')->error
   }
+
 let tag = (t, tag) =>
   switch t {
-  | Ok(a, tags) => Ok(a, Js.Array2.concat(tags, [Js.String2.concat("TAG: ", tag)]))
+  | Ok(a, tags) => Ok(a, Js.Array2.concat(tags, [Error.Tag.fromString(tag)]))
   | Err(e) => Error.tag(e, tag)->error
+  }
+
+let tags = t =>
+  switch t {
+  | Ok(_, tags) => tags
+  | Err(e) => Error.tags(e)
   }
 
 let map = (t, f) =>
@@ -32,6 +41,12 @@ let okExn = t =>
   switch t {
   | Ok(a, _) => a
   | Err(e) => Error.raise_(e)
+  }
+
+let okExnWithTags = t =>
+  switch t {
+  | Ok(a, _) => a
+  | Err(e) => Error.raiseWithTags(e)
   }
 
 let valOf = t =>
@@ -73,12 +88,18 @@ let fromOption = (opt, err) =>
   | None => Err(err)
   }
 
-let tags_to_json = tags => Js.Json.array(tags->Js.Array2.map(Js.Json.string))
+let fromOption_s = (opt, err_s) => fromOption(opt, Error.fromString(err_s))
+let fromOption_ss = (opt, err_ss) => fromOption(opt, Error.fromStrings(err_ss))
+
+let tags_to_json = tags => Js.Json.array(tags->Js.Array2.map(Error.Tag.toJson))
 let tags_from_json = json =>
   json
   ->Js.Json.decodeArray
-  ->fromOption(Error.fromString("JSON tag array not array in Or_error.t"))
-  ->map(arr => arr->Js.Array2.map(j => j->Js.Json.decodeString->Js.String2.make))
+  ->fromOption_s("JSON tag array not array in Or_error.t")
+  ->map(arr =>
+    arr->Js.Array2.map(j => j->Error.Tag.fromJson->fromOption_s("JSON is not a Tag in Or_error.t"))
+  )
+  ->flatMap(a => a->Belt.List.fromArray->all->map(Belt.List.toArray))
 
 let toJson = (t, jsonify) =>
   switch t {

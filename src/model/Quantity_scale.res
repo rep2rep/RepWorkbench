@@ -18,6 +18,11 @@ let fromJson = json =>
   | Some("Ordinal") => Or_error.create(Ordinal)
   | Some("Interval") => Or_error.create(Interval)
   | Some("Ratio") => Or_error.create(Ratio)
-  | Some(_) => Or_error.error_s("Quantity scale is not one of Nominal, Ordinal, Interval, or Ratio")
+  | Some(s) =>
+    Or_error.error_ss([
+      "Quantity scale '",
+      s,
+      "' is not one of Nominal, Ordinal, Interval, or Ratio",
+    ])
   | None => Or_error.error_s("Unable to decode string (reading Quantity_scale.t)")
   }

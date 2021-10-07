@@ -10,6 +10,6 @@ let fromJson = json =>
   switch String.fromJson(json)->Or_error.valOf {
   | Some("Global") => Or_error.create(Global)
   | Some("Local") => Or_error.create(Local)
-  | Some(_) => Or_error.error_s("Scope is not one of Global or Local")
+  | Some(s) => Or_error.error_ss(["Scope '", s, "' is not one of Global or Local"])
   | None => Or_error.error_s("Unable to decode string (reading Scope.t)")
   }

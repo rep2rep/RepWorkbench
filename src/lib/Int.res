@@ -6,5 +6,5 @@ include Belt.Int
 let toJson = t => toFloat(t)->Js.Json.number
 let fromJson = j =>
   Js.Json.decodeNumber(j)
-  ->Or_error.fromOption(Error.fromString("JSON is not a number (reading Int)"))
+  ->Or_error.fromOption_s("JSON is not a number (reading Int)")
   ->Or_error.map(fromFloat)

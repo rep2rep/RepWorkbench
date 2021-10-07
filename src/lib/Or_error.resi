@@ -5,16 +5,21 @@ let fromJson: (Js.Json.t, Js.Json.t => t<'a>) => t<t<'a>>
 
 let toOption: t<'a> => option<'a>
 let fromOption: (option<'a>, Error.t) => t<'a>
+let fromOption_s: (option<'a>, string) => t<'a>
+let fromOption_ss: (option<'a>, array<string>) => t<'a>
 
 let toString: (t<'a>, 'a => string) => string
 
 let create: 'a => t<'a>
 let error: Error.t => t<'a>
 let error_s: string => t<'a>
+let error_ss: array<string> => t<'a>
 
 let tag: (t<'a>, string) => t<'a>
+let tags: t<'a> => array<Error.Tag.t>
 
 let okExn: t<'a> => 'a
+let okExnWithTags: t<'a> => 'a
 let valOf: t<'a> => option<'a>
 let getWithDefault: (t<'a>, 'a) => 'a
 

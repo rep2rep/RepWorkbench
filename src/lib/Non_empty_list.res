@@ -100,5 +100,5 @@ let fromJson = (json, decode) =>
   json
   ->List.fromJson(decode)
   ->Or_error.flatMap(l =>
-    l->fromList->Or_error.fromOption(Error.fromString("Non-empty list is empty when reading JSON"))
+    l->fromList->Or_error.fromOption_s("Non-empty list is empty when reading JSON")
   )
