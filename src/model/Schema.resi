@@ -93,6 +93,8 @@ type t =
   | Dimension(Dimension.t)
   | Token(Token.t)
 
+let uuid: t => Uuid.t
+let findByUuid: (t, Uuid.t) => option<t>
 let validate: t => bool
 let toJson: t => Js.Json.t
 let fromJson: Js.Json.t => Or_error.t<t>

@@ -132,12 +132,55 @@ type t =
   | Dimension(Dimension.t)
   | Token(Token.t)
 
+let uuid = t =>
+  switch t {
+  | Representation(r) => r.uuid
+  | Scheme(s) => s.uuid
+  | Dimension(d) => d.uuid
+  | Token(t) => t.uuid
+  }
+
 let validate = t =>
   switch t {
   | Representation(r) => Representation.validate(r)
   | Scheme(s) => Scheme.validate(s)
   | Dimension(d) => Dimension.validate(d)
   | Token(t) => Token.validate(t)
+  }
+
+let rec findByUuid = (t, uid) =>
+  if uuid(t) == uid {
+    Some(t)
+  } else {
+    switch t {
+    | Representation(r) =>
+      List.concatMany([
+        r.tokens->List.map(t => Token(t)),
+        r.schemes->List.map(s => Scheme(s)),
+        r.dimensions->List.map(d => Dimension(d)),
+        r.subrepresentations->List.map(r => Representation(r)),
+      ])
+    | Scheme(s) =>
+      List.concatMany([
+        s.tokens->List.map(t => Token(t)),
+        s.dimensions->Non_empty_list.toList->List.map(d => Dimension(d)),
+        s.schemes->List.map(s => Scheme(s)),
+      ])
+    | Dimension(d) =>
+      List.concatMany([
+        d.dimensions->List.map(d => Dimension(d)),
+        d.tokens->Non_empty_list.toList->List.map(t => Token(t)),
+      ])
+    | Token(t) =>
+      List.concatMany([
+        t.sub_tokens->List.map(t => Token(t)),
+        t.anchored_tokens->List.map(t => Token(t)),
+        t.anchored_dimensions->List.map(d => Dimension(d)),
+        t.anchored_schemes->List.map(s => Scheme(s)),
+      ])
+    }
+    ->List.mapPartial(t => findByUuid(t, uid))
+    ->List.head
   }
 
 let toJson = t => {
