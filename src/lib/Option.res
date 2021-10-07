@@ -1,6 +1,7 @@
 include Belt.Option
 
 let some = x => Some(x)
+let flatten = tt => flatMap(tt, t => t)
 
 let toJson = (t, jsonify) =>
   switch t {

@@ -37,6 +37,8 @@ let flatMap = (t, f) =>
   | Err(e) => Err(e)
   }
 
+let flatten = tt => flatMap(tt, t => t)
+
 let okExn = t =>
   switch t {
   | Ok(a, _) => a

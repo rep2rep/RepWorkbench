@@ -25,6 +25,7 @@ let getWithDefault: (t<'a>, 'a) => 'a
 
 let map: (t<'a>, 'a => 'b) => t<'b>
 let flatMap: (t<'a>, 'a => t<'b>) => t<'b>
+let flatten: t<t<'a>> => t<'a>
 
 let all: list<t<'a>> => t<list<'a>>
 let both: ((t<'a>, t<'b>)) => t<('a, 'b)>
