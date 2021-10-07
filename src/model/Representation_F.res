@@ -75,24 +75,18 @@ module Make = (
     global_dict
     ->Js.Dict.get(uuid->Uuid.toString)
     ->Or_error.fromOption(
-      Error.fromStrings([
-        "Cannot find object matching UUID '",
-        uuid->Uuid.toString,
-        "' (reading Schema.Representation.t)",
-      ]),
+      Error.fromStrings(["Cannot find object matching UUID '", uuid->Uuid.toString, "'"]),
     )
+    ->Or_error.tag("Reading Schema.Representation.t")
+    ->Or_error.tag(String.concat("Reading UUID ", uuid->Uuid.toString))
     ->Or_error.flatMap(json =>
       Js.Json.decodeObject(json)
-      ->Or_error.fromOption(
-        Error.fromString("JSON is not a valid object (reading Scheme.Representation.t)"),
-      )
+      ->Or_error.fromOption(Error.fromString("JSON is not a valid object"))
       ->Or_error.flatMap(dict => {
         let get_value = (key, decode) =>
           dict
           ->Js.Dict.get(key)
-          ->Or_error.fromOption(
-            Error.fromStrings(["Unable to find key '", key, "' (reading Schema.Representation.t)"]),
-          )
+          ->Or_error.fromOption(Error.fromStrings(["Unable to find key '", key, "'"]))
           ->Or_error.flatMap(decode)
 
         let domain = get_value("domain", String.fromJson)
@@ -106,6 +100,7 @@ module Make = (
         )
 
         token_ids
+        ->Or_error.tag("Reading tokens")
         ->Schema_intf.recurse(
           Token._fromJsonHelper,
           global_dict,
@@ -117,6 +112,7 @@ module Make = (
         )
         ->Or_error.flatMap(((representations1, schemes1, dimensions1, tokens1)) =>
           dimension_ids
+          ->Or_error.tag("Reading dimensions")
           ->Schema_intf.recurse(
             Dimension._fromJsonHelper,
             global_dict,
@@ -128,6 +124,7 @@ module Make = (
           )
           ->Or_error.flatMap(((representations2, schemes2, dimensions2, tokens2)) =>
             scheme_ids
+            ->Or_error.tag("Reading schemes")
             ->Schema_intf.recurse(
               Scheme._fromJsonHelper,
               global_dict,
@@ -139,6 +136,7 @@ module Make = (
             )
             ->Or_error.flatMap(((representations3, schemes3, dimensions3, tokens3)) =>
               subrepresentation_ids
+              ->Or_error.tag("Reading subrepresentations")
               ->Schema_intf.recurse(
                 _fromJsonHelper,
                 global_dict,
@@ -154,24 +152,32 @@ module Make = (
                     Error.fromStrings([
                       "Unable to find value with UUID '",
                       Uuid.toString(uuid),
-                      "' (reading Schema.Representation.t)",
+                      "'",
                     ]),
                   )
 
                 let tokens =
-                  token_ids->Or_error.flatMap(token_ids =>
+                  token_ids
+                  ->Or_error.tag("Loading tokens")
+                  ->Or_error.flatMap(token_ids =>
                     token_ids->List.map(uuid => uuid_get(tokens4, uuid))->Or_error.all
                   )
                 let dimensions =
-                  dimension_ids->Or_error.flatMap(dimension_ids =>
+                  dimension_ids
+                  ->Or_error.tag("Loading dimensions")
+                  ->Or_error.flatMap(dimension_ids =>
                     dimension_ids->List.map(uuid => uuid_get(dimensions4, uuid))->Or_error.all
                   )
                 let schemes =
-                  scheme_ids->Or_error.flatMap(scheme_ids =>
+                  scheme_ids
+                  ->Or_error.tag("Loading schemes")
+                  ->Or_error.flatMap(scheme_ids =>
                     scheme_ids->List.map(uuid => uuid_get(schemes4, uuid))->Or_error.all
                   )
                 let subrepresentations =
-                  subrepresentation_ids->Or_error.flatMap(subrepresentation_ids =>
+                  subrepresentation_ids
+                  ->Or_error.tag("Loading subrepresentations")
+                  ->Or_error.flatMap(subrepresentation_ids =>
                     subrepresentation_ids
                     ->List.map(uuid => uuid_get(representations4, uuid))
                     ->Or_error.all
@@ -206,7 +212,12 @@ module Make = (
                     schemes4,
                     dimensions4,
                     tokens4,
-                  ))
+                  ))->Or_error.tag(
+                    Js.String2.concat(
+                      "Successfully read Representation with UUID ",
+                      uuid->Uuid.toString,
+                    ),
+                  )
                 })
               })
             )

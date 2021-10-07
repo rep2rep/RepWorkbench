@@ -10,6 +10,6 @@ Testing.equal(
 
 Testing.equal(
   "Generated JSON from monster graph is the same as what we wrote",
-  () => monsterGraph->Or_error.map(Schema.toJson)->Or_error.map(Js.Json.stringify),
-  Or_error.create(json)->Or_error.map(Js.Json.stringify),
+  () => monsterGraph->Or_error.map(Schema.toJson)->Or_error.toString(Js.Json.stringify),
+  Or_error.create(json)->Or_error.toString(Js.Json.stringify),
 )

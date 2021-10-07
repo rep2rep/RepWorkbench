@@ -1,6 +1,4 @@
-type t<'a> =
-  | Ok('a)
-  | Err(Error.t)
+type t<'a>
 
 let toJson: (t<'a>, 'a => Js.Json.t) => Js.Json.t
 let fromJson: (Js.Json.t, Js.Json.t => t<'a>) => t<t<'a>>
@@ -13,6 +11,8 @@ let toString: (t<'a>, 'a => string) => string
 let create: 'a => t<'a>
 let error: Error.t => t<'a>
 let error_s: string => t<'a>
+
+let tag: (t<'a>, string) => t<'a>
 
 let okExn: t<'a> => 'a
 let valOf: t<'a> => option<'a>

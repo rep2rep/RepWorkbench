@@ -89,18 +89,9 @@ let allSome = t =>
 
 let rec or_error_all = ts =>
   switch ts {
-  | Singleton(a) =>
-    switch a {
-    | Or_error.Ok(a) => Or_error.Ok(Singleton(a))
-    | Or_error.Err(e) => Or_error.Err(e)
-    }
+  | Singleton(a) => a->Or_error.map(singleton)
   | Cons(a, rest) =>
-    switch (a, or_error_all(rest)) {
-    | (Or_error.Ok(a), Or_error.Ok(rest)) => Or_error.Ok(Cons(a, rest))
-    | (Err(e), Ok(_)) => Err(e)
-    | (Ok(_), Err(e)) => Err(e)
-    | (Err(e), Err(e')) => Err(Error.join(e, e'))
-    }
+    Or_error.both((a, or_error_all(rest)))->Or_error.map(((a, rest)) => Cons(a, rest))
   }
 
 let toJson = (t, jsonify) => t->toList->List.toJson(jsonify)

@@ -92,22 +92,18 @@ module Make = (
     global_dict
     ->Js.Dict.get(uuid->Uuid.toString)
     ->Or_error.fromOption(
-      Error.fromStrings([
-        "Cannot find object matching UUID '",
-        uuid->Uuid.toString,
-        "' (reading Schema.Token.t)",
-      ]),
+      Error.fromStrings(["Cannot find object matching UUID '", uuid->Uuid.toString, "'"]),
     )
+    ->Or_error.tag("Reading Schema.Token.t")
+    ->Or_error.tag(String.concat("Reading UUID ", uuid->Uuid.toString))
     ->Or_error.flatMap(json =>
       Js.Json.decodeObject(json)
-      ->Or_error.fromOption(Error.fromString("JSON is not a valid object (reading Scheme.Token.t)"))
+      ->Or_error.fromOption(Error.fromString("JSON is not a valid object"))
       ->Or_error.flatMap(dict => {
         let get_value = (key, decode) =>
           dict
           ->Js.Dict.get(key)
-          ->Or_error.fromOption(
-            Error.fromStrings(["Unable to find key '", key, "' (reading Schema.Token.t)"]),
-          )
+          ->Or_error.fromOption(Error.fromStrings(["Unable to find key '", key, "'"]))
           ->Or_error.flatMap(decode)
 
         let concept = get_value("concept", String.fromJson)
@@ -129,6 +125,7 @@ module Make = (
         )
 
         sub_token_ids
+        ->Or_error.tag("Reading sub-tokens")
         ->Schema_intf.recurse(
           _fromJsonHelper,
           global_dict,
@@ -140,6 +137,7 @@ module Make = (
         )
         ->Or_error.flatMap(((representations1, schemes1, dimensions1, tokens1)) =>
           anchored_token_ids
+          ->Or_error.tag("Reading anchored tokens")
           ->Schema_intf.recurse(
             _fromJsonHelper,
             global_dict,
@@ -151,6 +149,7 @@ module Make = (
           )
           ->Or_error.flatMap(((representations2, schemes2, dimensions2, tokens2)) =>
             anchored_dimension_ids
+            ->Or_error.tag("Reading anchored dimensions")
             ->Schema_intf.recurse(
               Dimension._fromJsonHelper,
               global_dict,
@@ -162,6 +161,7 @@ module Make = (
             )
             ->Or_error.flatMap(((representations3, schemes3, dimensions3, tokens3)) =>
               anchored_scheme_ids
+              ->Or_error.tag("Reading anchored schemes")
               ->Schema_intf.recurse(
                 Scheme._fromJsonHelper,
                 global_dict,
@@ -182,21 +182,29 @@ module Make = (
                   )
 
                 let sub_tokens =
-                  sub_token_ids->Or_error.flatMap(sub_token_ids =>
+                  sub_token_ids
+                  ->Or_error.tag("Loading sub-tokens")
+                  ->Or_error.flatMap(sub_token_ids =>
                     sub_token_ids->List.map(uuid => uuid_get(tokens4, uuid))->Or_error.all
                   )
                 let anchored_tokens =
-                  anchored_token_ids->Or_error.flatMap(anchored_token_ids =>
+                  anchored_token_ids
+                  ->Or_error.tag("Loading anchored tokens")
+                  ->Or_error.flatMap(anchored_token_ids =>
                     anchored_token_ids->List.map(uuid => uuid_get(tokens4, uuid))->Or_error.all
                   )
                 let anchored_dimensions =
-                  anchored_dimension_ids->Or_error.flatMap(anchored_dimension_ids =>
+                  anchored_dimension_ids
+                  ->Or_error.tag("Loading anchored dimensions")
+                  ->Or_error.flatMap(anchored_dimension_ids =>
                     anchored_dimension_ids
                     ->List.map(uuid => uuid_get(dimensions4, uuid))
                     ->Or_error.all
                   )
                 let anchored_schemes =
-                  anchored_scheme_ids->Or_error.flatMap(anchored_scheme_ids =>
+                  anchored_scheme_ids
+                  ->Or_error.tag("Loading anchored schemes")
+                  ->Or_error.flatMap(anchored_scheme_ids =>
                     anchored_scheme_ids->List.map(uuid => uuid_get(schemes4, uuid))->Or_error.all
                   )
 
@@ -247,7 +255,9 @@ module Make = (
                     schemes4,
                     dimensions4,
                     tokens4->Uuid.Map.set(uuid, t),
-                  ))
+                  ))->Or_error.tag(
+                    Js.String2.concat("Successfully read Token with UUID ", uuid->Uuid.toString),
+                  )
                 })
               })
             )

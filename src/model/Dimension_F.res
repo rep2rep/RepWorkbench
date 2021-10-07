@@ -76,24 +76,18 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
     global_dict
     ->Js.Dict.get(uuid->Uuid.toString)
     ->Or_error.fromOption(
-      Error.fromStrings([
-        "Cannot find object matching UUID '",
-        uuid->Uuid.toString,
-        "' (reading Schema.Dimension.t)",
-      ]),
+      Error.fromStrings(["Cannot find object matching UUID '", uuid->Uuid.toString, "'"]),
     )
+    ->Or_error.tag("Reading Schema.Dimension.t")
+    ->Or_error.tag(String.concat("Reading UUID ", uuid->Uuid.toString))
     ->Or_error.flatMap(json =>
       Js.Json.decodeObject(json)
-      ->Or_error.fromOption(
-        Error.fromString("JSON is not a valid object (reading Scheme.Dimension.t)"),
-      )
+      ->Or_error.fromOption(Error.fromString("JSON is not a valid object"))
       ->Or_error.flatMap(dict => {
         let get_value = (key, decode) =>
           dict
           ->Js.Dict.get(key)
-          ->Or_error.fromOption(
-            Error.fromStrings(["Unable to find key '", key, "' (reading Schema.Dimension.t)"]),
-          )
+          ->Or_error.fromOption(Error.fromStrings(["Unable to find key '", key, "'"]))
           ->Or_error.flatMap(decode)
 
         let concept = get_value("concept", String.fromJson)
@@ -116,6 +110,7 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
         let token_ids = get_value("tokens", j => j->Non_empty_list.fromJson(Uuid.fromJson))
 
         dimension_ids
+        ->Or_error.tag("Reading dimensions")
         ->Schema_intf.recurse(
           _fromJsonHelper,
           global_dict,
@@ -127,6 +122,7 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
         )
         ->Or_error.flatMap(((representations1, schemes1, dimensions1, tokens1)) =>
           token_ids
+          ->Or_error.tag("Reading tokens")
           ->Or_error.map(Non_empty_list.toList)
           ->Schema_intf.recurse(
             Token._fromJsonHelper,
@@ -148,11 +144,15 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
               )
 
             let dimensions =
-              dimension_ids->Or_error.flatMap(dimension_ids =>
+              dimension_ids
+              ->Or_error.tag("Loading dimensions")
+              ->Or_error.flatMap(dimension_ids =>
                 dimension_ids->List.map(uuid => dimensions2->uuid_get(uuid))->Or_error.all
               )
             let tokens =
-              token_ids->Or_error.flatMap(token_ids =>
+              token_ids
+              ->Or_error.tag("Loading tokens")
+              ->Or_error.flatMap(token_ids =>
                 token_ids
                 ->Non_empty_list.map(uuid => tokens2->uuid_get(uuid))
                 ->Non_empty_list.or_error_all
@@ -209,7 +209,9 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
                 schemes2,
                 dimensions2->Uuid.Map.set(uuid, t),
                 tokens2,
-              ))
+              ))->Or_error.tag(
+                Js.String2.concat("Successfully read Dimension with UUID ", uuid->Uuid.toString),
+              )
             })
           })
         )

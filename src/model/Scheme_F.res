@@ -80,12 +80,10 @@ module Make = (
     global_dict
     ->Js.Dict.get(uuid->Uuid.toString)
     ->Or_error.fromOption(
-      Error.fromStrings([
-        "Cannot find object matching UUID '",
-        uuid->Uuid.toString,
-        "' (reading Schema.Scheme.t)",
-      ]),
+      Error.fromStrings(["Cannot find object matching UUID '", uuid->Uuid.toString, "'"]),
     )
+    ->Or_error.tag("Reading Schema.Scheme.t")
+    ->Or_error.tag(String.concat("Reading UUID ", uuid->Uuid.toString))
     ->Or_error.flatMap(json =>
       Js.Json.decodeObject(json)
       ->Or_error.fromOption(
@@ -116,6 +114,7 @@ module Make = (
         let scheme_ids = get_value("schemes", j => j->List.fromJson(Uuid.fromJson))
 
         token_ids
+        ->Or_error.tag("Reading tokens")
         ->Schema_intf.recurse(
           Token._fromJsonHelper,
           global_dict,
@@ -127,6 +126,7 @@ module Make = (
         )
         ->Or_error.flatMap(((representations1, schemes1, dimensions1, tokens1)) =>
           dimension_ids
+          ->Or_error.tag("Reading dimensions")
           ->Or_error.map(Non_empty_list.toList)
           ->Schema_intf.recurse(
             Dimension._fromJsonHelper,
@@ -139,6 +139,7 @@ module Make = (
           )
           ->Or_error.flatMap(((representations2, schemes2, dimensions2, tokens2)) =>
             scheme_ids
+            ->Or_error.tag("Reading schemes")
             ->Schema_intf.recurse(
               _fromJsonHelper,
               global_dict,
@@ -159,17 +160,23 @@ module Make = (
                 )
 
               let tokens =
-                token_ids->Or_error.flatMap(token_ids =>
+                token_ids
+                ->Or_error.tag("Loading tokens")
+                ->Or_error.flatMap(token_ids =>
                   token_ids->List.map(uuid => tokens3->uuid_get(uuid))->Or_error.all
                 )
               let dimensions =
-                dimension_ids->Or_error.flatMap(dimension_ids =>
+                dimension_ids
+                ->Or_error.tag("Loading dimensions")
+                ->Or_error.flatMap(dimension_ids =>
                   dimension_ids
                   ->Non_empty_list.map(uuid => dimensions3->uuid_get(uuid))
                   ->Non_empty_list.or_error_all
                 )
               let schemes =
-                scheme_ids->Or_error.flatMap(scheme_ids =>
+                scheme_ids
+                ->Or_error.tag("Loading schemes")
+                ->Or_error.flatMap(scheme_ids =>
                   scheme_ids->List.map(uuid => schemes3->uuid_get(uuid))->Or_error.all
                 )
 
@@ -218,7 +225,9 @@ module Make = (
                   schemes3->Uuid.Map.set(uuid, t),
                   dimensions3,
                   tokens3,
-                ))
+                ))->Or_error.tag(
+                  Js.String2.concat("Successfully read Scheme with UUID ", uuid->Uuid.toString),
+                )
               })
             })
           )
