@@ -13,6 +13,12 @@ let empty = list{}
 
 let singleton = a => list{a}
 
+let isEmpty = t =>
+  switch t {
+  | list{} => true
+  | _ => false
+  }
+
 let mapPartial = (t, f) =>
   t->reduceReverse(list{}, (xs, x) =>
     switch f(x) {

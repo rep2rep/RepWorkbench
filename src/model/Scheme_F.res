@@ -27,6 +27,12 @@ module Make = (
           Uuid.toString(t.uuid),
           "' must be explicit if and only if it has a graphic instance",
         ]),
+      (t.dimensions->Non_empty_list.length > 2 || t.tokens->List.isEmpty->not)
+        ->Or_error.fromBool_ss([
+          "Scheme '",
+          Uuid.toString(t.uuid),
+          "' must have either at least two dimensions, or at least one dimension and one token",
+        ]),
       t.tokens->List.map(Token.validate)->Or_error.allUnit,
       t.dimensions->Non_empty_list.map(Dimension.validate)->Non_empty_list.toList->Or_error.allUnit,
       t.schemes->List.map(validate)->Or_error.allUnit,

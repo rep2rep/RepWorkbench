@@ -7,6 +7,7 @@ let toString: (list<'a>, 'a => string) => string
 
 let empty: list<'a>
 let singleton: 'a => list<'a>
+let isEmpty: list<'a> => bool
 let range: int => list<int>
 let mapPartial: (list<'a>, 'a => option<'b>) => list<'b>
 let allSome: list<option<'a>> => option<list<'a>>
