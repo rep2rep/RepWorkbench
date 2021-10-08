@@ -34,3 +34,6 @@ let fromJson = (json, decode) =>
   ->Js.Json.decodeArray
   ->Or_error.fromOption_s("JSON is not a valid array (reading list)")
   ->Or_error.flatMap(arr => arr->fromArray->map(decode)->Or_error.all)
+
+let toString = (t, stringify) =>
+  t->map(stringify)->reduce("list{", (s, a) => String.concatMany(s, [a, ", "]))->String.concat("}")

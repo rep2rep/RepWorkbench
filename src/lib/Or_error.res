@@ -2,6 +2,13 @@ type t<'a> =
   | Ok('a, array<Error.Tag.t>)
   | Err(Error.t)
 
+let isOk = t =>
+  switch t {
+  | Ok(_, _) => true
+  | Err(_) => false
+  }
+let isError = t => !isOk(t)
+
 let create = a => Ok(a, [])
 let error = err => Err(err)
 let error_s = s => Err(Error.fromString(s))
@@ -63,24 +70,32 @@ let getWithDefault = (t, default) =>
   | Err(_) => default
   }
 
-let rec all = ts =>
-  switch ts {
-  | list{} => Ok(list{}, [])
-  | list{a, ...rest} =>
-    switch (a, all(rest)) {
-    | (Ok(a, tags), Ok(rest, tags')) => Ok(Belt.List.add(rest, a), Js.Array2.concat(tags, tags'))
-    | (Err(e), Ok(_, tags)) => Err(Error._posttag(e, tags))
-    | (Ok(_, tags), Err(e)) => Err(Error._pretag(e, tags))
-    | (Err(e), Err(e')) => Err(Error.join(e, e'))
-    }
-  }
-
 let both = ts =>
   switch ts {
   | (Ok(a, tags), Ok(b, tags')) => Ok((a, b), Js.Array2.concat(tags, tags'))
   | (Err(e), Err(e')) => Err(Error.join(e, e'))
   | (Err(e), Ok(_, tags)) => Err(Error._posttag(e, tags))
   | (Ok(_, tags), Err(e)) => Err(Error._pretag(e, tags))
+  }
+
+let rec all = ts =>
+  switch ts {
+  | list{} => Ok(list{}, [])
+  | list{a, ...rest} =>
+    switch both((a, all(rest))) {
+    | Ok((a, rest), tags) => Ok(Belt.List.add(rest, a), tags)
+    | Err(e) => Err(e)
+    }
+  }
+
+let rec allUnit = ts =>
+  switch ts {
+  | list{} => Ok((), [])
+  | list{a, ...rest} =>
+    switch both((a, allUnit(rest))) {
+    | Ok(((), ()), tags) => Ok((), tags)
+    | Err(e) => Err(e)
+    }
   }
 
 let toOption = valOf
@@ -92,6 +107,17 @@ let fromOption = (opt, err) =>
 
 let fromOption_s = (opt, err_s) => fromOption(opt, Error.fromString(err_s))
 let fromOption_ss = (opt, err_ss) => fromOption(opt, Error.fromStrings(err_ss))
+
+let toBool = t => Some() == valOf(t)
+let fromBool = (b, err) =>
+  if b {
+    Ok((), [])
+  } else {
+    Err(err)
+  }
+
+let fromBool_s = (opt, err_s) => fromBool(opt, Error.fromString(err_s))
+let fromBool_ss = (opt, err_ss) => fromBool(opt, Error.fromStrings(err_ss))
 
 let tags_to_json = tags => Js.Json.array(tags->Js.Array2.map(Error.Tag.toJson))
 let tags_from_json = json =>
