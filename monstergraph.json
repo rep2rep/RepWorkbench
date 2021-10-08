@@ -28,7 +28,8 @@
           "2",
           "3",
           "4",
-          "5"
+          "5",
+          "5a"
         ],
         "schemes": [],
         "organisation": "????"
@@ -106,7 +107,26 @@
         "tokens": [
           "6",
           "7",
-          "8"
+          "8",
+          "8a"
+        ]
+      },
+      "5a": {
+        "concept": "Function",
+        "concept_scale": "Ratio",
+        "concept_type": "????",
+        "concept_attributes": [],
+        "graphic": "curve",
+        "graphic_scale": "Ratio",
+        "graphic_type": "????",
+        "graphic_attributes": [],
+        "function": "Semantic",
+        "scope": "Global",
+        "explicit": true,
+        "dimensions": [],
+        "tokens": [
+          "8a",
+          "9"
         ]
       },
       "6": {
@@ -150,6 +170,20 @@
         "anchored_tokens": [
           "9"
         ],
+        "anchored_dimensions": [],
+        "anchored_schemes": []
+      },
+      "8a": {
+        "concept": "Isobar",
+        "concept_type": "????",
+        "graphic": "z-axis x curve",
+        "graphic_type": "????",
+        "is_class": true,
+        "level": "Atomic",
+        "function": "Semantic",
+        "explicit": true,
+        "sub_tokens": [],
+        "anchored_tokens": [],
         "anchored_dimensions": [],
         "anchored_schemes": []
       },
@@ -373,6 +407,7 @@
         "tokens": [],
         "dimensions": [
           "23",
+          "23a",
           "24",
           "25"
         ],
@@ -380,7 +415,7 @@
         "organisation": "????"
       },
       "23": {
-        "concept": "Energy",
+        "concept": "Power Energy",
         "concept_scale": "Ratio",
         "concept_type": "????",
         "concept_attributes": [],
@@ -393,7 +428,23 @@
         "explicit": true,
         "dimensions": [],
         "tokens": [
-          "31",
+          "31"
+        ]
+      },
+      "23a": {
+        "concept": "Heat Energy",
+        "concept_scale": "Ratio",
+        "concept_type": "????",
+        "concept_attributes": [],
+        "graphic": "Areas",
+        "graphic_scale": "Ratio",
+        "graphic_type": "????",
+        "graphic_attributes": [],
+        "function": "Semantic",
+        "scope": "Local",
+        "explicit": true,
+        "dimensions": [],
+        "tokens": [
           "32"
         ]
       },
