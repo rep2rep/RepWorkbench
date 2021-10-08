@@ -57,8 +57,8 @@
         Or_error.create(1),
         Or_error.error_s("X"),
         Or_error.error_s("Y"),
-      })->Or_error.toString(l => l->List.toString(Int.toString)),
-    "\nX\nY\n",
+      })->Or_error.messages,
+    Some(["X", "Y"]),
   )
 
   Testing.equal(
@@ -74,8 +74,8 @@
         Or_error.create(),
         Or_error.error_s("X"),
         Or_error.error_s("Y"),
-      })->Or_error.toString(() => ""),
-    "\nX\nY\n",
+      })->Or_error.messages,
+    Some(["X", "Y"]),
   )
 
   Testing.equal(
@@ -86,8 +86,8 @@
 
   Testing.equal(
     "Or_error both err",
-    () => Or_error.both((Or_error.error_s("X"), Or_error.error_s("Y")))->Or_error.toString(_ => ""),
-    "\nX\nY\n",
+    () => Or_error.both((Or_error.error_s("X"), Or_error.error_s("Y")))->Or_error.messages,
+    Some(["X", "Y"]),
   )
 
   Testing.equal(
@@ -97,7 +97,7 @@
         Or_error.error_s("X"),
         Or_error.error_s("Y"),
         Or_error.error_s("Z"),
-      ))->Or_error.toString(_ => ""),
-    "\nX\nY\nZ\n",
+      ))->Or_error.messages,
+    Some(["X", "Y", "Z"]),
   )
 }

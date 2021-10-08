@@ -74,6 +74,13 @@ let tags = t => t->Js.Array2.reduce((a, x) =>
     }
   , [])
 
+let messages = t => t->Js.Array2.reduce((a, x) =>
+    switch x {
+    | MessageOrTag.Message(m) => Js.Array2.concat(a, [Message.toString(m)])
+    | _ => a
+    }
+  , [])
+
 let toString_ = (t, includeTags) =>
   Js.String2.concatMany(
     "\n",

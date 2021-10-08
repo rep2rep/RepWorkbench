@@ -32,6 +32,12 @@ let tags = t =>
   | Err(e) => Error.tags(e)
   }
 
+let messages = t =>
+  switch t {
+  | Ok(_, _) => None
+  | Err(e) => Some(Error.messages(e))
+  }
+
 let map = (t, f) =>
   switch t {
   | Ok(a, tags) => Ok(f(a), tags)

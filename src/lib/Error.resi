@@ -16,6 +16,7 @@ let concat: list<t> => t
 
 let tag: (t, string) => t
 let tags: t => array<Tag.t>
+let messages: t => array<string>
 
 let toString: t => string
 let fromString: string => t

@@ -26,6 +26,8 @@ let isError: t<'a> => bool
 let tag: (t<'a>, string) => t<'a>
 let tags: t<'a> => array<Error.Tag.t>
 
+let messages: t<'a> => option<array<string>>
+
 let okExn: t<'a> => 'a
 let okExnWithTags: t<'a> => 'a
 let valOf: t<'a> => option<'a>
