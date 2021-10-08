@@ -32,7 +32,7 @@ let s = {
   organisation: "Organisation",
 }
 
-Testing.assertTrue("Valid scheme", () => Schema.Scheme.validate(s))
+Testing.assertTrue("Valid scheme", () => () == Schema.Scheme.validate(s)->Or_error.okExn)
 
 Testing.equal(
   "Scheme JSON is as expected",

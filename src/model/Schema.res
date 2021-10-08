@@ -9,7 +9,8 @@ module rec Representation: {
     subrepresentations: list<t>,
   }
 
-  let validate: t => bool
+  let uuid: t => Uuid.t
+  let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
   let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
@@ -35,7 +36,7 @@ and Dimension: {
   }
 
   let uuid: t => Uuid.t
-  let validate: t => bool
+  let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
   let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
@@ -59,7 +60,7 @@ and Scheme: {
   }
 
   let uuid: t => Uuid.t
-  let validate: t => bool
+  let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
   let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
@@ -84,7 +85,7 @@ and Token_: {
   }
 
   let uuid: t => Uuid.t
-  let validate: t => bool
+  let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
   let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
@@ -117,7 +118,8 @@ module Token: {
     anchored_schemes: list<Scheme.t>,
   }
 
-  let validate: t => bool
+  let uuid: t => Uuid.t
+  let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
 } = {

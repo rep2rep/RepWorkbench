@@ -16,11 +16,18 @@ module Make = (
   let uuid = t => t.uuid
 
   let rec validate = t => {
-    (List.length(t.tokens) > 0 || List.length(t.dimensions) > 0 || List.length(t.schemes) > 0) &&
-    t.tokens->List.every(Token.validate) &&
-    t.dimensions->List.every(Dimension.validate) &&
-    t.schemes->List.every(Scheme.validate) &&
-    t.subrepresentations->List.every(validate)
+    Or_error.allUnit(list{
+      (List.length(t.tokens) > 0 || List.length(t.dimensions) > 0 || List.length(t.schemes) > 0)
+        ->Or_error.fromBool_ss([
+          "Representation '",
+          Uuid.toString(t.uuid),
+          "' must have at least one token, dimension, or scheme",
+        ]),
+      t.tokens->List.map(Token.validate)->Or_error.allUnit,
+      t.dimensions->List.map(Dimension.validate)->Or_error.allUnit,
+      t.schemes->List.map(Scheme.validate)->Or_error.allUnit,
+      t.subrepresentations->List.map(validate)->Or_error.allUnit,
+    })
   }
 
   let rec _toJsonHelper = (t, idxs) => {

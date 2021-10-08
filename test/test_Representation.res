@@ -20,7 +20,7 @@ let r = {
 }
 
 // This is false because you are meant to have at least one child.
-Testing.assertFalse("Valid representation", () => Schema.Representation.validate(r))
+Testing.assertFalse("Valid representation", () => Schema.Representation.validate(r)->Or_error.isOk)
 
 Testing.equal("JSON is as expected", () => Schema.Representation.toJson(r), json)
 

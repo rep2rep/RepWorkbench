@@ -20,10 +20,17 @@ module Make = (
   let uuid = t => t.uuid
 
   let rec validate = t =>
-    t.explicit === !Option.isNone(t.graphic_structure) &&
-    t.tokens->List.every(Token.validate) &&
-    t.dimensions->Non_empty_list.every(Dimension.validate) &&
-    t.schemes->List.every(validate)
+    Or_error.allUnit(list{
+      (t.explicit === !Option.isNone(t.graphic_structure))
+        ->Or_error.fromBool_ss([
+          "Scheme '",
+          Uuid.toString(t.uuid),
+          "' must be explicit if and only if it has a graphic instance",
+        ]),
+      t.tokens->List.map(Token.validate)->Or_error.allUnit,
+      t.dimensions->Non_empty_list.map(Dimension.validate)->Non_empty_list.toList->Or_error.allUnit,
+      t.schemes->List.map(validate)->Or_error.allUnit,
+    })
 
   let rec _toJsonHelper = (t, idxs) => {
     let idxs0 = Uuid.Set.add(idxs, t.uuid)

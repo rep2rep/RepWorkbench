@@ -19,10 +19,17 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
   let uuid = t => t.uuid
 
   let rec validate = t =>
-    t.concept !== "" &&
-    t.explicit === !Option.isNone(t.graphic) &&
-    t.dimensions->List.every(validate) &&
-    t.tokens->Non_empty_list.every(Token.validate)
+    Or_error.allUnit(list{
+      (t.concept !== "")->Or_error.fromBool_s("Dimension concept cannot be empty"),
+      (t.explicit === !Option.isNone(t.graphic))
+        ->Or_error.fromBool_ss([
+          "Dimension '",
+          Uuid.toString(t.uuid),
+          "' must be explicit if and only if it has a graphic instance",
+        ]),
+      t.dimensions->List.map(validate)->Or_error.allUnit,
+      t.tokens->Non_empty_list.map(Token.validate)->Non_empty_list.toList->Or_error.allUnit,
+    })
 
   let rec _toJsonHelper = (t, idxs) => {
     let idxs0 = Uuid.Set.add(idxs, t.uuid)

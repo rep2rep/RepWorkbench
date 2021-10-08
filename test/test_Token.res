@@ -31,7 +31,7 @@ let t = {
   anchored_schemes: List.empty,
 }
 
-Testing.assertTrue("Valid token", () => Schema.Token.validate(t))
+Testing.assertTrue("Valid token", () => () == Schema.Token.validate(t)->Or_error.okExn)
 
 Testing.equal(
   "Token JSON is as expected",

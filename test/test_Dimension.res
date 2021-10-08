@@ -35,7 +35,7 @@ let d = {
   tokens: Non_empty_list.singleton(Test_Token.t),
 }
 
-Testing.assertTrue("Valid dimension", () => Schema.Dimension.validate(d))
+Testing.assertTrue("Valid dimension", () => () == Schema.Dimension.validate(d)->Or_error.okExn)
 
 Testing.equal("Dimension JSON is as expected", () => Schema.Dimension.toJson(d), json)
 

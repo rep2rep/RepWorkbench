@@ -78,7 +78,7 @@ type fromJsonHelper = (
 module type S = {
   type t
   let uuid: t => Uuid.t
-  let validate: t => bool
+  let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
 

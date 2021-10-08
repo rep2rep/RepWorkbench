@@ -9,7 +9,8 @@ module rec Representation: {
     subrepresentations: list<t>,
   }
 
-  let validate: t => bool
+  let uuid: t => Uuid.t
+  let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
 }
@@ -32,7 +33,8 @@ and Dimension: {
     tokens: Non_empty_list.t<Schema_intf.token>,
   }
 
-  let validate: t => bool
+  let uuid: t => Uuid.t
+  let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
 }
@@ -53,7 +55,8 @@ and Scheme: {
     organisation: string,
   }
 
-  let validate: t => bool
+  let uuid: t => Uuid.t
+  let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
 }
@@ -82,7 +85,8 @@ and Token: {
     anchored_schemes: list<Schema_intf.scheme>,
   }
 
-  let validate: t => bool
+  let uuid: t => Uuid.t
+  let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
 }
@@ -95,6 +99,6 @@ type t =
 
 let uuid: t => Uuid.t
 let findByUuid: (t, Uuid.t) => option<t>
-let validate: t => bool
+let validate: t => Or_error.t<unit>
 let toJson: t => Js.Json.t
 let fromJson: Js.Json.t => Or_error.t<t>

@@ -4,8 +4,8 @@ let monsterGraph = Model.fromJson(json)
 
 Testing.equal(
   "Monster graph is a valid representation",
-  () => monsterGraph->Or_error.map(Model.validate)->Or_error.okExn,
-  true,
+  () => monsterGraph->Or_error.flatMap(Model.validate)->Or_error.okExn,
+  (),
 )
 
 Testing.equal(
