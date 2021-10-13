@@ -5,9 +5,7 @@ module Make = (
   type rec t = Schema_intf.scheme = {
     uuid: Uuid.t,
     concept_structure: string,
-    concept_type: string,
     graphic_structure: option<Graphic.t>,
-    graphic_type: string,
     function: Function.t,
     explicit: bool,
     scope: Scope.t,
@@ -54,9 +52,7 @@ module Make = (
         t.uuid,
         Js.Dict.fromList(list{
           ("concept_structure", String.toJson(t.concept_structure)),
-          ("concept_type", String.toJson(t.concept_type)),
           ("graphic_structure", t.graphic_structure->Option.toJson(Graphic.toJson)),
-          ("graphic_type", String.toJson(t.graphic_type)),
           ("function", Function.toJson(t.function)),
           ("explicit", Bool.toJson(t.explicit)),
           ("scope", Scope.toJson(t.scope)),
@@ -106,11 +102,9 @@ module Make = (
           ->Or_error.flatMap(decode)
 
         let concept_structure = get_value("concept_structure", String.fromJson)
-        let concept_type = get_value("concept_type", String.fromJson)
         let graphic_structure = get_value("graphic_structure", j =>
           j->Option.fromJson(Graphic.fromJson)
         )
-        let graphic_type = get_value("graphic_type", String.fromJson)
         let function = get_value("function", Function.fromJson)
         let explicit = get_value("explicit", Bool.fromJson)
         let scope = get_value("scope", Scope.fromJson)
@@ -185,11 +179,9 @@ module Make = (
                   scheme_ids->List.map(uuid => schemes3->uuid_get(uuid))->Or_error.all
                 )
 
-              Or_error.both11((
+              Or_error.both9((
                 concept_structure,
-                concept_type,
                 graphic_structure,
-                graphic_type,
                 function,
                 explicit,
                 scope,
@@ -199,9 +191,7 @@ module Make = (
                 organisation,
               ))->Or_error.flatMap(((
                 concept_structure,
-                concept_type,
                 graphic_structure,
-                graphic_type,
                 function,
                 explicit,
                 scope,
@@ -213,9 +203,7 @@ module Make = (
                 let t = {
                   uuid: uuid,
                   concept_structure: concept_structure,
-                  concept_type: concept_type,
                   graphic_structure: graphic_structure,
-                  graphic_type: graphic_type,
                   function: function,
                   explicit: explicit,
                   scope: scope,

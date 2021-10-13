@@ -2,11 +2,8 @@ let json = %raw(`{
 "start": "1",
 "1": {
 "concept": "Some concept",
-"concept_type": "Concept type",
 "graphic": "Graphic reference",
-"graphic_type": "Graphic type",
 "is_class": false,
-"level": "Atomic",
 "function": "Semantic",
 "explicit": true,
 "sub_tokens": [],
@@ -18,11 +15,8 @@ let json = %raw(`{
 let t = {
   Schema.Token.uuid: Uuid.fromString("1"),
   concept: "Some concept",
-  concept_type: "Concept type",
   graphic: Some("Graphic reference"),
-  graphic_type: "Graphic type",
   is_class: false,
-  level: Schema.Token.Level.Atomic,
   function: Function.Semantic,
   explicit: true,
   sub_tokens: List.empty,

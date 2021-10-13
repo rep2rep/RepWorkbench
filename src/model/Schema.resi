@@ -20,17 +20,16 @@ and Dimension: {
     uuid: Uuid.t,
     concept: string,
     concept_scale: Quantity_scale.t,
-    concept_type: string,
     concept_attributes: list<Concept_attribute.t>,
     graphic: option<Graphic.t>,
     graphic_scale: Quantity_scale.t,
-    graphic_type: string,
     graphic_attributes: list<Graphic_attribute.t>,
     function: Function.t,
     scope: Scope.t,
     explicit: bool,
     dimensions: list<t>,
     tokens: Non_empty_list.t<Schema_intf.token>,
+    organisation: string,
   }
 
   let uuid: t => Uuid.t
@@ -43,9 +42,7 @@ and Scheme: {
   type rec t = Schema_intf.scheme = {
     uuid: Uuid.t,
     concept_structure: string,
-    concept_type: string,
     graphic_structure: option<Graphic.t>,
-    graphic_type: string,
     function: Function.t,
     explicit: bool,
     scope: Scope.t,
@@ -62,21 +59,11 @@ and Scheme: {
 }
 
 and Token: {
-  module Level: {
-    type t = Token_level.t = Atomic | Expression
-
-    let toJson: t => Js.Json.t
-    let fromJson: Js.Json.t => Or_error.t<t>
-  }
-
   type rec t = Schema_intf.token = {
     uuid: Uuid.t,
     concept: string,
-    concept_type: string,
     graphic: option<Graphic.t>,
-    graphic_type: string,
     is_class: bool,
-    level: Level.t,
     function: Function.t,
     explicit: bool,
     sub_tokens: list<t>,

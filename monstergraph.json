@@ -15,9 +15,7 @@
       },
       "1": {
         "concept_structure": "T-s-P space",
-        "concept_type": "????",
         "graphic_structure": "x-y-z graph",
-        "graphic_type": "?????",
         "function": "Semantic",
         "explicit": true,
         "scope": "Global",
@@ -32,16 +30,14 @@
           "5a"
         ],
         "schemes": [],
-        "organisation": "????"
+        "organisation": "???"
       },
       "2": {
         "concept": "Data",
         "concept_scale": "Nominal",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "Points",
         "graphic_scale": "Nominal",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Global",
@@ -51,16 +47,15 @@
           "6",
           "7",
           "8"
-        ]
+        ],
+        "organisation": "???"
       },
       "3": {
         "concept": "T",
         "concept_scale": "Ratio",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "y-axis",
         "graphic_scale": "Ratio",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Global",
@@ -70,16 +65,15 @@
           "6",
           "7",
           "8"
-        ]
+        ],
+        "organisation": "???"
       },
       "4": {
         "concept": "s",
         "concept_scale": "Ratio",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "x-axis",
         "graphic_scale": "Ratio",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Global",
@@ -89,16 +83,15 @@
           "6",
           "7",
           "8"
-        ]
+        ],
+        "organisation": "???"
       },
       "5": {
         "concept": "P",
         "concept_scale": "Ratio",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "z-axis",
         "graphic_scale": "Ratio",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Global",
@@ -109,16 +102,15 @@
           "7",
           "8",
           "8a"
-        ]
+        ],
+        "organisation": "???"
       },
       "5a": {
         "concept": "Function",
         "concept_scale": "Ratio",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "curve",
         "graphic_scale": "Ratio",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Global",
@@ -127,15 +119,13 @@
         "tokens": [
           "8a",
           "9"
-        ]
+        ],
+        "organisation": "???"
       },
       "6": {
         "concept": "Data point",
-        "concept_type": "????",
         "graphic": "Dot",
-        "graphic_type": "????",
         "is_class": true,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -145,11 +135,8 @@
       },
       "7": {
         "concept": "Triple point",
-        "concept_type": "????",
         "graphic": "\"A\"",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -159,11 +146,8 @@
       },
       "8": {
         "concept": "Critical point",
-        "concept_type": "????",
         "graphic": "\"C\"",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -175,11 +159,8 @@
       },
       "8a": {
         "concept": "Isobar",
-        "concept_type": "????",
         "graphic": "z-axis x curve",
-        "graphic_type": "????",
         "is_class": true,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -189,11 +170,8 @@
       },
       "9": {
         "concept": "Saturation dome",
-        "concept_type": "????",
         "graphic": "Bell-shape curve",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Expression",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -207,11 +185,9 @@
       "10": {
         "concept": "State-transitions",
         "concept_scale": "Nominal",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "Position",
         "graphic_scale": "Nominal",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Local",
@@ -220,15 +196,13 @@
         "tokens": [
           "11",
           "12"
-        ]
+        ],
+        "organisation": "Sides of bell"
       },
       "11": {
         "concept": "Liquid boundary",
-        "concept_type": "????",
         "graphic": "Left-side bell",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -240,11 +214,8 @@
       },
       "12": {
         "concept": "Vapor boundary",
-        "concept_type": "????",
         "graphic": "Right-side bell",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -257,11 +228,9 @@
       "13": {
         "concept": "States",
         "concept_scale": "Ordinal",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "Regions",
         "graphic_scale": "Ordinal",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Local",
@@ -272,15 +241,13 @@
           "15",
           "16",
           "17"
-        ]
+        ],
+        "organisation": "Regions"
       },
       "14": {
         "concept": "Super heat",
-        "concept_type": "????",
         "graphic": "Region above",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -290,11 +257,8 @@
       },
       "15": {
         "concept": "Liquid",
-        "concept_type": "????",
         "graphic": "Region left",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -304,11 +268,8 @@
       },
       "16": {
         "concept": "Mixture",
-        "concept_type": "????",
         "graphic": "Region middle",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -320,11 +281,8 @@
       },
       "17": {
         "concept": "Vapor",
-        "concept_type": "????",
         "graphic": "Region right",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -335,11 +293,9 @@
       "18": {
         "concept": "Dryness fraction",
         "concept_scale": "Ratio",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "Dryness-axis",
         "graphic_scale": "Ratio",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Local",
@@ -347,15 +303,13 @@
         "dimensions": [],
         "tokens": [
           "19"
-        ]
+        ],
+        "organisation": "Horizontal axis"
       },
       "19": {
         "concept": "Dryness %",
-        "concept_type": "????",
         "graphic": "Line",
-        "graphic_type": "????",
         "is_class": true,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -366,11 +320,9 @@
       "20": {
         "concept": "Cycles",
         "concept_scale": "Nominal",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "Rectangles",
         "graphic_scale": "Nominal",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Local",
@@ -378,15 +330,13 @@
         "dimensions": [],
         "tokens": [
           "21"
-        ]
+        ],
+        "organisation": "rectangles"
       },
       "21": {
         "concept": "Cycle",
-        "concept_type": "????",
         "graphic": "Rectangle",
-        "graphic_type": "????",
         "is_class": true,
-        "level": "Expression",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -398,9 +348,7 @@
       },
       "22": {
         "concept_structure": "Cycle-components",
-        "concept_type": "????",
         "graphic_structure": "Rectangle properties",
-        "graphic_type": "????",
         "function": "Semantic",
         "explicit": true,
         "scope": "Local",
@@ -412,16 +360,14 @@
           "25"
         ],
         "schemes": [],
-        "organisation": "????"
+        "organisation": "???"
       },
       "23": {
         "concept": "Power Energy",
         "concept_scale": "Ratio",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "Areas",
         "graphic_scale": "Ratio",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Local",
@@ -429,16 +375,15 @@
         "dimensions": [],
         "tokens": [
           "31"
-        ]
+        ],
+        "organisation": "???"
       },
       "23a": {
         "concept": "Heat Energy",
         "concept_scale": "Ratio",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "Areas",
         "graphic_scale": "Ratio",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Local",
@@ -446,16 +391,15 @@
         "dimensions": [],
         "tokens": [
           "32"
-        ]
+        ],
+        "organisation": "???"
       },
       "24": {
         "concept": "Process",
         "concept_scale": "Ordinal",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "Sides",
         "graphic_scale": "Ordinal",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Local",
@@ -466,16 +410,15 @@
           "27",
           "28",
           "29"
-        ]
+        ],
+        "organisation": "Form a rectangle"
       },
       "25": {
         "concept": "Transitions",
         "concept_scale": "Ordinal",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "Corners",
         "graphic_scale": "Ordinal",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Local",
@@ -483,15 +426,13 @@
         "dimensions": [],
         "tokens": [
           "30"
-        ]
+        ],
+        "organisation": "Form a rectangle"
       },
       "26": {
         "concept": "Compress",
-        "concept_type": "????",
         "graphic": "Line 12",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -503,11 +444,8 @@
       },
       "27": {
         "concept": "Boil",
-        "concept_type": "????",
         "graphic": "Line 23",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -519,11 +457,8 @@
       },
       "28": {
         "concept": "Power",
-        "concept_type": "????",
         "graphic": "Line 34",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -537,11 +472,8 @@
       },
       "29": {
         "concept": "Condense",
-        "concept_type": "????",
         "graphic": "Line 41",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -553,11 +485,8 @@
       },
       "30": {
         "concept": "Transition",
-        "concept_type": "????",
         "graphic": "Corner",
-        "graphic_type": "????",
         "is_class": true,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -567,11 +496,8 @@
       },
       "31": {
         "concept": "W",
-        "concept_type": "????",
         "graphic": "1234",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -583,11 +509,8 @@
       },
       "32": {
         "concept": "Q",
-        "concept_type": "????",
         "graphic": "23-x-axis",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -600,11 +523,9 @@
       "33": {
         "concept": "Efficiency (W-Q)",
         "concept_scale": "Ratio",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "1234/Below-23",
         "graphic_scale": "Ratio",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Local",
@@ -612,15 +533,13 @@
         "dimensions": [],
         "tokens": [
           "34"
-        ]
+        ],
+        "organisation": "Computation"
       },
       "34": {
         "concept": "Efficency-power",
-        "concept_type": "????",
         "graphic": "Number",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],
@@ -631,11 +550,9 @@
       "35": {
         "concept": "Efficiency (T)",
         "concept_scale": "Ratio",
-        "concept_type": "????",
         "concept_attributes": [],
         "graphic": "Ratio (T3-T4)/T3",
         "graphic_scale": "Ratio",
-        "graphic_type": "????",
         "graphic_attributes": [],
         "function": "Semantic",
         "scope": "Local",
@@ -643,15 +560,13 @@
         "dimensions": [],
         "tokens": [
           "36"
-        ]
+        ],
+        "organisation": "Computation"
       },
       "36": {
         "concept": "Efficency-temp",
-        "concept_type": "????",
         "graphic": "Number",
-        "graphic_type": "????",
         "is_class": false,
-        "level": "Atomic",
         "function": "Semantic",
         "explicit": true,
         "sub_tokens": [],

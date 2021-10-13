@@ -2,9 +2,7 @@ let json = %raw(`{
 "start": "3",
 "3": {
 "concept_structure": "Concept structure",
-"concept_type": "Concept type",
 "graphic_structure": "Graphic",
-"graphic_type": "Graphic type",
 "function": "Arbitrary",
 "explicit": true,
 "scope": "Local",
@@ -20,9 +18,7 @@ let json = %raw(`{
 let s = {
   Schema.Scheme.uuid: Uuid.fromString("3"),
   concept_structure: "Concept structure",
-  concept_type: "Concept type",
   graphic_structure: Some("Graphic"),
-  graphic_type: "Graphic type",
   function: Function.Arbitrary,
   explicit: true,
   scope: Scope.Local,

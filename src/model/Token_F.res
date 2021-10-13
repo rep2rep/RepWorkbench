@@ -5,11 +5,8 @@ module Make = (
   type rec t = Schema_intf.token = {
     uuid: Uuid.t,
     concept: string,
-    concept_type: string,
     graphic: option<Graphic.t>,
-    graphic_type: string,
     is_class: bool,
-    level: Token_level.t,
     function: Function.t,
     explicit: bool,
     sub_tokens: list<t>,
@@ -59,11 +56,8 @@ module Make = (
         t.uuid,
         Js.Dict.fromList(list{
           ("concept", String.toJson(t.concept)),
-          ("concept_type", String.toJson(t.concept_type)),
           ("graphic", Option.toJson(t.graphic, Graphic.toJson)),
-          ("graphic_type", String.toJson(t.graphic_type)),
           ("is_class", Bool.toJson(t.is_class)),
-          ("level", Token_level.toJson(t.level)),
           ("function", Function.toJson(t.function)),
           ("explicit", Bool.toJson(t.explicit)),
           ("sub_tokens", t.sub_tokens->List.map(uuid)->List.toJson(Uuid.toJson)),
@@ -112,11 +106,8 @@ module Make = (
           ->Or_error.flatMap(decode)
 
         let concept = get_value("concept", String.fromJson)
-        let concept_type = get_value("concept_type", String.fromJson)
         let graphic = get_value("graphic", j => j->Option.fromJson(Graphic.fromJson))
-        let graphic_type = get_value("graphic_type", String.fromJson)
         let is_class = get_value("is_class", Bool.fromJson)
-        let level = get_value("level", Token_level.fromJson)
         let function = get_value("function", Function.fromJson)
         let explicit = get_value("explicit", Bool.fromJson)
 
@@ -211,13 +202,10 @@ module Make = (
                     anchored_scheme_ids->List.map(uuid => uuid_get(schemes4, uuid))->Or_error.all
                   )
 
-                Or_error.both12((
+                Or_error.both9((
                   concept,
-                  concept_type,
                   graphic,
-                  graphic_type,
                   is_class,
-                  level,
                   function,
                   explicit,
                   sub_tokens,
@@ -226,11 +214,8 @@ module Make = (
                   anchored_schemes,
                 ))->Or_error.flatMap(((
                   concept,
-                  concept_type,
                   graphic,
-                  graphic_type,
                   is_class,
-                  level,
                   function,
                   explicit,
                   sub_tokens,
@@ -241,11 +226,8 @@ module Make = (
                   let t = {
                     uuid: uuid,
                     concept: concept,
-                    concept_type: concept_type,
                     graphic: graphic,
-                    graphic_type: graphic_type,
                     is_class: is_class,
-                    level: level,
                     function: function,
                     explicit: explicit,
                     sub_tokens: sub_tokens,
