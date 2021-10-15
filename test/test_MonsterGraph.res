@@ -1,4 +1,4 @@
-let json = Node.Fs.readFileAsUtf8Sync("monstergraph.json")->Js.Json.parseExn
+let json = Node_fs.readFileAsUtf8Sync("monstergraph.json")->Js.Json.parseExn
 
 let monsterGraph = Model.fromJson(json)
 

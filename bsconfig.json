@@ -21,6 +21,7 @@
     "react-jsx": 3
   },
   "bs-dependencies": [
-    "@rescript/react"
+    "@rescript/react",
+    "rescript-react-digraph"
   ]
 }
