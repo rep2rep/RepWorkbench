@@ -6,13 +6,14 @@
   "private": true,
   "scripts": {
     "test": "./scripts/run-tests",
-    "build": "./node_modules/rescript/rescript build -with-deps && mkdir -p dist && npx webpack --mode development && cp ./src/index.html ./dist/index.html",
+    "build": "rm -rf dist && ./node_modules/rescript/rescript build -with-deps && mkdir -p dist && node ./bundle.js && cp ./src/index.html ./dist/index.html",
     "clean": "./node_modules/rescript/rescript clean; rm -rf ./dist",
     "format": "./scripts/format-rescript; ./scripts/format-json",
     "watch": "./scripts/watch"
   },
   "author": "rep2rep",
   "devDependencies": {
+    "esbuild": "^0.13.8",
     "rescript": "^9.1.4",
     "webpack": "^5.55.1",
     "webpack-cli": "^4.8.0"
