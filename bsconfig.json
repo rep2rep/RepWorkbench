@@ -22,6 +22,6 @@
   },
   "bs-dependencies": [
     "@rescript/react",
-    "rescript-react-digraph"
+    "rescript-react-d3-graph"
   ]
 }

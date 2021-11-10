@@ -1,25 +1,22 @@
 module App = {
-  type state = {count: int}
-  type action =
-    | Increment
-    | Decrement
+  type state = ModelState.t
+  type action = ModelAction.t
 
-  let initialState = {count: 0}
-  let reducer = (state, action) =>
-    switch action {
-    | Increment => {count: state.count + 1}
-    | Decrement => {count: state.count - 1}
-    }
+  let init = ModelState.init
+  let reducer = (state, action) => ModelAction.dispatch(state, action)
 
   @react.component
   let make = () => {
-    let (state, dispatch) = React.useReducer(reducer, initialState)
+    let (state, dispatch) = React.useReducer(reducer, init)
+
+    let addStartNode = _ => dispatch(ModelAction.Create(0.0, 0.0))
+
     <main>
-      {React.string("Simple counter with reducer")}
-      <div>
-        <button onClick={_ => dispatch(Decrement)}> {React.string("Decrement")} </button>
-        <span className="counter"> {state.count->string_of_int->React.string} </span>
-        <button onClick={_ => dispatch(Increment)}> {React.string("Increment")} </button>
+      <div className="graph-header">
+        <button onClick={addStartNode}> {React.string("Add Node")} </button>
+      </div>
+      <div className="container" style={ReactDOM.Style.make(~height="calc(100%-72px)", ())}>
+        <ReactD3Graph.Graph id={"modelGraph"} data={ModelState.data(state)} />
       </div>
     </main>
   }

@@ -20,6 +20,6 @@
   },
   "dependencies": {
     "@rescript/react": "^0.10.3",
-    "rescript-react-digraph": "file:../rescript-react-digraph"
+    "rescript-react-d3-graph": "file:../rescript-react-d3-graph"
   }
 }
