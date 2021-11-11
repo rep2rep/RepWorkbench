@@ -1,7 +1,10 @@
 module NodePayload = {
-  type t = string
+  type t = {
+    name: string,
+    reference: string,
+  }
 
-  let create = s => s
+  let create = (name, reference) => {name: name, reference: reference}
 }
 
 module LinkPayload = {
@@ -23,7 +26,7 @@ module Graph = {
 
   let addNode = (t, node) => {
     ...t,
-    nodes: Js.Array.concat(t.nodes, [node]),
+    nodes: Array.concat(t.nodes, [node]),
   }
 }
 

@@ -1,20 +1,17 @@
-type t = Create(float, float)
+type t = Create(float, float, ModelNode.Kind.t)
 
-let createNewNode = (state, x, y) => {
-  let payload = ModelState.NodePayload.create("Testing!")
-  let config = ReactD3Graph.Node.Config.create()
-  let node = ReactD3Graph.Node.create(
-    ~id=Uuid.create()->Uuid.toString->ReactD3Graph.Node.Id.ofString,
-    ~payload,
-    ~config,
-    ~x,
-    ~y,
-    (),
-  )
+let createNewNode = (state, x, y, kind) => {
+  let (name, reference) = switch kind {
+  | ModelNode.Kind.Representation => ("Representation", "Reference")
+  | ModelNode.Kind.Scheme => ("Scheme", "Reference")
+  | ModelNode.Kind.Dimension => ("Dimension, Q", "Reference, Q")
+  | ModelNode.Kind.Token => ("Token", "Reference")
+  }
+  let node = ModelNode.create(name, reference, x, y, kind)
   ModelState.addNode(state, node)
 }
 
 let dispatch = (state, action) =>
   switch action {
-  | Create(x, y) => createNewNode(state, x, y)
+  | Create(x, y, kind) => createNewNode(state, x, y, kind)
   }

@@ -9,13 +9,26 @@ module App = {
   let make = () => {
     let (state, dispatch) = React.useReducer(reducer, init)
 
-    let addStartNode = _ => dispatch(ModelAction.Create(0.0, 0.0))
+    let addRepNode = _ => dispatch(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Representation))
+    let addSchNode = _ => dispatch(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Scheme))
+    let addDimNode = _ => dispatch(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Dimension))
+    let addTokNode = _ => dispatch(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Token))
 
     <main>
       <div className="graph-header">
-        <button onClick={addStartNode}> {React.string("Add Node")} </button>
+        <button onClick={addRepNode}> {React.string("Add Representation Node")} </button>
+        <button onClick={addSchNode}> {React.string("Add Scheme Node")} </button>
+        <button onClick={addDimNode}> {React.string("Add Dimension Node")} </button>
+        <button onClick={addTokNode}> {React.string("Add Token Node")} </button>
       </div>
-      <div className="container" style={ReactDOM.Style.make(~height="calc(100%-72px)", ())}>
+      <div
+        className="container"
+        style={ReactDOM.Style.make(
+          ~height="calc(100%-72px)",
+          ~fontSize="0.9rem",
+          ~fontFamily="sans-serif",
+          (),
+        )}>
         <ReactD3Graph.Graph id={"modelGraph"} data={ModelState.data(state)} />
       </div>
     </main>

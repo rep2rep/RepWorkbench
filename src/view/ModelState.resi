@@ -1,7 +1,10 @@
 module NodePayload: {
-  type t
+  type t = {
+    name: string,
+    reference: string,
+  }
 
-  let create: string => t
+  let create: (string, string) => t
 }
 
 module LinkPayload: {
