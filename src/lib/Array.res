@@ -10,3 +10,5 @@ let fromJson = (j, decode) =>
       xs->Or_error.flatMap(xs => decode(x)->Or_error.map(x => concat(xs, [x])))
     )
   )
+
+let joinWith = Js.Array2.joinWith
