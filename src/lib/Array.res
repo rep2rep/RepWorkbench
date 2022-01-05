@@ -14,3 +14,4 @@ let fromJson = (j, decode) =>
 let joinWith = Js.Array2.joinWith
 let filter = Js.Array2.filter
 let includes = Js.Array2.includes
+let flatMap = (t, f) => Js.Array2.map(t, f) |> Js.Array2.concatMany([])

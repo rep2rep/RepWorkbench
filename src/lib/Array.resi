@@ -6,3 +6,4 @@ let fromJson: (Js.Json.t, Js.Json.t => Or_error.t<'a>) => Or_error.t<array<'a>>
 let joinWith: (array<string>, string) => string
 let filter: (array<'a>, 'a => bool) => array<'a>
 let includes: (array<'a>, 'a) => bool
+let flatMap: (array<'a>, 'a => array<'b>) => array<'b>
