@@ -1,4 +1,23 @@
-type t = ReactD3Graph.Node.t<ModelState.NodePayload.t>
+module Payload = {
+  type t = {
+    name: string,
+    reference: string,
+    selected: bool,
+  }
+
+  let create = (name, reference) => {name: name, reference: reference, selected: false}
+  let dummy = {name: "", reference: "", selected: false}
+
+  let name = t => t.name
+  let reference = t => t.reference
+  let selected = t => t.selected
+}
+
+type t = {
+  focus: ReactD3Graph.Node.t<Payload.t>,
+  child_connector: ReactD3Graph.Node.t<Payload.t>,
+  parent_connector: ReactD3Graph.Node.t<Payload.t>,
+}
 
 module Kind = {
   type t =
@@ -9,9 +28,16 @@ module Kind = {
 }
 
 module SchemaShape = {
+  let style = selected =>
+    if selected {
+      ReactDOM.Style.make(~fill="rgb(240, 240, 240)", ~stroke="black", ~strokeWidth="2", ())
+    } else {
+      ReactDOM.Style.make(~fill="white", ~stroke="black", ~strokeWidth="1", ())
+    }
+
   module Representation = {
     @react.component
-    let make = (~width: float, ~height: float, ~children: React.element) => {
+    let make = (~width: float, ~height: float, ~selected: bool, ~children: React.element) => {
       let radius = (height /. 2.0)->Float.toString
 
       <svg width={Float.toString(width +. 2.)} height={Float.toString(height +. 2.)}>
@@ -22,7 +48,7 @@ module SchemaShape = {
           height={Float.toString(height)}
           rx={radius}
           ry={radius}
-          style={ReactDOM.Style.make(~fill="white", ~stroke="black", ~strokeWidth="1", ())}
+          style={style(selected)}
         />
         children
       </svg>
@@ -31,14 +57,14 @@ module SchemaShape = {
 
   module Scheme = {
     @react.component
-    let make = (~width: float, ~height: float, ~children: React.element) => {
+    let make = (~width: float, ~height: float, ~selected: bool, ~children: React.element) => {
       <svg width={Float.toString(width +. 2.)} height={Float.toString(height +. 2.)}>
         <rect
           x={"1"}
           y={"1"}
           width={Float.toString(width)}
           height={Float.toString(height)}
-          style={ReactDOM.Style.make(~fill="white", ~stroke="black", ~strokeWidth="1", ())}
+          style={style(selected)}
         />
         children
       </svg>
@@ -47,7 +73,7 @@ module SchemaShape = {
 
   module Dimension = {
     @react.component
-    let make = (~width: float, ~height: float, ~children: React.element) => {
+    let make = (~width: float, ~height: float, ~selected: bool, ~children: React.element) => {
       let mkPoint = ((x, y)) => Array.joinWith([Float.toString(x), Float.toString(y)], ",")
 
       let topInset = 8.
@@ -59,10 +85,7 @@ module SchemaShape = {
       ]
 
       <svg width={Float.toString(width +. 2.)} height={Float.toString(height +. 2.)}>
-        <polygon
-          points={points->Array.map(mkPoint)->Array.joinWith(" ")}
-          style={ReactDOM.Style.make(~fill="white", ~stroke="black", ~strokeWidth="1", ())}
-        />
+        <polygon points={points->Array.map(mkPoint)->Array.joinWith(" ")} style={style(selected)} />
         children
       </svg>
     }
@@ -70,7 +93,7 @@ module SchemaShape = {
 
   module Token = {
     @react.component
-    let make = (~width: float, ~height: float, ~children: React.element) => {
+    let make = (~width: float, ~height: float, ~selected: bool, ~children: React.element) => {
       <svg width={Float.toString(width +. 2.)} height={Float.toString(height +. 2.)}>
         <rect
           x={"1"}
@@ -79,7 +102,7 @@ module SchemaShape = {
           height={Float.toString(height)}
           rx={"10"}
           ry={"10"}
-          style={ReactDOM.Style.make(~fill="white", ~stroke="black", ~strokeWidth="1", ())}
+          style={style(selected)}
         />
         children
       </svg>
@@ -119,14 +142,13 @@ module Configs = {
       ~renderLabel=false,
       ~size=size(width, height),
       ~viewGenerator=node => {
-        <SchemaShape.Representation width={width} height={height}>
+        <SchemaShape.Representation
+          width={width}
+          height={height}
+          selected={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.selected}>
           <SchemaText
-            topText={ReactD3Graph.Node.payload(node)
-            ->Option.getExn
-            ->(p => p.ModelState.NodePayload.name)}
-            bottomText={ReactD3Graph.Node.payload(node)
-            ->Option.getExn
-            ->(p => p.ModelState.NodePayload.reference)}
+            topText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.name}
+            bottomText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.reference}
             width={width}
             height={height}
           />
@@ -141,14 +163,13 @@ module Configs = {
       ~renderLabel=false,
       ~size=size(width, height),
       ~viewGenerator=node => {
-        <SchemaShape.Scheme width={width} height={height}>
+        <SchemaShape.Scheme
+          width={width}
+          height={height}
+          selected={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.selected}>
           <SchemaText
-            topText={ReactD3Graph.Node.payload(node)
-            ->Option.getExn
-            ->(p => p.ModelState.NodePayload.name)}
-            bottomText={ReactD3Graph.Node.payload(node)
-            ->Option.getExn
-            ->(p => p.ModelState.NodePayload.reference)}
+            topText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.name}
+            bottomText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.reference}
             width={width}
             height={height}
           />
@@ -163,14 +184,13 @@ module Configs = {
       ~renderLabel=false,
       ~size=size(width, height),
       ~viewGenerator=node => {
-        <SchemaShape.Dimension width={width} height={height}>
+        <SchemaShape.Dimension
+          width={width}
+          height={height}
+          selected={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.selected}>
           <SchemaText
-            topText={ReactD3Graph.Node.payload(node)
-            ->Option.getExn
-            ->(p => p.ModelState.NodePayload.name)}
-            bottomText={ReactD3Graph.Node.payload(node)
-            ->Option.getExn
-            ->(p => p.ModelState.NodePayload.reference)}
+            topText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.name}
+            bottomText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.reference}
             width={width}
             height={height}
           />
@@ -185,14 +205,13 @@ module Configs = {
       ~renderLabel=false,
       ~size=size(width, height),
       ~viewGenerator=node => {
-        <SchemaShape.Token width={width} height={height}>
+        <SchemaShape.Token
+          width={width}
+          height={height}
+          selected={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.selected}>
           <SchemaText
-            topText={ReactD3Graph.Node.payload(node)
-            ->Option.getExn
-            ->(p => p.ModelState.NodePayload.name)}
-            bottomText={ReactD3Graph.Node.payload(node)
-            ->Option.getExn
-            ->(p => p.ModelState.NodePayload.reference)}
+            topText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.name}
+            bottomText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.reference}
             width={width}
             height={height}
           />
@@ -209,6 +228,13 @@ module Configs = {
     | Kind.Dimension => dimension(width, height)
     | Kind.Token => token(width, height)
     }
+
+  let connector = ReactD3Graph.Node.Config.create(
+    ~renderLabel=false,
+    ~size={"width": 0., "height": 0.},
+    ~viewGenerator=_ => React.null,
+    (),
+  )
 }
 
 let letter_scale_factor = 11
@@ -217,20 +243,47 @@ let width = (name, reference) =>
 let height = 50
 
 let createSchema = (x, y, payload, config) => {
-  ReactD3Graph.Node.create(
-    ~id=Uuid.create()->Uuid.toString->ReactD3Graph.Node.Id.ofString,
+  let uuid = Uuid.create()->Uuid.toString
+  let focus = ReactD3Graph.Node.create(
+    ~id=uuid->ReactD3Graph.Node.Id.ofString,
     ~payload,
     ~config,
     ~x,
     ~y,
     (),
   )
+  let child_connector = ReactD3Graph.Node.create(
+    ~id=(uuid ++ "_children")->ReactD3Graph.Node.Id.ofString,
+    ~payload=Payload.dummy,
+    ~config=Configs.connector,
+    ~x,
+    ~y=y +. Int.toFloat(height) /. 2.,
+    (),
+  )
+  let parent_connector = ReactD3Graph.Node.create(
+    ~id=(uuid ++ "_parents")->ReactD3Graph.Node.Id.ofString,
+    ~payload=Payload.dummy,
+    ~config=Configs.connector,
+    ~x,
+    ~y=y -. Int.toFloat(height) /. 2.,
+    (),
+  )
+  {focus: focus, child_connector: child_connector, parent_connector: parent_connector}
 }
 
-let create = (name, reference, x, y, kind) => {
-  let payload = ModelState.NodePayload.create(name, reference)
+let create = (~name, ~reference, ~x, ~y, kind) => {
+  let payload = Payload.create(name, reference)
   let width = width(name, reference)->Int.toFloat
   let height = height->Int.toFloat
   let config = Configs.create(kind, width, height)
   createSchema(x, y, payload, config)
+}
+
+let id = t => t.focus->ReactD3Graph.Node.id
+
+let setSelected = (t, isSelected) => {
+  ...t,
+  focus: t.focus->ReactD3Graph.Node.updatePayload(payload =>
+    payload->Option.map(payload => {...payload, selected: isSelected})
+  ),
 }
