@@ -14,7 +14,13 @@ module Kind = {
 }
 
 module Config = {
-  let heirarchy = ReactD3Graph.Link.Config.create()
+  let heirarchy = ReactD3Graph.Link.Config.create(
+    ~offsetSource={"dx": 0., "dy": 25.},
+    ~offsetTarget={"dx": 0., "dy": -25.},
+    ~color=ReactD3Graph.Color.ofHexString("#000000"),
+    ~strokeWidth=1.,
+    (),
+  )
   let anchor = ReactD3Graph.Link.Config.create()
   let relation = ReactD3Graph.Link.Config.create()
 }
@@ -26,8 +32,8 @@ let create = (~source, ~target, kind) => {
   | Kind.Relation => Config.relation
   }
   ReactD3Graph.Link.create(
-    ~source=source.ModelNode.child_connector->ReactD3Graph.Node.id,
-    ~target=target.ModelNode.parent_connector->ReactD3Graph.Node.id,
+    ~source=source->ModelNode.id,
+    ~target=target->ModelNode.id,
     ~payload=Payload.create("Hello"),
     ~config,
     (),

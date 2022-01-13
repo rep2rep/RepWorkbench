@@ -13,11 +13,7 @@ module Payload = {
   let selected = t => t.selected
 }
 
-type t = {
-  focus: ReactD3Graph.Node.t<Payload.t>,
-  child_connector: ReactD3Graph.Node.t<Payload.t>,
-  parent_connector: ReactD3Graph.Node.t<Payload.t>,
-}
+type t = {focus: ReactD3Graph.Node.t<Payload.t>}
 
 module Kind = {
   type t =
@@ -228,19 +224,12 @@ module Configs = {
     | Kind.Dimension => dimension(width, height)
     | Kind.Token => token(width, height)
     }
-
-  let connector = ReactD3Graph.Node.Config.create(
-    ~renderLabel=false,
-    ~size={"width": 0., "height": 0.},
-    ~viewGenerator=_ => React.null,
-    (),
-  )
 }
 
 let letter_scale_factor = 11
 let width = (name, reference) =>
-  Int.max(String.length(name), String.length(reference)) * letter_scale_factor
-let height = 50
+  (Int.max(String.length(name), String.length(reference)) * letter_scale_factor)->Int.toFloat
+let height = 50.
 
 let createSchema = (x, y, payload, config) => {
   let uuid = Uuid.create()->Uuid.toString
@@ -252,29 +241,13 @@ let createSchema = (x, y, payload, config) => {
     ~y,
     (),
   )
-  let child_connector = ReactD3Graph.Node.create(
-    ~id=(uuid ++ "_children")->ReactD3Graph.Node.Id.ofString,
-    ~payload=Payload.dummy,
-    ~config=Configs.connector,
-    ~x,
-    ~y=y +. Int.toFloat(height) /. 2.,
-    (),
-  )
-  let parent_connector = ReactD3Graph.Node.create(
-    ~id=(uuid ++ "_parents")->ReactD3Graph.Node.Id.ofString,
-    ~payload=Payload.dummy,
-    ~config=Configs.connector,
-    ~x,
-    ~y=y -. Int.toFloat(height) /. 2.,
-    (),
-  )
-  {focus: focus, child_connector: child_connector, parent_connector: parent_connector}
+  {focus: focus}
 }
 
 let create = (~name, ~reference, ~x, ~y, kind) => {
   let payload = Payload.create(name, reference)
-  let width = width(name, reference)->Int.toFloat
-  let height = height->Int.toFloat
+  let width = width(name, reference)
+  let height = height
   let config = Configs.create(kind, width, height)
   createSchema(x, y, payload, config)
 }

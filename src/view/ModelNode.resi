@@ -9,11 +9,7 @@ module Payload: {
   let dummy: t
 }
 
-type t = {
-  focus: ReactD3Graph.Node.t<Payload.t>,
-  child_connector: ReactD3Graph.Node.t<Payload.t>,
-  parent_connector: ReactD3Graph.Node.t<Payload.t>,
-}
+type t = {focus: ReactD3Graph.Node.t<Payload.t>}
 
 module Kind: {
   type t =

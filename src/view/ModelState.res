@@ -51,11 +51,7 @@ let init = {
 }
 
 let data = t => {
-  ReactD3Graph.Data.nodes: t.graph.nodes->Array.flatMap(node => [
-    node.ModelNode.focus,
-    node.ModelNode.parent_connector,
-    node.ModelNode.child_connector,
-  ]),
+  ReactD3Graph.Data.nodes: t.graph.nodes->Array.flatMap(node => [node.ModelNode.focus]),
   links: t.graph.links,
 }
 
