@@ -34,11 +34,11 @@ module App = {
       }
     let linkNodes = _ => {
       let ids = ModelState.selectedNodeIds(state)
-      let source = ids[0]
-      let target = ids[1]
-      source->Option.iter(source =>
-        target->Option.iter(target => dispatch(ModelAction.Connect(source, target)))
-      )
+      switch ids {
+      | [source] => dispatch(ModelAction.Connect(source, source))
+      | [source, target] => dispatch(ModelAction.Connect(source, target))
+      | _ => ()
+      }
     }
 
     <main>
