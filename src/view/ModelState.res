@@ -15,6 +15,14 @@ module Graph = {
   }
   let addNode = (t, node) => addNodes(t, [node])
 
+  let removeNode = (t, nodeId) => {
+    ...t,
+    nodes: t.nodes->Array.filter(node => ModelNode.id(node) != nodeId),
+    links: t.links->Array.filter(link =>
+      ModelLink.source(link) != nodeId && ModelLink.target(link) != nodeId
+    ),
+  }
+
   let mapNodes = (t, f) => {...t, nodes: t.nodes->Array.map(f)}
 
   let addLinks = (t, links) => {
@@ -50,6 +58,12 @@ let addNode = (t, node) => {
   ...t,
   nodeMap: t.nodeMap->Belt.Map.String.set(ModelNode.id(node)->ReactD3Graph.Node.Id.toString, node),
   graph: t.graph->Graph.addNode(node),
+}
+
+let removeNode = (t, nodeId) => {
+  ...t,
+  nodeMap: t.nodeMap->Belt.Map.String.remove(nodeId->ReactD3Graph.Node.Id.toString),
+  graph: t.graph->Graph.removeNode(nodeId),
 }
 
 let addLink = (t, link) => {...t, graph: t.graph->Graph.addLink(link)}

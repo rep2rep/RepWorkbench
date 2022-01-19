@@ -28,6 +28,8 @@ module App = {
       | _ => ()
       }
     }
+    let deleteNodes = _ =>
+      ModelState.selection(state).nodes->Array.forEach(id => dispatch(ModelAction.Delete(id)))
 
     <main>
       <div className="graph-header">
@@ -36,6 +38,7 @@ module App = {
         <button onClick={addDimNode}> {React.string("Add Dimension Node")} </button>
         <button onClick={addTokNode}> {React.string("Add Token Node")} </button>
         <button onClick={linkNodes}> {React.string("Link")} </button>
+        <button onClick={deleteNodes}> {React.string("Delete")} </button>
       </div>
       <div
         className="container"

@@ -2,6 +2,7 @@ type nodeId = ReactD3Graph.Node.Id.t
 
 type t =
   | Create(float, float, ModelNode.Kind.t)
+  | Delete(nodeId)
   | Connect(nodeId, nodeId)
   | Anchor(nodeId, nodeId)
   | Relate(nodeId, nodeId)
@@ -17,6 +18,8 @@ let createNewNode = (state, x, y, kind) => {
   let node = ModelNode.create(~name, ~reference, ~x, ~y, kind)
   ModelState.addNode(state, node)
 }
+
+let deleteNode = ModelState.removeNode
 
 let connect = (state, source, target, kind) => {
   let modelSource = state->ModelState.nodeWithId(source)
@@ -35,6 +38,7 @@ let setSelection = ModelState.setSelection
 let dispatch = (state, action) =>
   switch action {
   | Create(x, y, kind) => createNewNode(state, x, y, kind)
+  | Delete(id) => deleteNode(state, id)
   | Connect(source, target) => connect(state, source, target, ModelLink.Kind.Heirarchy)
   | Anchor(source, target) => connect(state, source, target, ModelLink.Kind.Anchor)
   | Relate(source, target) => connect(state, source, target, ModelLink.Kind.Relation)

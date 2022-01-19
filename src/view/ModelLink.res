@@ -39,3 +39,6 @@ let create = (~source, ~target, kind) => {
     (),
   )
 }
+
+let source = ReactD3Graph.Link.source
+let target = ReactD3Graph.Link.target
