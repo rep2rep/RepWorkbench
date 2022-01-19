@@ -2,15 +2,13 @@ module Payload = {
   type t = {
     name: string,
     reference: string,
-    selected: bool,
   }
 
-  let create = (name, reference) => {name: name, reference: reference, selected: false}
-  let dummy = {name: "", reference: "", selected: false}
+  let create = (name, reference) => {name: name, reference: reference}
+  let dummy = {name: "", reference: ""}
 
   let name = t => t.name
   let reference = t => t.reference
-  let selected = t => t.selected
 }
 
 type t = {focus: ReactD3Graph.Node.t<Payload.t>}
@@ -139,9 +137,7 @@ module Configs = {
       ~size=size(width, height),
       ~viewGenerator=node => {
         <SchemaShape.Representation
-          width={width}
-          height={height}
-          selected={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.selected}>
+          width={width} height={height} selected={ReactD3Graph.Node.selected(node)}>
           <SchemaText
             topText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.name}
             bottomText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.reference}
@@ -160,9 +156,7 @@ module Configs = {
       ~size=size(width, height),
       ~viewGenerator=node => {
         <SchemaShape.Scheme
-          width={width}
-          height={height}
-          selected={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.selected}>
+          width={width} height={height} selected={ReactD3Graph.Node.selected(node)}>
           <SchemaText
             topText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.name}
             bottomText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.reference}
@@ -181,9 +175,7 @@ module Configs = {
       ~size=size(width, height),
       ~viewGenerator=node => {
         <SchemaShape.Dimension
-          width={width}
-          height={height}
-          selected={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.selected}>
+          width={width} height={height} selected={ReactD3Graph.Node.selected(node)}>
           <SchemaText
             topText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.name}
             bottomText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.reference}
@@ -202,9 +194,7 @@ module Configs = {
       ~size=size(width, height),
       ~viewGenerator=node => {
         <SchemaShape.Token
-          width={width}
-          height={height}
-          selected={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.selected}>
+          width={width} height={height} selected={ReactD3Graph.Node.selected(node)}>
           <SchemaText
             topText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.name}
             bottomText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.reference}
@@ -253,10 +243,3 @@ let create = (~name, ~reference, ~x, ~y, kind) => {
 }
 
 let id = t => t.focus->ReactD3Graph.Node.id
-
-let setSelected = (t, isSelected) => {
-  ...t,
-  focus: t.focus->ReactD3Graph.Node.updatePayload(payload =>
-    payload->Option.map(payload => {...payload, selected: isSelected})
-  ),
-}

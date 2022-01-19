@@ -18,22 +18,10 @@ module App = {
     let addSchNode = _ => dispatch(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Scheme))
     let addDimNode = _ => dispatch(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Dimension))
     let addTokNode = _ => dispatch(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Token))
-    let clickGraph = _ => dispatch(ModelAction.ClearSelection)
-    let clickNode = (event, nodeId, _node) =>
-      switch ReactEvent.Pointer.shiftKey(event) {
-      | true =>
-        if state->ModelState.nodeIsSelected(nodeId) {
-          dispatch(ModelAction.Deselect(nodeId))
-        } else {
-          dispatch(ModelAction.Select(nodeId))
-        }
-      | _ => {
-          dispatch(ModelAction.ClearSelection)
-          dispatch(ModelAction.Select(nodeId))
-        }
-      }
+    let selectionChange = (~oldSelection as _, ~newSelection) =>
+      dispatch(ModelAction.Selection(newSelection))
     let linkNodes = _ => {
-      let ids = ModelState.selectedNodeIds(state)
+      let ids = ModelState.selection(state).nodes
       switch ids {
       | [source] => dispatch(ModelAction.Connect(source, source))
       | [source, target] => dispatch(ModelAction.Connect(source, target))
@@ -58,11 +46,7 @@ module App = {
           (),
         )}>
         <ReactD3Graph.Graph
-          id={"modelGraph"}
-          data={ModelState.data(state)}
-          config
-          onClickGraph={clickGraph}
-          onClickNode={clickNode}
+          id={"modelGraph"} data={ModelState.data(state)} config onSelectionChange={selectionChange}
         />
       </div>
     </main>

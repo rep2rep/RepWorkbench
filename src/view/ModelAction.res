@@ -5,9 +5,7 @@ type t =
   | Connect(nodeId, nodeId)
   | Anchor(nodeId, nodeId)
   | Relate(nodeId, nodeId)
-  | Select(nodeId)
-  | Deselect(nodeId)
-  | ClearSelection
+  | Selection(ReactD3Graph.Graph.Selection.t)
 
 let createNewNode = (state, x, y, kind) => {
   let (name, reference) = switch kind {
@@ -32,9 +30,7 @@ let connect = (state, source, target, kind) => {
   }
 }
 
-let select = ModelState.addToSelection
-let deselect = ModelState.removeFromSelection
-let clearSelection = ModelState.clearSelection
+let setSelection = ModelState.setSelection
 
 let dispatch = (state, action) =>
   switch action {
@@ -42,7 +38,5 @@ let dispatch = (state, action) =>
   | Connect(source, target) => connect(state, source, target, ModelLink.Kind.Heirarchy)
   | Anchor(source, target) => connect(state, source, target, ModelLink.Kind.Anchor)
   | Relate(source, target) => connect(state, source, target, ModelLink.Kind.Relation)
-  | Select(nodeId) => select(state, nodeId)
-  | Deselect(nodeId) => deselect(state, nodeId)
-  | ClearSelection => clearSelection(state)
+  | Selection(selection) => setSelection(state, selection)
   }

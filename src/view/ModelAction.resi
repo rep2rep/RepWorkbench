@@ -5,8 +5,6 @@ type t =
   | Connect(nodeId, nodeId)
   | Anchor(nodeId, nodeId)
   | Relate(nodeId, nodeId)
-  | Select(nodeId)
-  | Deselect(nodeId)
-  | ClearSelection
+  | Selection(ReactD3Graph.Graph.Selection.t)
 
 let dispatch: (ModelState.t, t) => ModelState.t

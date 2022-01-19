@@ -2,7 +2,6 @@ module Payload: {
   type t = {
     name: string,
     reference: string,
-    selected: bool,
   }
 
   let create: (string, string) => t
@@ -21,4 +20,3 @@ module Kind: {
 
 let create: (~name: string, ~reference: string, ~x: float, ~y: float, Kind.t) => t
 let id: t => ReactD3Graph.Node.Id.t
-let setSelected: (t, bool) => t
