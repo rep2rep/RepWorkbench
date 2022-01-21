@@ -23,5 +23,5 @@ let fromJson: Js.Json.t => Or_error.t<t>
 
 let create: (~source: ModelNode.t, ~target: ModelNode.t, Kind.t) => t
 
-let source: t => ReactD3Graph.Node.Id.t
-let target: t => ReactD3Graph.Node.Id.t
+let source: t => Uuid.t
+let target: t => Uuid.t

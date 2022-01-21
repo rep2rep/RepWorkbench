@@ -1,8 +1,8 @@
 module App = {
   type state = State.t
   type action =
+    | GlobalAction(Action.t)
     | ModelAction(ModelAction.t)
-    | InspectorAction
 
   let saveKey = "RepNotation:ModelState"
   let init = {
@@ -17,9 +17,9 @@ module App = {
   }
   let reducer = (state, action) => {
     let newState = switch action {
+    | GlobalAction(action) => Action.dispatch(state, action)
     | ModelAction(action) =>
       state->State.updateModel(ModelAction.dispatch(state->State.modelState, action))
-    | InspectorAction => state
     }
     ModelState.save(saveKey, newState->State.modelState)
     newState
@@ -33,12 +33,29 @@ module App = {
   @react.component
   let make = () => {
     let (state, dispatch) = React.useReducer(reducer, init)
+    let dispatchG = a => dispatch(GlobalAction(a))
     let dispatchM = a => dispatch(ModelAction(a))
 
-    let addRepNode = _ => dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Representation))
-    let addSchNode = _ => dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Scheme))
-    let addDimNode = _ => dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Dimension))
-    let addTokNode = _ => dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Token))
+    let addRepNode = _ => {
+      let id = Uuid.create()
+      dispatchG(Action.CreateNode(ModelNode.Kind.Representation, id))
+      dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Representation, id))
+    }
+    let addSchNode = _ => {
+      let id = Uuid.create()
+      dispatchG(Action.CreateNode(ModelNode.Kind.Scheme, id))
+      dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Scheme, id))
+    }
+    let addDimNode = _ => {
+      let id = Uuid.create()
+      dispatchG(Action.CreateNode(ModelNode.Kind.Dimension, id))
+      dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Dimension, id))
+    }
+    let addTokNode = _ => {
+      let id = Uuid.create()
+      dispatchG(Action.CreateNode(ModelNode.Kind.Token, id))
+      dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Token, id))
+    }
     let selectionChange = (~oldSelection as _, ~newSelection) =>
       dispatchM(ModelAction.Selection(newSelection))
     let linkNodes = _ => {
@@ -54,8 +71,12 @@ module App = {
       ->State.modelState
       ->ModelState.selection
       ->ModelSelection.nodes
-      ->Array.forEach(id => dispatchM(ModelAction.Delete(id)))
-    let movedNodes = (nodeId, ~x, ~y) => dispatchM(ModelAction.Move(nodeId, x, y))
+      ->Array.forEach(id => {
+        dispatchG(Action.DeleteNode(id))
+        dispatchM(ModelAction.Delete(id))
+      })
+    let movedNodes = (nodeId, ~x, ~y) =>
+      dispatchM(ModelAction.Move(nodeId->ReactD3Graph.Node.Id.toString->Uuid.fromString, x, y))
 
     <main>
       <div className="graph-header">

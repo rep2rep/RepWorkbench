@@ -26,6 +26,6 @@ let data: t => array<ReactD3Graph.Node.t<Payload.t>>
 let toJson: t => Js.Json.t
 let fromJson: Js.Json.t => Or_error.t<t>
 
-let create: (~name: string, ~reference: string, ~x: float, ~y: float, Kind.t) => t
-let id: t => ReactD3Graph.Node.Id.t
+let create: (~name: string, ~reference: string, ~x: float, ~y: float, Kind.t, Uuid.t) => t
+let id: t => Uuid.t
 let setPosition: (t, ~x: float, ~y: float) => t

@@ -10,7 +10,7 @@ let links: t => array<ModelLink.t>
 
 let addNodes: (t, array<ModelNode.t>) => t
 let addNode: (t, ModelNode.t) => t
-let removeNode: (t, ReactD3Graph.Node.Id.t) => t
+let removeNode: (t, Uuid.t) => t
 let mapNodes: (t, ModelNode.t => ModelNode.t) => t
 
 let addLinks: (t, array<ModelLink.t>) => t

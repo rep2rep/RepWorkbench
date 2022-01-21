@@ -56,23 +56,23 @@ let create = (~source, ~target, kind) => {
   | Kind.Relation => Config.relation
   }
   ReactD3Graph.Link.create(
-    ~source=source->ModelNode.id,
-    ~target=target->ModelNode.id,
+    ~source=source->ModelNode.id->Uuid.toString->ReactD3Graph.Node.Id.ofString,
+    ~target=target->ModelNode.id->Uuid.toString->ReactD3Graph.Node.Id.ofString,
     ~payload=Payload.create(kind),
     ~config,
     (),
   )
 }
 
-let source = ReactD3Graph.Link.source
-let target = ReactD3Graph.Link.target
+let source = t => t->ReactD3Graph.Link.source->ReactD3Graph.Node.Id.toString->Uuid.fromString
+let target = t => t->ReactD3Graph.Link.target->ReactD3Graph.Node.Id.toString->Uuid.fromString
 let id = t => t->ReactD3Graph.Link.id
 let payload = t => t->ReactD3Graph.Link.payload
 
 let toJson = t =>
   Js.Dict.fromList(list{
-    ("source", source(t)->ReactD3Graph.Node.Id.toString->String.toJson),
-    ("target", target(t)->ReactD3Graph.Node.Id.toString->String.toJson),
+    ("source", source(t)->Uuid.toJson),
+    ("target", target(t)->Uuid.toJson),
     ("id", id(t)->Option.map(ReactD3Graph.Link.Id.toString)->Option.toJson(String.toJson)),
     ("payload", payload(t)->Option.toJson(Payload.toJson)),
   })->Js.Json.object_
@@ -87,12 +87,8 @@ let fromJson = json =>
       ->Js.Dict.get(key)
       ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
       ->Or_error.flatMap(reader)
-    let source = getValue("source", json =>
-      json->String.fromJson->Or_error.map(ReactD3Graph.Node.Id.ofString)
-    )
-    let target = getValue("target", json =>
-      json->String.fromJson->Or_error.map(ReactD3Graph.Node.Id.ofString)
-    )
+    let source = getValue("source", Uuid.fromJson)
+    let target = getValue("target", Uuid.fromJson)
     let id = getValue("id", json =>
       json
       ->Option.fromJson(String.fromJson)
@@ -101,6 +97,8 @@ let fromJson = json =>
     let payload = getValue("payload", json => json->Option.fromJson(Payload.fromJson))
 
     Or_error.both4((source, target, id, payload))->Or_error.map(((source, target, id, payload)) => {
+      let source = source->Uuid.toString->ReactD3Graph.Node.Id.ofString
+      let target = target->Uuid.toString->ReactD3Graph.Node.Id.ofString
       let payload = payload->Option.getWithDefault(Kind.Hierarchy)
       let config = switch payload {
       | Kind.Hierarchy => Config.hierarchy

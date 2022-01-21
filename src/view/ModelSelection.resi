@@ -5,5 +5,5 @@ let fromJson: Js.Json.t => Or_error.t<t>
 
 let empty: t
 
-let nodes: t => array<ReactD3Graph.Node.Id.t>
+let nodes: t => array<Uuid.t>
 let links: t => array<ReactD3Graph.Link.Id.t>

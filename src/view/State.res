@@ -26,7 +26,7 @@ let inspectorState = t =>
       switch ModelSelection.nodes(selection) {
       | [nodeIdS] =>
         model.slots
-        ->Belt.Map.String.get(ReactD3Graph.Node.Id.toString(nodeIdS))
+        ->Belt.Map.String.get(Uuid.toString(nodeIdS))
         ->Option.map(s => InspectorState.Single(s))
       | [] => Some(InspectorState.Empty)
       | _ => Some(InspectorState.Multiple)

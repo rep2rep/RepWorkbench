@@ -28,7 +28,7 @@ module T = {
         let nodeMap =
           graph
           ->ModelGraph.nodes
-          ->Array.map(node => (ModelNode.id(node)->ReactD3Graph.Node.Id.toString, node))
+          ->Array.map(node => (ModelNode.id(node)->Uuid.toString, node))
           ->Belt.Map.String.fromArray
         {
           graph: graph,
@@ -57,12 +57,11 @@ let data = t => {
   links: t.graph->ModelGraph.links->Array.flatMap(ModelLink.data),
 }
 
-let nodeWithId = (t, nodeId) =>
-  t.nodeMap->Belt.Map.String.get(nodeId->ReactD3Graph.Node.Id.toString)
+let nodeWithId = (t, nodeId) => t.nodeMap->Belt.Map.String.get(nodeId->Uuid.toString)
 
 let addNode = (t, node) => {
   ...t,
-  nodeMap: t.nodeMap->Belt.Map.String.set(ModelNode.id(node)->ReactD3Graph.Node.Id.toString, node),
+  nodeMap: t.nodeMap->Belt.Map.String.set(ModelNode.id(node)->Uuid.toString, node),
   graph: t.graph->ModelGraph.addNode(node),
 }
 
@@ -73,7 +72,7 @@ let updateNodes = (t, f) => {
 
 let removeNode = (t, nodeId) => {
   ...t,
-  nodeMap: t.nodeMap->Belt.Map.String.remove(nodeId->ReactD3Graph.Node.Id.toString),
+  nodeMap: t.nodeMap->Belt.Map.String.remove(nodeId->Uuid.toString),
   graph: t.graph->ModelGraph.removeNode(nodeId),
 }
 

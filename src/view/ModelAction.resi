@@ -1,12 +1,10 @@
-type nodeId = ReactD3Graph.Node.Id.t
-
 type t =
-  | Create(float, float, ModelNode.Kind.t)
-  | Delete(nodeId)
-  | Move(nodeId, float, float)
-  | Connect(nodeId, nodeId)
-  | Anchor(nodeId, nodeId)
-  | Relate(nodeId, nodeId)
+  | Create(float, float, ModelNode.Kind.t, Uuid.t)
+  | Delete(Uuid.t)
+  | Move(Uuid.t, float, float)
+  | Connect(Uuid.t, Uuid.t)
+  | Anchor(Uuid.t, Uuid.t)
+  | Relate(Uuid.t, Uuid.t)
   | Selection(ReactD3Graph.Graph.Selection.t)
 
 let dispatch: (ModelState.t, t) => ModelState.t

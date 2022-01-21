@@ -271,17 +271,17 @@ let width = (name, reference) =>
   (Int.max(String.length(name), String.length(reference)) * letter_scale_factor)->Int.toFloat
 let height = 50.
 
-let createSchema = (x, y, payload, config) => {
-  let uuid = Uuid.create()->Uuid.toString
-  ReactD3Graph.Node.create(~id=uuid->ReactD3Graph.Node.Id.ofString, ~payload, ~config, ~x, ~y, ())
+let createSchema = (x, y, payload, config, id) => {
+  let id = id->Uuid.toString->ReactD3Graph.Node.Id.ofString
+  ReactD3Graph.Node.create(~id, ~payload, ~config, ~x, ~y, ())
 }
 
-let create = (~name, ~reference, ~x, ~y, kind) => {
+let create = (~name, ~reference, ~x, ~y, kind, id) => {
   let payload = Payload.create(name, reference, kind)
   let width = width(name, reference)
   let height = height
   let config = Configs.create(kind, width, height)
-  createSchema(x, y, payload, config)
+  createSchema(x, y, payload, config, id)
 }
 
 let toJson = t =>
@@ -317,5 +317,5 @@ let fromJson = json =>
     })
   })
 
-let id = ReactD3Graph.Node.id
+let id = t => t->ReactD3Graph.Node.id->ReactD3Graph.Node.Id.toString->Uuid.fromString
 let setPosition = (t, ~x, ~y) => t->ReactD3Graph.Node.setX(x)->ReactD3Graph.Node.setY(y)

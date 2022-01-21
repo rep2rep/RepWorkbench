@@ -38,5 +38,5 @@ let fromJson = json =>
 
 let empty = ReactD3Graph.Graph.Selection.empty
 
-let nodes = t => t.nodes
+let nodes = t => t.nodes->Array.map(id => id->ReactD3Graph.Node.Id.toString->Uuid.fromString)
 let links = t => t.links

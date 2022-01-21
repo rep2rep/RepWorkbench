@@ -1,22 +1,20 @@
-type nodeId = ReactD3Graph.Node.Id.t
-
 type t =
-  | Create(float, float, ModelNode.Kind.t)
-  | Delete(nodeId)
-  | Move(nodeId, float, float)
-  | Connect(nodeId, nodeId)
-  | Anchor(nodeId, nodeId)
-  | Relate(nodeId, nodeId)
+  | Create(float, float, ModelNode.Kind.t, Uuid.t)
+  | Delete(Uuid.t)
+  | Move(Uuid.t, float, float)
+  | Connect(Uuid.t, Uuid.t)
+  | Anchor(Uuid.t, Uuid.t)
+  | Relate(Uuid.t, Uuid.t)
   | Selection(ReactD3Graph.Graph.Selection.t)
 
-let createNewNode = (state, x, y, kind) => {
+let createNewNode = (state, x, y, kind, id) => {
   let (name, reference) = switch kind {
   | ModelNode.Kind.Representation => ("Representation", "Reference")
   | ModelNode.Kind.Scheme => ("Scheme", "Reference")
   | ModelNode.Kind.Dimension => ("Dimension, Q", "Reference, Q")
   | ModelNode.Kind.Token => ("Token", "Reference")
   }
-  let node = ModelNode.create(~name, ~reference, ~x, ~y, kind)
+  let node = ModelNode.create(~name, ~reference, ~x, ~y, kind, id)
   ModelState.addNode(state, node)
 }
 
@@ -46,7 +44,7 @@ let setSelection = ModelState.setSelection
 
 let dispatch = (state, action) =>
   switch action {
-  | Create(x, y, kind) => createNewNode(state, x, y, kind)
+  | Create(x, y, kind, id) => createNewNode(state, x, y, kind, id)
   | Delete(id) => deleteNode(state, id)
   | Move(id, x, y) => moveNode(state, id, x, y)
   | Connect(source, target) => connect(state, source, target, ModelLink.Kind.Hierarchy)
