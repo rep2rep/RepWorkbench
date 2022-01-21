@@ -1,12 +1,27 @@
 module App = {
-  type state = ModelState.t
-  type action = ModelAction.t
+  type state = State.t
+  type action =
+    | ModelAction(ModelAction.t)
+    | InspectorAction
 
   let saveKey = "RepNotation:ModelState"
-  let init = ModelState.load(saveKey)->Option.getWithDefault(ModelState.init)
+  let init = {
+    State.models: [
+      {
+        State.Model.name: "Model",
+        model: ModelState.load(saveKey)->Option.getWithDefault(ModelState.empty),
+        slots: Belt.Map.String.empty,
+      },
+    ],
+    currentModel: Some(0),
+  }
   let reducer = (state, action) => {
-    let newState = ModelAction.dispatch(state, action)
-    ModelState.save(saveKey, newState)
+    let newState = switch action {
+    | ModelAction(action) =>
+      state->State.updateModel(ModelAction.dispatch(state->State.modelState, action))
+    | InspectorAction => state
+    }
+    ModelState.save(saveKey, newState->State.modelState)
     newState
   }
 
@@ -18,24 +33,29 @@ module App = {
   @react.component
   let make = () => {
     let (state, dispatch) = React.useReducer(reducer, init)
+    let dispatchM = a => dispatch(ModelAction(a))
 
-    let addRepNode = _ => dispatch(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Representation))
-    let addSchNode = _ => dispatch(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Scheme))
-    let addDimNode = _ => dispatch(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Dimension))
-    let addTokNode = _ => dispatch(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Token))
+    let addRepNode = _ => dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Representation))
+    let addSchNode = _ => dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Scheme))
+    let addDimNode = _ => dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Dimension))
+    let addTokNode = _ => dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Token))
     let selectionChange = (~oldSelection as _, ~newSelection) =>
-      dispatch(ModelAction.Selection(newSelection))
+      dispatchM(ModelAction.Selection(newSelection))
     let linkNodes = _ => {
-      let ids = ModelState.selection(state).nodes
+      let ids = state->State.modelState->ModelState.selection->ModelSelection.nodes
       switch ids {
-      | [source] => dispatch(ModelAction.Connect(source, source))
-      | [source, target] => dispatch(ModelAction.Connect(source, target))
+      | [source] => dispatchM(ModelAction.Connect(source, source))
+      | [source, target] => dispatchM(ModelAction.Connect(source, target))
       | _ => ()
       }
     }
     let deleteNodes = _ =>
-      ModelState.selection(state).nodes->Array.forEach(id => dispatch(ModelAction.Delete(id)))
-    let movedNodes = (nodeId, ~x, ~y) => dispatch(ModelAction.Move(nodeId, x, y))
+      state
+      ->State.modelState
+      ->ModelState.selection
+      ->ModelSelection.nodes
+      ->Array.forEach(id => dispatchM(ModelAction.Delete(id)))
+    let movedNodes = (nodeId, ~x, ~y) => dispatchM(ModelAction.Move(nodeId, x, y))
 
     <main>
       <div className="graph-header">
@@ -56,11 +76,12 @@ module App = {
         )}>
         <ReactD3Graph.Graph
           id={"modelGraph"}
-          data={ModelState.data(state)}
+          data={state->State.modelState->ModelState.data}
           config
           onSelectionChange={selectionChange}
           onNodePositionChange={movedNodes}
         />
+        <InspectorPanel id={"nodeInspector"} data={state->State.inspectorState} />
       </div>
     </main>
   }

@@ -46,7 +46,7 @@ module Storage = LocalStorage.MakeJsonable(T)
 let load = key => Storage.get(key)->Or_error.toOption
 let save = Storage.set
 
-let init = {
+let empty = {
   graph: ModelGraph.empty,
   selection: ModelSelection.empty,
   nodeMap: Belt.Map.String.empty,
