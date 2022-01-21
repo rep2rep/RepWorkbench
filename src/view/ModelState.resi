@@ -12,5 +12,5 @@ let removeNode: (t, ReactD3Graph.Node.Id.t) => t
 let updateNodes: (t, ModelNode.t => ModelNode.t) => t
 let nodeWithId: (t, ReactD3Graph.Node.Id.t) => option<ModelNode.t>
 
-let selection: t => ReactD3Graph.Graph.Selection.t
-let setSelection: (t, ReactD3Graph.Graph.Selection.t) => t
+let selection: t => ModelSelection.t
+let setSelection: (t, ModelSelection.t) => t

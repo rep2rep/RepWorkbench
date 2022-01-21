@@ -1,56 +1,16 @@
-module Selection = {
-  type t = ReactD3Graph.Graph.Selection.t = {
-    nodes: array<ReactD3Graph.Node.Id.t>,
-    links: array<ReactD3Graph.Link.Id.t>,
-  }
-
-  let toJson = t =>
-    Js.Dict.fromList(list{
-      ("nodes", t.nodes->Array.map(ReactD3Graph.Node.Id.toString)->Array.toJson(String.toJson)),
-      ("links", t.links->Array.map(ReactD3Graph.Link.Id.toString)->Array.toJson(String.toJson)),
-    })->Js.Json.object_
-
-  let fromJson = json =>
-    json
-    ->Js.Json.decodeObject
-    ->Or_error.fromOption_s("Failed to decode selection object JSON")
-    ->Or_error.flatMap(dict => {
-      let getValue = (key, reader) =>
-        dict
-        ->Js.Dict.get(key)
-        ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
-        ->Or_error.flatMap(reader)
-      let nodes = getValue("nodes", json =>
-        json
-        ->Array.fromJson(String.fromJson)
-        ->Or_error.map(arr => arr->Array.map(ReactD3Graph.Node.Id.ofString))
-      )
-      let links = getValue("links", json =>
-        json
-        ->Array.fromJson(String.fromJson)
-        ->Or_error.map(arr => arr->Array.map(ReactD3Graph.Link.Id.ofString))
-      )
-
-      Or_error.both((nodes, links))->Or_error.map(((nodes, links)) => {
-        nodes: nodes,
-        links: links,
-      })
-    })
-}
-
 module T = {
   let key = "RepNotation:ModelState"
 
   type t = {
     graph: ModelGraph.t,
-    selection: ReactD3Graph.Graph.Selection.t,
+    selection: ModelSelection.t,
     nodeMap: Belt.Map.String.t<ModelNode.t>,
   }
 
   let toJson = t =>
     Js.Dict.fromList(list{
       ("graph", ModelGraph.toJson(t.graph)),
-      ("selection", Selection.toJson(t.selection)),
+      ("selection", ModelSelection.toJson(t.selection)),
     })->Js.Json.object_
 
   let fromJson = json =>
@@ -64,7 +24,7 @@ module T = {
         ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
         ->Or_error.flatMap(reader)
       let graph = getValue("graph", ModelGraph.fromJson)
-      let selection = getValue("selection", Selection.fromJson)
+      let selection = getValue("selection", ModelSelection.fromJson)
 
       Or_error.both((graph, selection))->Or_error.map(((graph, selection)) => {
         let nodeMap =
@@ -90,7 +50,7 @@ let save = Storage.set
 
 let init = {
   graph: ModelGraph.empty,
-  selection: ReactD3Graph.Graph.Selection.empty,
+  selection: ModelSelection.empty,
   nodeMap: Belt.Map.String.empty,
 }
 
