@@ -45,10 +45,13 @@ module Token = {
   }
 }
 
-type t =
-  | Empty
-  | MultipleSchema
+type schema =
   | Representation(Representation.t)
   | Scheme(Scheme.t)
   | Dimension(Dimension.t)
   | Token(Token.t)
+
+type t =
+  | Empty
+  | Multiple
+  | Single(schema)

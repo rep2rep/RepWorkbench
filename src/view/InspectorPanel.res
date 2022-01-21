@@ -4,7 +4,7 @@ let make = (~id, ~data) => {
     {switch data {
     | InspectorState.Empty =>
       <span className="inspector-panel-empty-message"> {React.string("Select a schema")} </span>
-    | InspectorState.MultipleSchema =>
+    | InspectorState.Multiple =>
       <span className="inspector-panel-multiple-message">
         {React.string("Multiple schema selected")}
       </span>
