@@ -2,8 +2,13 @@ module App = {
   type state = ModelState.t
   type action = ModelAction.t
 
-  let init = ModelState.init
-  let reducer = (state, action) => ModelAction.dispatch(state, action)
+  let init = ModelState.load()->Option.getWithDefault(ModelState.init)
+  let reducer = (state, action) => {
+    let newState = ModelAction.dispatch(state, action)
+    Js.Console.log(newState)
+    ModelState.save(newState)
+    newState
+  }
 
   let config = ReactD3Graph.Config.create(
     ~d3=ReactD3Graph.Config.D3.create(~disableLinkForce=true, ()),
@@ -30,6 +35,7 @@ module App = {
     }
     let deleteNodes = _ =>
       ModelState.selection(state).nodes->Array.forEach(id => dispatch(ModelAction.Delete(id)))
+    let movedNodes = (nodeId, ~x, ~y) => dispatch(ModelAction.Move(nodeId, x, y))
 
     <main>
       <div className="graph-header">
@@ -49,7 +55,11 @@ module App = {
           (),
         )}>
         <ReactD3Graph.Graph
-          id={"modelGraph"} data={ModelState.data(state)} config onSelectionChange={selectionChange}
+          id={"modelGraph"}
+          data={ModelState.data(state)}
+          config
+          onSelectionChange={selectionChange}
+          onNodePositionChange={movedNodes}
         />
       </div>
     </main>

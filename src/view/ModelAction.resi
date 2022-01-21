@@ -3,6 +3,7 @@ type nodeId = ReactD3Graph.Node.Id.t
 type t =
   | Create(float, float, ModelNode.Kind.t)
   | Delete(nodeId)
+  | Move(nodeId, float, float)
   | Connect(nodeId, nodeId)
   | Anchor(nodeId, nodeId)
   | Relate(nodeId, nodeId)
