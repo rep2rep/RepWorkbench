@@ -1,7 +1,7 @@
 type t
 
-let load: unit => option<t>
-let save: t => unit
+let load: string => option<t>
+let save: (string, t) => unit
 
 let init: t
 let data: t => ReactD3Graph.Data.t<ModelNode.Payload.t, ModelLink.Payload.t>

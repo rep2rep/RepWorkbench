@@ -1,6 +1,5 @@
 module type Stringable = {
   type t
-  let key: string
 
   let toString: t => string
   let fromString: string => option<t>
@@ -8,7 +7,7 @@ module type Stringable = {
 
 module type Jsonable = {
   type t
-  let key: string
+
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
 }
@@ -33,20 +32,24 @@ module Raw = {
 }
 
 module MakeStringable = (S: Stringable) => {
-  let set = t => Raw.setItem(S.key, S.toString(t))
-  let get = () => Raw.getItem(S.key)->Option.flatMap(S.fromString)
-  let delete = () => Raw.removeItem(S.key)
+  type key = string
+
+  let set = (key, t) => Raw.setItem(key, S.toString(t))
+  let get = key => Raw.getItem(key)->Option.flatMap(S.fromString)
+  let delete = key => Raw.removeItem(key)
 }
 
 module MakeJsonable = (S: Jsonable) => {
-  let set = t => Raw.setItem(S.key, S.toJson(t)->Js.Json.stringify)
-  let get = () =>
-    switch Raw.getItem(S.key) {
-    | None => Or_error.error_ss(["Unable to retrieve from storage '", S.key, "'"])
+  type key = string
+
+  let set = (key, t) => Raw.setItem(key, S.toJson(t)->Js.Json.stringify)
+  let get = key =>
+    switch Raw.getItem(key) {
+    | None => Or_error.error_ss(["Unable to retrieve from storage '", key, "'"])
     | Some(s) =>
       try Or_error.create(Js.Json.parseExn(s)) catch {
       | _ => Or_error.error_s("Failed to load state")
       }->Or_error.flatMap(S.fromJson)
     }
-  let delete = () => Raw.removeItem(S.key)
+  let delete = key => Raw.removeItem(key)
 }

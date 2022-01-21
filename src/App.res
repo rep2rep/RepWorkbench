@@ -2,10 +2,11 @@ module App = {
   type state = ModelState.t
   type action = ModelAction.t
 
-  let init = ModelState.load()->Option.getWithDefault(ModelState.init)
+  let saveKey = "RepNotation:ModelState"
+  let init = ModelState.load(saveKey)->Option.getWithDefault(ModelState.init)
   let reducer = (state, action) => {
     let newState = ModelAction.dispatch(state, action)
-    ModelState.save(newState)
+    ModelState.save(saveKey, newState)
     newState
   }
 

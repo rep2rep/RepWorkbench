@@ -1,6 +1,4 @@
 module T = {
-  let key = "RepNotation:ModelState"
-
   type t = {
     graph: ModelGraph.t,
     selection: ModelSelection.t,
@@ -45,7 +43,7 @@ include T
 
 module Storage = LocalStorage.MakeJsonable(T)
 
-let load = () => Storage.get()->Or_error.toOption
+let load = key => Storage.get(key)->Or_error.toOption
 let save = Storage.set
 
 let init = {

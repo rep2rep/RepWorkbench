@@ -1,6 +1,5 @@
 module type Stringable = {
   type t
-  let key: string
 
   let toString: t => string
   let fromString: string => option<t>
@@ -8,7 +7,7 @@ module type Stringable = {
 
 module type Jsonable = {
   type t
-  let key: string
+
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
 }
@@ -26,14 +25,18 @@ module Raw: {
 
 module MakeStringable: (S: Stringable) =>
 {
-  let set: S.t => unit
-  let get: unit => option<S.t>
-  let delete: unit => unit
+  type key = string
+
+  let set: (key, S.t) => unit
+  let get: key => option<S.t>
+  let delete: key => unit
 }
 
 module MakeJsonable: (S: Jsonable) =>
 {
-  let set: S.t => unit
-  let get: unit => Or_error.t<S.t>
-  let delete: unit => unit
+  type key = string
+
+  let set: (key, S.t) => unit
+  let get: key => Or_error.t<S.t>
+  let delete: key => unit
 }
