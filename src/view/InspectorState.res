@@ -4,6 +4,12 @@ module Representation = {
     display: string,
     notes: string,
   }
+
+  let empty = {
+    domain: "Representation",
+    display: "Reference",
+    notes: "",
+  }
 }
 
 module Scheme = {
@@ -15,6 +21,16 @@ module Scheme = {
     scope: Scope.t,
     organisation: string,
     notes: string,
+  }
+
+  let empty = {
+    concept_structure: "Scheme",
+    graphic_structure: "Reference",
+    function: Function.Semantic,
+    explicit: true,
+    scope: Scope.Global,
+    organisation: "",
+    notes: "",
   }
 }
 
@@ -32,6 +48,20 @@ module Dimension = {
     organisation: string,
     notes: string,
   }
+
+  let empty = {
+    concept: "Dimension",
+    concept_scale: Quantity_scale.Nominal,
+    concept_attributes: list{},
+    graphic: "Reference",
+    graphic_scale: Quantity_scale.Nominal,
+    graphic_attributes: list{},
+    function: Function.Semantic,
+    scope: Scope.Global,
+    explicit: true,
+    organisation: "",
+    notes: "",
+  }
 }
 
 module Token = {
@@ -42,6 +72,15 @@ module Token = {
     function: Function.t,
     explicit: bool,
     notes: string,
+  }
+
+  let empty = {
+    concept: "Token",
+    graphic: "Reference",
+    is_class: false,
+    function: Function.Semantic,
+    explicit: true,
+    notes: "",
   }
 }
 

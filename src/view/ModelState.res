@@ -2,7 +2,7 @@ module T = {
   type t = {
     graph: ModelGraph.t,
     selection: ModelSelection.t,
-    nodeMap: Belt.Map.String.t<ModelNode.t>,
+    nodeMap: Uuid.Map.t<ModelNode.t>,
   }
 
   let toJson = t =>
@@ -26,10 +26,7 @@ module T = {
 
       Or_error.both((graph, selection))->Or_error.map(((graph, selection)) => {
         let nodeMap =
-          graph
-          ->ModelGraph.nodes
-          ->Array.map(node => (ModelNode.id(node)->Uuid.toString, node))
-          ->Belt.Map.String.fromArray
+          graph->ModelGraph.nodes->Array.map(node => (ModelNode.id(node), node))->Uuid.Map.fromArray
         {
           graph: graph,
           selection: selection,
@@ -49,7 +46,7 @@ let save = Storage.set
 let empty = {
   graph: ModelGraph.empty,
   selection: ModelSelection.empty,
-  nodeMap: Belt.Map.String.empty,
+  nodeMap: Uuid.Map.empty(),
 }
 
 let data = t => {
@@ -57,11 +54,11 @@ let data = t => {
   links: t.graph->ModelGraph.links->Array.flatMap(ModelLink.data),
 }
 
-let nodeWithId = (t, nodeId) => t.nodeMap->Belt.Map.String.get(nodeId->Uuid.toString)
+let nodeWithId = (t, nodeId) => t.nodeMap->Uuid.Map.get(nodeId)
 
 let addNode = (t, node) => {
   ...t,
-  nodeMap: t.nodeMap->Belt.Map.String.set(ModelNode.id(node)->Uuid.toString, node),
+  nodeMap: t.nodeMap->Uuid.Map.set(ModelNode.id(node), node),
   graph: t.graph->ModelGraph.addNode(node),
 }
 
@@ -72,7 +69,7 @@ let updateNodes = (t, f) => {
 
 let removeNode = (t, nodeId) => {
   ...t,
-  nodeMap: t.nodeMap->Belt.Map.String.remove(nodeId->Uuid.toString),
+  nodeMap: t.nodeMap->Uuid.Map.remove(nodeId),
   graph: t.graph->ModelGraph.removeNode(nodeId),
 }
 

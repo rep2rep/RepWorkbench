@@ -10,7 +10,7 @@ module App = {
       {
         State.Model.name: "Model",
         model: ModelState.load(saveKey)->Option.getWithDefault(ModelState.empty),
-        slots: Belt.Map.String.empty,
+        slots: Uuid.Map.empty(),
       },
     ],
     currentModel: Some(0),

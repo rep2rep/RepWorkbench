@@ -2,7 +2,7 @@ module Model = {
   type t = {
     name: string,
     model: ModelState.t,
-    slots: Belt.Map.String.t<InspectorState.schema>,
+    slots: Uuid.Map.t<InspectorState.schema>,
   }
 
   let model = t => t.model
@@ -24,10 +24,7 @@ let inspectorState = t =>
     t.models[currentModel]->Option.flatMap(model => {
       let selection = model.model->ModelState.selection
       switch ModelSelection.nodes(selection) {
-      | [nodeIdS] =>
-        model.slots
-        ->Belt.Map.String.get(Uuid.toString(nodeIdS))
-        ->Option.map(s => InspectorState.Single(s))
+      | [nodeId] => model.slots->Uuid.Map.get(nodeId)->Option.map(s => InspectorState.Single(s))
       | [] => Some(InspectorState.Empty)
       | _ => Some(InspectorState.Multiple)
       }
@@ -49,7 +46,7 @@ let _setM = (arr, i, model) => _set(arr, i, oldModel => {...oldModel, Model.mode
 let _setI = (arr, i, key, inspector) =>
   _set(arr, i, oldModel => {
     ...oldModel,
-    Model.slots: oldModel.Model.slots->Belt.Map.String.set(key, inspector),
+    Model.slots: oldModel.Model.slots->Uuid.Map.update(key, _ => inspector),
   })
 
 let updateModel = (t, model) => {

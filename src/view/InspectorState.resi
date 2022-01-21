@@ -4,6 +4,8 @@ module Representation: {
     display: string,
     notes: string,
   }
+
+  let empty: t
 }
 
 module Scheme: {
@@ -16,6 +18,8 @@ module Scheme: {
     organisation: string,
     notes: string,
   }
+
+  let empty: t
 }
 
 module Dimension: {
@@ -32,6 +36,8 @@ module Dimension: {
     organisation: string,
     notes: string,
   }
+
+  let empty: t
 }
 
 module Token: {
@@ -43,6 +49,8 @@ module Token: {
     explicit: bool,
     notes: string,
   }
+
+  let empty: t
 }
 
 type schema =

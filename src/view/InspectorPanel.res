@@ -8,10 +8,7 @@ let make = (~id, ~data) => {
       <span className="inspector-panel-multiple-message">
         {React.string("Multiple schema selected")}
       </span>
-    | x => {
-        Js.Console.log(x)
-        React.string("Stuff will go here!")
-      }
+    | x => React.string("Stuff will go here!")
     }}
   </div>
 }
