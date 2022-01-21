@@ -37,7 +37,11 @@ module Map: {
   let has: (t<'v>, key) => bool
   let set: (t<'v>, key, 'v) => t<'v>
   let get: (t<'v>, key) => option<'v>
+  let remove: (t<'v>, key) => t<'v>
+  let update: (t<'v>, key, option<'v> => option<'v>) => t<'v>
   let merge: (t<'x>, t<'y>, (key, option<'x>, option<'y>) => option<'z>) => t<'z>
   let toList: t<'v> => list<(key, 'v)>
+  let toArray: t<'v> => array<(key, 'v)>
   let fromList: list<(key, 'v)> => t<'v>
+  let fromArray: array<(key, 'v)> => t<'v>
 }
