@@ -284,15 +284,13 @@ let create = (~name, ~reference, ~x, ~y, kind) => {
   createSchema(x, y, payload, config)
 }
 
-let toJson = t => {
-  Js.Console.log(t)
+let toJson = t =>
   Js.Dict.fromList(list{
     ("payload", t->ReactD3Graph.Node.payload->Option.getExn->Payload.toJson),
     ("x", t->ReactD3Graph.Node.x->Float.toJson),
     ("y", t->ReactD3Graph.Node.y->Float.toJson),
     ("id", t->ReactD3Graph.Node.id->ReactD3Graph.Node.Id.toString->String.toJson),
   })->Js.Json.object_
-}
 
 let fromJson = json =>
   json

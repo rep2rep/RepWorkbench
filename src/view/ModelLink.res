@@ -72,7 +72,7 @@ let payload = t => t->ReactD3Graph.Link.payload
 let toJson = t =>
   Js.Dict.fromList(list{
     ("source", source(t)->ReactD3Graph.Node.Id.toString->String.toJson),
-    ("target", source(t)->ReactD3Graph.Node.Id.toString->String.toJson),
+    ("target", target(t)->ReactD3Graph.Node.Id.toString->String.toJson),
     ("id", id(t)->Option.map(ReactD3Graph.Link.Id.toString)->Option.toJson(String.toJson)),
     ("payload", payload(t)->Option.toJson(Payload.toJson)),
   })->Js.Json.object_

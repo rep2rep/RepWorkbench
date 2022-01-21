@@ -5,7 +5,6 @@ module App = {
   let init = ModelState.load()->Option.getWithDefault(ModelState.init)
   let reducer = (state, action) => {
     let newState = ModelAction.dispatch(state, action)
-    Js.Console.log(newState)
     ModelState.save(newState)
     newState
   }
