@@ -63,6 +63,7 @@ module Payload = {
 
   let create = (name, reference, kind) => {kind: kind, name: name, reference: reference}
 
+  let kind = t => t.kind
   let name = t => t.name
   let reference = t => t.reference
 }
@@ -318,4 +319,6 @@ let fromJson = json =>
   })
 
 let id = t => t->ReactD3Graph.Node.id->ReactD3Graph.Node.Id.toString->Uuid.fromString
+let kind = t => t->ReactD3Graph.Node.payload->Option.getExn->Payload.kind
 let setPosition = (t, ~x, ~y) => t->ReactD3Graph.Node.setX(x)->ReactD3Graph.Node.setY(y)
+let updatePayload = (t, f) => t->ReactD3Graph.Node.updatePayload(n => n->Option.map(f))

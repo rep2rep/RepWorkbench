@@ -1,12 +1,9 @@
-type t = {
-  nodeId: Uuid.t,
-  event: InspectorEvent.t,
-}
+type t = Update(Uuid.t, InspectorEvent.t)
 
 let dispatch = (state, t) => {
-  let key = t.nodeId
+  let Update(key, event) = t
   let newState = switch state {
-  | InspectorState.Single(s) => Some(InspectorState.Schema.applyEvent(s, t.event))
+  | InspectorState.Single(s) => Some(InspectorState.Schema.applyEvent(s, event))
   | _ => None
   }
   (key, newState)

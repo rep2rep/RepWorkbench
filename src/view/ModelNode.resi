@@ -28,4 +28,6 @@ let fromJson: Js.Json.t => Or_error.t<t>
 
 let create: (~name: string, ~reference: string, ~x: float, ~y: float, Kind.t, Uuid.t) => t
 let id: t => Uuid.t
+let kind: t => Kind.t
 let setPosition: (t, ~x: float, ~y: float) => t
+let updatePayload: (t, Payload.t => Payload.t) => t

@@ -76,11 +76,10 @@ module App = {
     let slotsChange = e => {
       let selection = state->State.modelState->ModelState.selection->ModelSelection.nodes
       switch selection {
-      | [nodeId] =>
-        dispatchI({
-          InspectorAction.nodeId: nodeId,
-          event: e,
-        })
+      | [nodeId] => {
+          dispatchI(InspectorAction.Update(nodeId, e))
+          dispatchM(ModelAction.Update(nodeId, e))
+        }
       | _ => ()
       }
     }
