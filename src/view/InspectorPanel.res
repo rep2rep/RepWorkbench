@@ -74,7 +74,9 @@ module Scheme = {
             )}>
           {Function.all
           ->Array.map(f =>
-            <option value={Function.toString(f)}> {React.string(Function.toString(f))} </option>
+            <option value={Function.toString(f)} key={Function.toString(f)}>
+              {React.string(Function.toString(f))}
+            </option>
           )
           ->React.array}
         </select>
@@ -101,8 +103,10 @@ module Scheme = {
               ),
             )}>
           {Scope.all
-          ->Array.map(f =>
-            <option value={Scope.toString(f)}> {React.string(Scope.toString(f))} </option>
+          ->Array.map(s =>
+            <option value={Scope.toString(s)} key={Scope.toString(s)}>
+              {React.string(Scope.toString(s))}
+            </option>
           )
           ->React.array}
         </select>
@@ -176,7 +180,9 @@ module Token = {
             )}>
           {Function.all
           ->Array.map(f =>
-            <option value={Function.toString(f)}> {React.string(Function.toString(f))} </option>
+            <option value={Function.toString(f)} key={Function.toString(f)}>
+              {React.string(Function.toString(f))}
+            </option>
           )
           ->React.array}
         </select>
