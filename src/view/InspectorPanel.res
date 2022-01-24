@@ -2,7 +2,7 @@ module Representation = {
   @react.component
   let make = (~slots: InspectorState.Representation.t, ~onChange) => {
     <>
-      <div className="inspect-rep-row">
+      <div className="inspect-row">
         <label htmlFor="inspector-rep-domain"> {React.string("Domain")} </label>
         <input
           type_="text"
@@ -12,7 +12,7 @@ module Representation = {
             onChange(InspectorEvent.Representation.Domain(ReactEvent.Form.target(e)["value"]))}
         />
       </div>
-      <div className="inspect-rep-row">
+      <div className="inspect-row">
         <label htmlFor="inspector-rep-display"> {React.string("Display")} </label>
         <input
           type_="text"
@@ -22,16 +22,20 @@ module Representation = {
             onChange(InspectorEvent.Representation.Display(ReactEvent.Form.target(e)["value"]))}
         />
       </div>
-      <div className="inspect-rep-row">
+      <div className="inspect-row">
         <label htmlFor="inspector-rep-notes"> {React.string("Notes")} </label>
       </div>
-      <div className="inspect-rep-row">
+      <div className="inspect-row">
         <textarea
           name="inspector-rep-notes"
           onChange={e =>
-            onChange(InspectorEvent.Representation.Notes(ReactEvent.Form.target(e)["value"]))}>
-          {React.string(slots.notes)}
-        </textarea>
+            onChange(InspectorEvent.Representation.Notes(ReactEvent.Form.target(e)["value"]))}
+          value={slots.notes}
+        />
+      </div>
+    </>
+  }
+}
       </div>
     </>
   }
