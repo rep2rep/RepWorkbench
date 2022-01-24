@@ -198,7 +198,7 @@ module SchemaShape = {
 }
 
 module SchemaText = {
-  let max_label = 13
+  let max_label = 12
 
   let trim = (s, length) =>
     if String.length(s) > length {
