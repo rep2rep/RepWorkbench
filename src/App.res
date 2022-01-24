@@ -83,6 +83,38 @@ module App = {
       | _ => ()
       }
     }
+    let save = _ =>
+      ReactDOM.querySelector("[name=\"svg-container-modelGraph\"]")->Option.iter(svg => {
+        let serializer = XMLSerializer.create()
+        let source = serializer->XMLSerializer.serializeToString(svg)
+        let source = if (
+          source
+          ->String.match_(%re("/^<svg[^>]+xmlns=\"http\:\/\/www\.w3\.org\/2000\/svg\"/"))
+          ->Option.isNone
+        ) {
+          source->String.replaceByRe(%re("/^<svg/"), "<svg xmlns=\"http://www.w3.org/2000/svg\"")
+        } else {
+          source
+        }
+        let source = if (
+          source
+          ->String.match_(%re("/^<svg[^>]+\"http\:\/\/www\.w3\.org\/1999\/xlink\"/"))
+          ->Option.isNone
+        ) {
+          source->String.replaceByRe(
+            %re("/^<svg/"),
+            "<svg xmlns:xlink=\"http://www.w3.org/1999/xlink\"",
+          )
+        } else {
+          source
+        }
+        let source = "<?xml version=\"1.0\" standalone=\"no\"?>\r\n" ++ source
+        let url = "data:image/svg+xml;charset=utf-8," ++ Js.Global.encodeURIComponent(source)
+        ReactDOM.querySelector("#download-link")->Option.iter(downloadLink => {
+          Js.Console.log({"url": url, "dl": downloadLink})
+          %raw("downloadLink.href = url")
+        })
+      })
 
     <main>
       <div className="graph-header">
@@ -92,6 +124,10 @@ module App = {
         <button onClick={addTokNode}> {React.string("Add Token Node")} </button>
         <button onClick={linkNodes}> {React.string("Link")} </button>
         <button onClick={deleteNodes}> {React.string("Delete")} </button>
+        <button onClick={save}> {React.string("Prepare to download")} </button>
+        <a id="download-link" download={State.name(state)->Option.getWithDefault("Untitled")}>
+          {React.string("Click to download")}
+        </a>
       </div>
       <div
         className="container"
