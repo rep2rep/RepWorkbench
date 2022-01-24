@@ -16,6 +16,7 @@ let store: t => unit
 let load: unit => option<t>
 let empty: t
 
+let name: t => option<string>
 let modelState: t => ModelState.t
 let inspectorState: t => InspectorState.t
 

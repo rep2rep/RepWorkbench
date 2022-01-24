@@ -47,6 +47,7 @@ module Model = {
 
   let id = t => t.id
   let model = t => t.model
+  let name = t => t.name
 
   let create = name => {
     id: Uuid.create(),
@@ -107,6 +108,9 @@ let empty = {
   models: [Model.create("Model")],
   currentModel: Some(0),
 }
+
+let name = t =>
+  t.currentModel->Option.flatMap(currentModel => t.models[currentModel]->Option.map(Model.name))
 
 let modelState = t =>
   t.currentModel
