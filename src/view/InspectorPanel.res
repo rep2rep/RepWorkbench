@@ -135,6 +135,147 @@ module Scheme = {
   }
 }
 
+module Dimension = {
+  @react.component
+  let make = (~slots: InspectorState.Dimension.t, ~onChange) => {
+    <>
+      <div className="inspect-row">
+        <label htmlFor="inspector-dim-concept"> {React.string("Concept")} </label>
+        <input
+          type_="text"
+          value={slots.concept}
+          name="inspector-dim-concept"
+          onChange={e =>
+            onChange(InspectorEvent.Dimension.Concept(ReactEvent.Form.target(e)["value"]))}
+        />
+      </div>
+      <div className="inspect-row">
+        <label htmlFor="inspector-dim-concept-scale"> {React.string("Concept Scale")} </label>
+        <select
+          name="inspector-dim-concept-scale"
+          value={Quantity_scale.toString(slots.concept_scale)}
+          onChange={e =>
+            onChange(
+              InspectorEvent.Dimension.Concept_scale(
+                Quantity_scale.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
+              ),
+            )}>
+          {Quantity_scale.all
+          ->Array.map(f =>
+            <option value={Quantity_scale.toString(f)} key={Quantity_scale.toString(f)}>
+              {React.string(Quantity_scale.toString(f))}
+            </option>
+          )
+          ->React.array}
+        </select>
+      </div>
+      // Need to add concept attributes
+      <div className="inspect-row">
+        <label htmlFor="inspector-dim-graphic"> {React.string("Graphic")} </label>
+        <input
+          type_="text"
+          value={slots.graphic}
+          name="inspector-dim-graphic"
+          onChange={e =>
+            onChange(InspectorEvent.Dimension.Graphic(ReactEvent.Form.target(e)["value"]))}
+        />
+      </div>
+      <div className="inspect-row">
+        <label htmlFor="inspector-dim-graphic-scale"> {React.string("Graphic Scale")} </label>
+        <select
+          name="inspector-dim-graphic-scale"
+          value={Quantity_scale.toString(slots.graphic_scale)}
+          onChange={e =>
+            onChange(
+              InspectorEvent.Dimension.Graphic_scale(
+                Quantity_scale.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
+              ),
+            )}>
+          {Quantity_scale.all
+          ->Array.map(f =>
+            <option value={Quantity_scale.toString(f)} key={Quantity_scale.toString(f)}>
+              {React.string(Quantity_scale.toString(f))}
+            </option>
+          )
+          ->React.array}
+        </select>
+      </div>
+      // Need to add graphic attributes
+      <div className="inspect-row">
+        <label htmlFor="inspector-dim-function"> {React.string("Function")} </label>
+        <select
+          name="inspector-dim-function"
+          value={Function.toString(slots.function)}
+          onChange={e =>
+            onChange(
+              InspectorEvent.Dimension.Function(
+                Function.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
+              ),
+            )}>
+          {Function.all
+          ->Array.map(f =>
+            <option value={Function.toString(f)} key={Function.toString(f)}>
+              {React.string(Function.toString(f))}
+            </option>
+          )
+          ->React.array}
+        </select>
+      </div>
+      <div className="inspect-row">
+        <label htmlFor="inspector-dim-explicit"> {React.string("Explicit")} </label>
+        <input
+          name="inspector-dim-explicit"
+          type_="checkbox"
+          checked={slots.explicit}
+          onChange={e =>
+            onChange(InspectorEvent.Dimension.Explicit(ReactEvent.Form.target(e)["checked"]))}
+        />
+      </div>
+      <div className="inspect-row">
+        <label htmlFor="inspector-dim-scope"> {React.string("Scope")} </label>
+        <select
+          name="inspector-dim-scope"
+          value={Scope.toString(slots.scope)}
+          onChange={e =>
+            onChange(
+              InspectorEvent.Dimension.Scope(
+                Scope.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
+              ),
+            )}>
+          {Scope.all
+          ->Array.map(s =>
+            <option value={Scope.toString(s)} key={Scope.toString(s)}>
+              {React.string(Scope.toString(s))}
+            </option>
+          )
+          ->React.array}
+        </select>
+      </div>
+      <div className="inspect-row">
+        <label htmlFor="inspector-dim-organisation"> {React.string("Organisation")} </label>
+        <input
+          type_="text"
+          value={slots.organisation}
+          name="inspector-dim-organisation"
+          onChange={e =>
+            onChange(InspectorEvent.Dimension.Organisation(ReactEvent.Form.target(e)["value"]))}
+        />
+      </div>
+      <div className="inspect-row">
+        <label htmlFor="inspector-dim-notes"> {React.string("Notes")} </label>
+      </div>
+      <div className="inspect-row">
+        <textarea
+          name="inspector-dim-notes"
+          onChange={e =>
+            onChange(InspectorEvent.Dimension.Notes(ReactEvent.Form.target(e)["value"]))}
+          value={slots.notes}
+        />
+      </div>
+    </>
+  }
+}
+
 module Token = {
   @react.component
   let make = (~slots: InspectorState.Token.t, ~onChange) => {
@@ -228,9 +369,10 @@ let make = (~id, ~data, ~onChange=?) => {
         <Representation slots onChange={c => onChange(InspectorEvent.Representation(c))} />
       | InspectorState.Schema.Scheme(slots) =>
         <Scheme slots onChange={c => onChange(InspectorEvent.Scheme(c))} />
+      | InspectorState.Schema.Dimension(slots) =>
+        <Dimension slots onChange={c => onChange(InspectorEvent.Dimension(c))} />
       | InspectorState.Schema.Token(slots) =>
         <Token slots onChange={c => onChange(InspectorEvent.Token(c))} />
-      | _ => React.string("Stuff will go here!")
       }
     }}
   </div>

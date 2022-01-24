@@ -16,6 +16,21 @@ module Scheme: {
     | Notes(string)
 }
 
+module Dimension: {
+  type t =
+    | Concept(string)
+    | Concept_scale(Quantity_scale.t)
+    | Concept_attributes(list<Concept_attribute.t>)
+    | Graphic(string)
+    | Graphic_scale(Quantity_scale.t)
+    | Graphic_attributes(list<Graphic_attribute.t>)
+    | Function(Function.t)
+    | Scope(Scope.t)
+    | Explicit(bool)
+    | Organisation(string)
+    | Notes(string)
+}
+
 module Token: {
   type t =
     | Concept(string)
@@ -29,4 +44,5 @@ module Token: {
 type t =
   | Representation(Representation.t)
   | Scheme(Scheme.t)
+  | Dimension(Dimension.t)
   | Token(Token.t)

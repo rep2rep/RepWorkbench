@@ -244,6 +244,21 @@ module Dimension = {
     organisation: "",
     notes: "",
   }
+
+  let applyEvent = (t, event) =>
+    switch event {
+    | InspectorEvent.Dimension.Concept(s) => {...t, concept: s}
+    | InspectorEvent.Dimension.Concept_scale(s) => {...t, concept_scale: s}
+    | InspectorEvent.Dimension.Concept_attributes(s) => {...t, concept_attributes: s}
+    | InspectorEvent.Dimension.Graphic(s) => {...t, graphic: s}
+    | InspectorEvent.Dimension.Graphic_scale(s) => {...t, graphic_scale: s}
+    | InspectorEvent.Dimension.Graphic_attributes(s) => {...t, graphic_attributes: s}
+    | InspectorEvent.Dimension.Function(s) => {...t, function: s}
+    | InspectorEvent.Dimension.Scope(s) => {...t, scope: s}
+    | InspectorEvent.Dimension.Explicit(s) => {...t, explicit: s}
+    | InspectorEvent.Dimension.Organisation(s) => {...t, organisation: s}
+    | InspectorEvent.Dimension.Notes(s) => {...t, notes: s}
+    }
 }
 
 module Token = {
@@ -366,6 +381,7 @@ module Schema = {
     | (Representation(r), InspectorEvent.Representation(e)) =>
       Representation(Representation.applyEvent(r, e))
     | (Scheme(s), InspectorEvent.Scheme(e)) => Scheme(Scheme.applyEvent(s, e))
+    | (Dimension(s), InspectorEvent.Dimension(e)) => Dimension(Dimension.applyEvent(s, e))
     | (Token(t), InspectorEvent.Token(e)) => Token(Token.applyEvent(t, e))
     | _ => t
     }
