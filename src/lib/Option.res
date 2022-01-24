@@ -7,6 +7,9 @@ let iter = (x, f) =>
   | Some(x) => f(x)
   | None => ()
   }
+let both = ((a, b)) => a->flatMap(a => b->map(b => (a, b)))
+let all = xs =>
+  xs->Array.reduce(Some([]), (ys, x) => both((ys, x))->map(((ys, x)) => Array.concat(ys, [x])))
 
 let toJson = (t, jsonify) =>
   switch t {
