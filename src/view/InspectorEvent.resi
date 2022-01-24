@@ -5,4 +5,17 @@ module Representation: {
     | Notes(string)
 }
 
-type t = Representation(Representation.t)
+module Scheme: {
+  type t =
+    | Concept_structure(string)
+    | Graphic_structure(string)
+    | Function(Function.t)
+    | Explicit(bool)
+    | Scope(Scope.t)
+    | Organisation(string)
+    | Notes(string)
+}
+
+type t =
+  | Representation(Representation.t)
+  | Scheme(Scheme.t)

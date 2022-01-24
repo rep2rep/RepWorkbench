@@ -123,6 +123,17 @@ module Scheme = {
     organisation: "",
     notes: "",
   }
+
+  let applyEvent = (t, e) =>
+    switch e {
+    | InspectorEvent.Scheme.Concept_structure(s) => {...t, concept_structure: s}
+    | InspectorEvent.Scheme.Graphic_structure(s) => {...t, graphic_structure: s}
+    | InspectorEvent.Scheme.Function(s) => {...t, function: s}
+    | InspectorEvent.Scheme.Explicit(s) => {...t, explicit: s}
+    | InspectorEvent.Scheme.Scope(s) => {...t, scope: s}
+    | InspectorEvent.Scheme.Organisation(s) => {...t, organisation: s}
+    | InspectorEvent.Scheme.Notes(s) => {...t, notes: s}
+    }
 }
 
 module Dimension = {
@@ -344,6 +355,7 @@ module Schema = {
     switch (t, event) {
     | (Representation(r), InspectorEvent.Representation(e)) =>
       Representation(Representation.applyEvent(r, e))
+    | (Scheme(s), InspectorEvent.Scheme(e)) => Scheme(Scheme.applyEvent(s, e))
     | _ => t
     }
 }
