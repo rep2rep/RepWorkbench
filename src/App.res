@@ -3,6 +3,7 @@ module App = {
   type action =
     | GlobalAction(Action.t)
     | ModelAction(ModelAction.t)
+    | InspectorAction(InspectorAction.t)
 
   let init = State.load()->Option.getWithDefault(State.empty)
   let reducer = (state, action) => {
@@ -10,6 +11,10 @@ module App = {
     | GlobalAction(action) => Action.dispatch(state, action)
     | ModelAction(action) =>
       state->State.updateModel(ModelAction.dispatch(state->State.modelState, action))
+    | InspectorAction(action) => {
+        let (key, newSlots) = InspectorAction.dispatch(state->State.inspectorState, action)
+        state->State.updateSlots(key, newSlots)
+      }
     }
     State.store(newState)
     newState
@@ -25,6 +30,7 @@ module App = {
     let (state, dispatch) = React.useReducer(reducer, init)
     let dispatchG = a => dispatch(GlobalAction(a))
     let dispatchM = a => dispatch(ModelAction(a))
+    let dispatchI = a => dispatch(InspectorAction(a))
 
     let addRepNode = _ => {
       let id = Uuid.create()
@@ -67,6 +73,17 @@ module App = {
       })
     let movedNodes = (nodeId, ~x, ~y) =>
       dispatchM(ModelAction.Move(nodeId->ReactD3Graph.Node.Id.toString->Uuid.fromString, x, y))
+    let slotsChange = e => {
+      let selection = state->State.modelState->ModelState.selection->ModelSelection.nodes
+      switch selection {
+      | [nodeId] =>
+        dispatchI({
+          InspectorAction.nodeId: nodeId,
+          event: e,
+        })
+      | _ => ()
+      }
+    }
 
     <main>
       <div className="graph-header">
@@ -92,7 +109,9 @@ module App = {
           onSelectionChange={selectionChange}
           onNodePositionChange={movedNodes}
         />
-        <InspectorPanel id={"nodeInspector"} data={state->State.inspectorState} />
+        <InspectorPanel
+          id={"nodeInspector"} data={state->State.inspectorState} onChange=slotsChange
+        />
       </div>
     </main>
   }

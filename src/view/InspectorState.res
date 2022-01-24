@@ -38,6 +38,13 @@ module Representation = {
     display: "Reference",
     notes: "",
   }
+
+  let applyEvent = (t, event) =>
+    switch event {
+    | InspectorEvent.Representation.Domain(s) => {...t, domain: s}
+    | InspectorEvent.Representation.Display(s) => {...t, display: s}
+    | InspectorEvent.Representation.Notes(s) => {...t, notes: s}
+    }
 }
 
 module Scheme = {
@@ -332,6 +339,13 @@ module Schema = {
         }
       })
     })
+
+  let applyEvent = (t, event) =>
+    switch (t, event) {
+    | (Representation(r), InspectorEvent.Representation(e)) =>
+      Representation(Representation.applyEvent(r, e))
+    | _ => t
+    }
 }
 
 type t =

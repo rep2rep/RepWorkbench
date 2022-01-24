@@ -62,6 +62,8 @@ module Schema: {
 
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
+
+  let applyEvent: (t, InspectorEvent.t) => t
 }
 
 type t =
