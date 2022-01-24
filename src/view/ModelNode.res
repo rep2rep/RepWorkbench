@@ -156,6 +156,15 @@ module SchemaShape = {
 }
 
 module SchemaText = {
+  let max_label = 15
+
+  let trim = s =>
+    if String.length(s) > max_label {
+      s->String.substring(~from=0, ~to_=max_label - 3) ++ "..."
+    } else {
+      s
+    }
+
   @react.component
   let make = (~topText: string, ~bottomText: string, ~width: float, ~height: float) =>
     <g>
@@ -167,10 +176,10 @@ module SchemaText = {
         style={ReactDOM.Style.make(~fill="white", ~stroke="black", ~strokeWidth="1", ())}
       />
       <text x={"50%"} y={Float.toString(height /. 2. -. 5.)} textAnchor={"middle"}>
-        {React.string(topText)}
+        <title> {React.string(topText)} </title> {React.string(trim(topText))}
       </text>
       <text x={"50%"} y={Float.toString(height -. 8.)} textAnchor={"middle"}>
-        {React.string(bottomText)}
+        <title> {React.string(bottomText)} </title> {React.string(trim(bottomText))}
       </text>
     </g>
 }
@@ -267,9 +276,7 @@ module Configs = {
     }
 }
 
-let letter_scale_factor = 11
-let width = (name, reference) =>
-  (Int.max(String.length(name), String.length(reference)) * letter_scale_factor)->Int.toFloat
+let width = 120.
 let height = 50.
 
 let createSchema = (x, y, payload, config, id) => {
@@ -279,8 +286,6 @@ let createSchema = (x, y, payload, config, id) => {
 
 let create = (~name, ~reference, ~x, ~y, kind, id) => {
   let payload = Payload.create(name, reference, kind)
-  let width = width(name, reference)
-  let height = height
   let config = Configs.create(kind, width, height)
   createSchema(x, y, payload, config, id)
 }
@@ -311,8 +316,6 @@ let fromJson = json =>
     )
 
     Or_error.both4((payload, x, y, id))->Or_error.map(((payload, x, y, id)) => {
-      let width = width(payload.name, payload.reference)
-      let height = height
       let config = Configs.create(payload.kind, width, height)
       ReactD3Graph.Node.create(~id, ~payload, ~config, ~x, ~y, ())
     })
