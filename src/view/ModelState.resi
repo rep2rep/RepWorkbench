@@ -1,7 +1,7 @@
 type t
 
-let load: string => option<t>
-let save: (string, t) => unit
+let toJson: t => Js.Json.t
+let fromJson: Js.Json.t => Or_error.t<t>
 
 let empty: t
 let data: t => ReactD3Graph.Data.t<ModelNode.Payload.t, ModelLink.Payload.t>

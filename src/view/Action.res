@@ -5,10 +5,10 @@ type t =
 let create = (state, kind, id) => {
   let slots = switch kind {
   | ModelNode.Kind.Representation =>
-    InspectorState.Representation(InspectorState.Representation.empty)
-  | ModelNode.Kind.Scheme => InspectorState.Scheme(InspectorState.Scheme.empty)
-  | ModelNode.Kind.Dimension => InspectorState.Dimension(InspectorState.Dimension.empty)
-  | ModelNode.Kind.Token => InspectorState.Token(InspectorState.Token.empty)
+    InspectorState.Schema.Representation(InspectorState.Representation.empty)
+  | ModelNode.Kind.Scheme => InspectorState.Schema.Scheme(InspectorState.Scheme.empty)
+  | ModelNode.Kind.Dimension => InspectorState.Schema.Dimension(InspectorState.Dimension.empty)
+  | ModelNode.Kind.Token => InspectorState.Schema.Token(InspectorState.Token.empty)
   }
   state->State.updateSlots(id, Some(slots))
 }

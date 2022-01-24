@@ -4,24 +4,14 @@ module App = {
     | GlobalAction(Action.t)
     | ModelAction(ModelAction.t)
 
-  let saveKey = "RepNotation:ModelState"
-  let init = {
-    State.models: [
-      {
-        State.Model.name: "Model",
-        model: ModelState.load(saveKey)->Option.getWithDefault(ModelState.empty),
-        slots: Uuid.Map.empty(),
-      },
-    ],
-    currentModel: Some(0),
-  }
+  let init = State.load()->Option.getWithDefault(State.empty)
   let reducer = (state, action) => {
     let newState = switch action {
     | GlobalAction(action) => Action.dispatch(state, action)
     | ModelAction(action) =>
       state->State.updateModel(ModelAction.dispatch(state->State.modelState, action))
     }
-    ModelState.save(saveKey, newState->State.modelState)
+    State.store(newState)
     newState
   }
 

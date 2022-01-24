@@ -53,13 +53,18 @@ module Token: {
   let empty: t
 }
 
-type schema =
-  | Representation(Representation.t)
-  | Scheme(Scheme.t)
-  | Dimension(Dimension.t)
-  | Token(Token.t)
+module Schema: {
+  type t =
+    | Representation(Representation.t)
+    | Scheme(Scheme.t)
+    | Dimension(Dimension.t)
+    | Token(Token.t)
+
+  let toJson: t => Js.Json.t
+  let fromJson: Js.Json.t => Or_error.t<t>
+}
 
 type t =
   | Empty
   | Multiple
-  | Single(schema)
+  | Single(Schema.t)
