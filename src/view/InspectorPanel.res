@@ -24,6 +24,8 @@ module Representation = {
       </div>
       <div className="inspect-rep-row">
         <label htmlFor="inspector-rep-notes"> {React.string("Notes")} </label>
+      </div>
+      <div className="inspect-rep-row">
         <textarea
           name="inspector-rep-notes"
           onChange={e =>
