@@ -4,25 +4,36 @@ type t =
   | Interval
   | Ratio
 
-let toJson = t =>
+let toString = t =>
   switch t {
-  | Nominal => String.toJson("Nominal")
-  | Ordinal => String.toJson("Ordinal")
-  | Interval => String.toJson("Interval")
-  | Ratio => String.toJson("Ratio")
+  | Nominal => "Nominal"
+  | Ordinal => "Ordinal"
+  | Interval => "Interval"
+  | Ratio => "Ratio"
   }
 
+let fromString = s =>
+  switch s {
+  | "Nominal" => Some(Nominal)
+  | "Ordinal" => Some(Ordinal)
+  | "Interval" => Some(Interval)
+  | "Ratio" => Some(Ratio)
+  | _ => None
+  }
+
+let toJson = t => t->toString->String.toJson
+
 let fromJson = json =>
-  switch String.fromJson(json)->Or_error.valOf {
-  | Some("Nominal") => Or_error.create(Nominal)
-  | Some("Ordinal") => Or_error.create(Ordinal)
-  | Some("Interval") => Or_error.create(Interval)
-  | Some("Ratio") => Or_error.create(Ratio)
-  | Some(s) =>
-    Or_error.error_ss([
+  json
+  ->String.fromJson
+  ->Or_error.flatMap(s =>
+    s
+    ->fromString
+    ->Or_error.fromOption_ss([
       "Quantity scale '",
       s,
       "' is not one of Nominal, Ordinal, Interval, or Ratio",
     ])
-  | None => Or_error.error_s("Unable to decode string (reading Quantity_scale.t)")
-  }
+  )
+
+let all = [Nominal, Ordinal, Interval, Ratio]
