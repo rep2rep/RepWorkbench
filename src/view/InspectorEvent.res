@@ -16,6 +16,17 @@ module Scheme = {
     | Notes(string)
 }
 
+module Token = {
+  type t =
+    | Concept(string)
+    | Graphic(string)
+    | Is_class(bool)
+    | Function(Function.t)
+    | Explicit(bool)
+    | Notes(string)
+}
+
 type t =
   | Representation(Representation.t)
   | Scheme(Scheme.t)
+  | Token(Token.t)

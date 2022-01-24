@@ -308,6 +308,16 @@ module Token = {
     explicit: true,
     notes: "",
   }
+
+  let applyEvent = (t, event) =>
+    switch event {
+    | InspectorEvent.Token.Concept(s) => {...t, concept: s}
+    | InspectorEvent.Token.Graphic(s) => {...t, graphic: s}
+    | InspectorEvent.Token.Is_class(s) => {...t, is_class: s}
+    | InspectorEvent.Token.Function(s) => {...t, function: s}
+    | InspectorEvent.Token.Explicit(s) => {...t, explicit: s}
+    | InspectorEvent.Token.Notes(s) => {...t, notes: s}
+    }
 }
 
 module Schema = {
@@ -356,6 +366,7 @@ module Schema = {
     | (Representation(r), InspectorEvent.Representation(e)) =>
       Representation(Representation.applyEvent(r, e))
     | (Scheme(s), InspectorEvent.Scheme(e)) => Scheme(Scheme.applyEvent(s, e))
+    | (Token(t), InspectorEvent.Token(e)) => Token(Token.applyEvent(t, e))
     | _ => t
     }
 }

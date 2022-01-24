@@ -45,6 +45,12 @@ let updateNode = (state, nodeId, event) =>
         | InspectorEvent.Scheme.Graphic_structure(s) => (None, Some(s))
         | _ => (None, None)
         }
+      | (ModelNode.Kind.Token, InspectorEvent.Token(e)) =>
+        switch e {
+        | InspectorEvent.Token.Concept(s) => (Some(s), None)
+        | InspectorEvent.Token.Graphic(s) => (None, Some(s))
+        | _ => (None, None)
+        }
       | _ => (None, None)
       }
       node->ModelNode.updatePayload(payload => {
