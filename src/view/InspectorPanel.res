@@ -12,6 +12,25 @@ module Representation = {
             onChange(InspectorEvent.Representation.Domain(ReactEvent.Form.target(e)["value"]))}
         />
       </div>
+      <div className="inspect-rep-row">
+        <label htmlFor="inspector-rep-display"> {React.string("Display")} </label>
+        <input
+          type_="text"
+          value={slots.display}
+          name="inspector-rep-display"
+          onChange={e =>
+            onChange(InspectorEvent.Representation.Display(ReactEvent.Form.target(e)["value"]))}
+        />
+      </div>
+      <div className="inspect-rep-row">
+        <label htmlFor="inspector-rep-notes"> {React.string("Notes")} </label>
+        <textarea
+          name="inspector-rep-notes"
+          onChange={e =>
+            onChange(InspectorEvent.Representation.Notes(ReactEvent.Form.target(e)["value"]))}>
+          {React.string(slots.notes)}
+        </textarea>
+      </div>
     </>
   }
 }
