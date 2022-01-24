@@ -12,7 +12,7 @@ let createNewNode = (state, x, y, kind, id) => {
   let (name, reference) = switch kind {
   | ModelNode.Kind.Representation => ("Representation", "Reference")
   | ModelNode.Kind.Scheme => ("Scheme", "Reference")
-  | ModelNode.Kind.Dimension => ("Dimension, Q", "Reference, Q")
+  | ModelNode.Kind.Dimension => ("Dimension", "Reference")
   | ModelNode.Kind.Token => ("Token", "Reference")
   }
   let node = ModelNode.create(~name, ~reference, ~x, ~y, kind, id)
@@ -47,7 +47,9 @@ let updateNode = (state, nodeId, event) =>
         }
       | (ModelNode.Kind.Dimension, InspectorEvent.Dimension(e)) =>
         switch e {
-        | _ => (None, None) // This is more... complicated
+        | InspectorEvent.Dimension.Concept(s) => (Some(s), None)
+        | InspectorEvent.Dimension.Graphic(s) => (None, Some(s))
+        | _ => (None, None)
         }
       | (ModelNode.Kind.Token, InspectorEvent.Token(e)) =>
         switch e {
@@ -61,9 +63,28 @@ let updateNode = (state, nodeId, event) =>
         let name = name->Option.getWithDefault(payload.name)
         let reference = reference->Option.getWithDefault(payload.reference)
         switch (ModelNode.kind(node), event) {
-        | (ModelNode.Kind.Token, InspectorEvent.Token(InspectorEvent.Token.Is_class(is_class))) =>
-          ModelNode.Payload.create(name, reference, payload.kind, is_class)
-        | _ => ModelNode.Payload.create(name, reference, payload.kind, payload.dashed)
+        | (ModelNode.Kind.Token, InspectorEvent.Token(InspectorEvent.Token.Is_class(is_class))) => {
+            ...payload,
+            name: name,
+            reference: reference,
+            dashed: is_class,
+          }
+        | (
+            ModelNode.Kind.Dimension,
+            InspectorEvent.Dimension(InspectorEvent.Dimension.Concept_scale(q)),
+          ) => {
+            ...payload,
+            name_suffix: Some(Quantity_scale.toString(q)->String.substring(~from=0, ~to_=1)),
+          }
+        | (
+            ModelNode.Kind.Dimension,
+            InspectorEvent.Dimension(InspectorEvent.Dimension.Graphic_scale(q)),
+          ) => {
+            ...payload,
+            reference_suffix: Some(Quantity_scale.toString(q)->String.substring(~from=0, ~to_=1)),
+          }
+
+        | _ => {...payload, name: name, reference: reference}
         }
       })
     } else {

@@ -31,7 +31,9 @@ module Payload = {
   type t = {
     kind: Kind.t,
     name: string,
+    name_suffix: option<string>,
     reference: string,
+    reference_suffix: option<string>,
     dashed: bool,
   }
 
@@ -41,6 +43,8 @@ module Payload = {
       ("name", t.name->String.toJson),
       ("reference", t.reference->String.toJson),
       ("dashed", t.dashed->Bool.toJson),
+      ("name_suffix", t.name_suffix->Option.toJson(String.toJson)),
+      ("reference_suffix", t.reference_suffix->Option.toJson(String.toJson)),
     })->Js.Json.object_
 
   let fromJson = json =>
@@ -57,29 +61,30 @@ module Payload = {
       let name = getValue("name", String.fromJson)
       let reference = getValue("reference", String.fromJson)
       let dashed = getValue("dashed", Bool.fromJson)
-      Or_error.both4((kind, name, reference, dashed))->Or_error.map(((
+      let name_suffix = getValue("name_suffix", j => j->Option.fromJson(String.fromJson))
+      let reference_suffix = getValue("reference_suffix", j => j->Option.fromJson(String.fromJson))
+      Or_error.both6((
         kind,
         name,
         reference,
         dashed,
-      )) => {
+        name_suffix,
+        reference_suffix,
+      ))->Or_error.map(((kind, name, reference, dashed, name_suffix, reference_suffix)) => {
         kind: kind,
         name: name,
         reference: reference,
         dashed: dashed,
+        name_suffix: name_suffix,
+        reference_suffix: reference_suffix,
       })
     })
 
-  let create = (name, reference, kind, dashed) => {
-    kind: kind,
-    name: name,
-    reference: reference,
-    dashed: dashed,
-  }
-
   let kind = t => t.kind
   let name = t => t.name
+  let name_suffix = t => t.name_suffix
   let reference = t => t.reference
+  let reference_suffix = t => t.reference_suffix
   let dashed = t => t.dashed
 }
 
@@ -193,17 +198,45 @@ module SchemaShape = {
 }
 
 module SchemaText = {
-  let max_label = 15
+  let max_label = 13
 
-  let trim = s =>
-    if String.length(s) > max_label {
+  let trim = (s, length) =>
+    if String.length(s) > length {
       s->String.substring(~from=0, ~to_=max_label - 3) ++ "..."
     } else {
       s
     }
 
   @react.component
-  let make = (~topText: string, ~bottomText: string, ~width: float, ~height: float) =>
+  let make = (
+    ~topText: string,
+    ~bottomText: string,
+    ~topSuffix: option<string>=?,
+    ~bottomSuffix: option<string>=?,
+    ~width: float,
+    ~height: float,
+  ) => {
+    let addSuffix = (first, suff, trimming) =>
+      switch suff {
+      | None =>
+        if trimming {
+          trim(first, max_label)
+        } else {
+          first
+        }
+      | Some(suffix) =>
+        if trimming {
+          trim(first, max_label - String.length(suffix) - 2)
+        } else {
+          first
+        } ++
+        ", " ++
+        suffix
+      }
+    let fullTopText = addSuffix(topText, topSuffix, false)
+    let shortTopText = addSuffix(topText, topSuffix, true)
+    let fullBottomText = addSuffix(bottomText, bottomSuffix, false)
+    let shortBottomText = addSuffix(bottomText, bottomSuffix, true)
     <g>
       <line
         x1="8"
@@ -213,12 +246,13 @@ module SchemaText = {
         style={ReactDOM.Style.make(~fill="white", ~stroke="black", ~strokeWidth="1", ())}
       />
       <text x={"50%"} y={Float.toString(height /. 2. -. 5.)} textAnchor={"middle"}>
-        <title> {React.string(topText)} </title> {React.string(trim(topText))}
+        <title> {React.string(fullTopText)} </title> {React.string(shortTopText)}
       </text>
       <text x={"50%"} y={Float.toString(height -. 8.)} textAnchor={"middle"}>
-        <title> {React.string(bottomText)} </title> {React.string(trim(bottomText))}
+        <title> {React.string(fullBottomText)} </title> {React.string(shortBottomText)}
       </text>
     </g>
+  }
 }
 
 module Configs = {
@@ -276,6 +310,14 @@ module Configs = {
           <SchemaText
             topText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.name}
             bottomText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.reference}
+            topSuffix={ReactD3Graph.Node.payload(node)
+            ->Option.getExn
+            ->Payload.name_suffix
+            ->Option.getExn}
+            bottomSuffix={ReactD3Graph.Node.payload(node)
+            ->Option.getExn
+            ->Payload.reference_suffix
+            ->Option.getExn}
             width={width}
             height={height}
           />
@@ -316,7 +358,7 @@ module Configs = {
     }
 }
 
-let width = 120.
+let width = 150.
 let height = 50.
 
 let createSchema = (x, y, payload, config, id) => {
@@ -325,7 +367,22 @@ let createSchema = (x, y, payload, config, id) => {
 }
 
 let create = (~name, ~reference, ~x, ~y, kind, id) => {
-  let payload = Payload.create(name, reference, kind, false)
+  let payload = {
+    Payload.kind: kind,
+    name: name,
+    reference: reference,
+    dashed: false,
+    name_suffix: if kind == Kind.Dimension {
+      Some("N")
+    } else {
+      None
+    },
+    reference_suffix: if kind == Kind.Dimension {
+      Some("N")
+    } else {
+      None
+    },
+  }
   let config = Configs.create(kind, width, height)
   createSchema(x, y, payload, config, id)
 }

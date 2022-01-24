@@ -10,14 +10,14 @@ module Payload: {
   type t = {
     kind: Kind.t,
     name: string,
+    name_suffix: option<string>,
     reference: string,
+    reference_suffix: option<string>,
     dashed: bool,
   }
 
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
-
-  let create: (string, string, Kind.t, bool) => t
 }
 
 type t
