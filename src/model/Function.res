@@ -3,19 +3,30 @@ type t =
   | Auxiliary
   | Arbitrary
 
-let toJson = t =>
+let toString = t =>
   switch t {
   | Semantic => "Semantic"
   | Auxiliary => "Auxiliary"
   | Arbitrary => "Arbitrary"
-  }->String.toJson
+  }
+
+let fromString = s =>
+  switch s {
+  | "Semantic" => Some(Semantic)
+  | "Auxiliary" => Some(Auxiliary)
+  | "Arbitrary" => Some(Arbitrary)
+  | _ => None
+  }
+
+let toJson = t => t->toString->String.toJson
 
 let fromJson = json =>
-  switch String.fromJson(json)->Or_error.valOf {
-  | Some("Semantic") => Or_error.create(Semantic)
-  | Some("Auxiliary") => Or_error.create(Auxiliary)
-  | Some("Arbitrary") => Or_error.create(Arbitrary)
-  | Some(s) =>
-    Or_error.error_ss(["Function '", s, "' is not one of Sematic, Auxiliary, or Arbitrary"])
-  | None => Or_error.error_s("Unable to decode string (reading Function.t)")
-  }
+  String.fromJson(json)->Or_error.flatMap(s =>
+    fromString(s)->Or_error.fromOption_ss([
+      "Function '",
+      s,
+      "' is not one of Semantic, Auxiliary, or Arbitrary",
+    ])
+  )
+
+let all = [Semantic, Auxiliary, Arbitrary]
