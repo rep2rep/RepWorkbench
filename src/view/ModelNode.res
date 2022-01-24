@@ -32,6 +32,7 @@ module Payload = {
     kind: Kind.t,
     name: string,
     reference: string,
+    dashed: bool,
   }
 
   let toJson = t =>
@@ -39,6 +40,7 @@ module Payload = {
       ("kind", t.kind->Kind.toJson),
       ("name", t.name->String.toJson),
       ("reference", t.reference->String.toJson),
+      ("dashed", t.dashed->Bool.toJson),
     })->Js.Json.object_
 
   let fromJson = json =>
@@ -54,18 +56,31 @@ module Payload = {
       let kind = getValue("kind", Kind.fromJson)
       let name = getValue("name", String.fromJson)
       let reference = getValue("reference", String.fromJson)
-      Or_error.both3((kind, name, reference))->Or_error.map(((kind, name, reference)) => {
+      let dashed = getValue("dashed", Bool.fromJson)
+      Or_error.both4((kind, name, reference, dashed))->Or_error.map(((
+        kind,
+        name,
+        reference,
+        dashed,
+      )) => {
         kind: kind,
         name: name,
         reference: reference,
+        dashed: dashed,
       })
     })
 
-  let create = (name, reference, kind) => {kind: kind, name: name, reference: reference}
+  let create = (name, reference, kind, dashed) => {
+    kind: kind,
+    name: name,
+    reference: reference,
+    dashed: dashed,
+  }
 
   let kind = t => t.kind
   let name = t => t.name
   let reference = t => t.reference
+  let dashed = t => t.dashed
 }
 
 type t = ReactD3Graph.Node.t<Payload.t>
@@ -73,9 +88,25 @@ type t = ReactD3Graph.Node.t<Payload.t>
 let data = t => [t]
 
 module SchemaShape = {
-  let style = selected =>
-    if selected {
+  let style = (~dashed=false, selected) =>
+    if selected && dashed {
+      ReactDOM.Style.make(
+        ~fill="rgb(240, 240, 240)",
+        ~stroke="black",
+        ~strokeWidth="2",
+        ~strokeDasharray="5 3",
+        (),
+      )
+    } else if selected && !dashed {
       ReactDOM.Style.make(~fill="rgb(240, 240, 240)", ~stroke="black", ~strokeWidth="2", ())
+    } else if !selected && dashed {
+      ReactDOM.Style.make(
+        ~fill="white",
+        ~stroke="black",
+        ~strokeWidth="1",
+        ~strokeDasharray="5 3",
+        (),
+      )
     } else {
       ReactDOM.Style.make(~fill="white", ~stroke="black", ~strokeWidth="1", ())
     }
@@ -138,7 +169,13 @@ module SchemaShape = {
 
   module Token = {
     @react.component
-    let make = (~width: float, ~height: float, ~selected: bool, ~children: React.element) => {
+    let make = (
+      ~width: float,
+      ~height: float,
+      ~selected: bool,
+      ~dashed: bool,
+      ~children: React.element,
+    ) => {
       <svg width={Float.toString(width +. 2.)} height={Float.toString(height +. 2.)}>
         <rect
           x={"1"}
@@ -147,7 +184,7 @@ module SchemaShape = {
           height={Float.toString(height)}
           rx={"10"}
           ry={"10"}
-          style={style(selected)}
+          style={style(~dashed, selected)}
         />
         children
       </svg>
@@ -254,7 +291,10 @@ module Configs = {
       ~size=size(width, height),
       ~viewGenerator=node => {
         <SchemaShape.Token
-          width={width} height={height} selected={ReactD3Graph.Node.selected(node)}>
+          width={width}
+          height={height}
+          selected={ReactD3Graph.Node.selected(node)}
+          dashed={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.dashed}>
           <SchemaText
             topText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.name}
             bottomText={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.reference}
@@ -285,7 +325,7 @@ let createSchema = (x, y, payload, config, id) => {
 }
 
 let create = (~name, ~reference, ~x, ~y, kind, id) => {
-  let payload = Payload.create(name, reference, kind)
+  let payload = Payload.create(name, reference, kind, false)
   let config = Configs.create(kind, width, height)
   createSchema(x, y, payload, config, id)
 }

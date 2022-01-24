@@ -56,7 +56,11 @@ let updateNode = (state, nodeId, event) =>
       node->ModelNode.updatePayload(payload => {
         let name = name->Option.getWithDefault(payload.name)
         let reference = reference->Option.getWithDefault(payload.reference)
-        ModelNode.Payload.create(name, reference, payload.kind)
+        switch (ModelNode.kind(node), event) {
+        | (ModelNode.Kind.Token, InspectorEvent.Token(InspectorEvent.Token.Is_class(is_class))) =>
+          ModelNode.Payload.create(name, reference, payload.kind, is_class)
+        | _ => ModelNode.Payload.create(name, reference, payload.kind, payload.dashed)
+        }
       })
     } else {
       node
