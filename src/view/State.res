@@ -49,8 +49,8 @@ module Model = {
   let model = t => t.model
   let name = t => t.name
 
-  let create = name => {
-    id: Uuid.create(),
+  let create = (id, name) => {
+    id: id,
     name: name,
     model: ModelState.empty,
     slots: Uuid.Map.empty(),
@@ -59,13 +59,13 @@ module Model = {
 
 type t = {
   models: array<Model.t>,
-  currentModel: option<int>,
+  currentModel: option<Uuid.t>,
 }
 
 let store = t => {
   LocalStorage.Raw.setItem(
     "RepNotation:CurrentModel",
-    t.currentModel->Option.toJson(Int.toJson)->Js.Json.stringify,
+    t.currentModel->Option.toJson(Uuid.toJson)->Js.Json.stringify,
   )
   LocalStorage.Raw.setItem(
     "RepNotation:AllModels",
@@ -79,7 +79,7 @@ let load = () => {
     let json = try Or_error.create(Js.Json.parseExn(s)) catch {
     | _ => Or_error.error_s("Badly stored currentModel")
     }
-    json->Or_error.flatMap(json => json->Option.fromJson(Int.fromJson))->Or_error.toOption
+    json->Or_error.flatMap(json => json->Option.fromJson(Uuid.fromJson))->Or_error.toOption
   })
   let models = LocalStorage.Raw.getItem("RepNotation:AllModels")->Option.flatMap(s => {
     let json = try Or_error.create(Js.Json.parseExn(s)) catch {
@@ -98,52 +98,77 @@ let load = () => {
   })
 }
 
-// let empty = {
-//   models: [],
-//   currentModel: None,
-// }
-
-// A "non-empty" empty while we don't have multiple models
 let empty = {
-  models: [Model.create("Model")],
-  currentModel: Some(0),
+  models: [],
+  currentModel: None,
 }
 
-let name = t =>
-  t.currentModel->Option.flatMap(currentModel => t.models[currentModel]->Option.map(Model.name))
+let currentModel = t =>
+  t.models->Array.find(model =>
+    t.currentModel->Option.map(id => model.id == id)->Option.getWithDefault(false)
+  )
+
+let focusedName = t => t->currentModel->Option.map(Model.name)
+
+let focusedId = t => t.currentModel
+
+let models = t => t.models
+
+let createModel = (t, id) => {
+  models: Array.concat(t.models, [Model.create(id, "Model")]),
+  currentModel: Some(id),
+}
+
+let deleteModel = (t, id) => {
+  LocalStorage.Raw.removeItem("RepNotation:Model:" ++ Uuid.toString(id))
+  let currentModel = if (
+    t.currentModel->Option.map(current => current == id)->Option.getWithDefault(false)
+  ) {
+    None
+  } else {
+    t.currentModel
+  }
+  {
+    models: t.models->Array.filter(m => m.id != id),
+    currentModel: currentModel,
+  }
+}
+
+let focusModel = (t, id) => {
+  ...t,
+  currentModel: Some(id),
+}
 
 let modelState = t =>
-  t.currentModel
-  ->Option.flatMap(currentModel => t.models[currentModel]->Option.map(Model.model))
-  ->Option.getWithDefault(ModelState.empty)
+  t->currentModel->Option.map(Model.model)->Option.getWithDefault(ModelState.empty)
 
 let inspectorState = t =>
-  t.currentModel
-  ->Option.flatMap(currentModel =>
-    t.models[currentModel]->Option.flatMap(model => {
-      let selection = model.model->ModelState.selection
-      switch ModelSelection.nodes(selection) {
-      | [nodeId] => model.slots->Uuid.Map.get(nodeId)->Option.map(s => InspectorState.Single(s))
-      | [] => Some(InspectorState.Empty)
-      | _ => Some(InspectorState.Multiple)
-      }
-    })
-  )
+  t
+  ->currentModel
+  ->Option.flatMap(model => {
+    let selection = model.model->ModelState.selection
+    switch ModelSelection.nodes(selection) {
+    | [nodeId] => model.slots->Uuid.Map.get(nodeId)->Option.map(s => InspectorState.Single(s))
+    | [] => Some(InspectorState.Empty)
+    | _ => Some(InspectorState.Multiple)
+    }
+  })
   ->Option.getWithDefault(InspectorState.Empty)
 
-let _set = (arr, i, f) => {
-  let i = Option.getExn(i)
-  let oldModel = arr[i]->Option.getExn
-  let newModel = f(oldModel)
-  let arr = arr->Array.sliceToEnd(0)
-  let _ = arr->Array.set(i, newModel)
-  arr
+let _set = (arr, id, f) => {
+  arr->Array.map(m =>
+    if id->Option.map(id => m->Model.id == id)->Option.getWithDefault(false) {
+      f(m)
+    } else {
+      m
+    }
+  )
 }
 
-let _setM = (arr, i, model) => _set(arr, i, oldModel => {...oldModel, Model.model: model})
+let _setM = (arr, id, model) => _set(arr, id, oldModel => {...oldModel, Model.model: model})
 
-let _setI = (arr, i, key, inspector) =>
-  _set(arr, i, oldModel => {
+let _setI = (arr, id, key, inspector) =>
+  _set(arr, id, oldModel => {
     ...oldModel,
     Model.slots: oldModel.Model.slots->Uuid.Map.update(key, _ => inspector),
   })

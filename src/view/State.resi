@@ -1,24 +1,26 @@
 module Model: {
-  type t = {
-    id: Uuid.t,
-    name: string,
-    model: ModelState.t,
-    slots: Uuid.Map.t<InspectorState.Schema.t>,
-  }
+  type t
+
+  let id: t => Uuid.t
+  let name: t => string
 }
 
-type t = {
-  models: array<Model.t>,
-  currentModel: option<int>,
-}
+type t
 
 let store: t => unit
 let load: unit => option<t>
 let empty: t
 
-let name: t => option<string>
+let models: t => array<Model.t>
+let focusedName: t => option<string>
+let focusedId: t => option<Uuid.t>
+
 let modelState: t => ModelState.t
 let inspectorState: t => InspectorState.t
+
+let createModel: (t, Uuid.t) => t
+let deleteModel: (t, Uuid.t) => t
+let focusModel: (t, Uuid.t) => t
 
 let updateModel: (t, ModelState.t) => t
 let updateSlots: (t, Uuid.t, option<InspectorState.Schema.t>) => t

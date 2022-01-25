@@ -1,8 +1,15 @@
 type t =
+  | NewModel(Uuid.t)
+  | DeleteModel(Uuid.t)
+  | FocusModel(Uuid.t)
   | CreateNode(ModelNode.Kind.t, Uuid.t)
   | DeleteNode(Uuid.t)
 
-let create = (state, kind, id) => {
+let createModel = State.createModel
+let deleteModel = State.deleteModel
+let focusModel = State.focusModel
+
+let createNode = (state, kind, id) => {
   let slots = switch kind {
   | ModelNode.Kind.Representation =>
     InspectorState.Schema.Representation(InspectorState.Representation.empty)
@@ -12,10 +19,13 @@ let create = (state, kind, id) => {
   }
   state->State.updateSlots(id, Some(slots))
 }
-let delete = (state, id) => state->State.updateSlots(id, None)
+let deleteNode = (state, id) => state->State.updateSlots(id, None)
 
 let dispatch = (state, action) =>
   switch action {
-  | CreateNode(kind, id) => create(state, kind, id)
-  | DeleteNode(id) => delete(state, id)
+  | NewModel(id) => createModel(state, id)
+  | DeleteModel(id) => deleteModel(state, id)
+  | FocusModel(id) => focusModel(state, id)
+  | CreateNode(kind, id) => createNode(state, kind, id)
+  | DeleteNode(id) => deleteNode(state, id)
   }

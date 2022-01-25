@@ -21,6 +21,7 @@ module App = {
   }
 
   let config = ReactD3Graph.Config.create(
+    ~global=ReactD3Graph.Config.Global.create(~width="100%", ~height="calc(100vh - 50px)", ()),
     ~d3=ReactD3Graph.Config.D3.create(~disableLinkForce=true, ()),
     (),
   )
@@ -32,6 +33,9 @@ module App = {
     let dispatchM = a => dispatch(ModelAction(a))
     let dispatchI = a => dispatch(InspectorAction(a))
 
+    let newModel = id => dispatchG(Action.NewModel(id))
+    let deleteModel = id => dispatchG(Action.DeleteModel(id))
+    let focusModel = id => dispatchG(Action.FocusModel(id))
     let addRepNode = _ => {
       let id = Uuid.create()
       dispatchG(Action.CreateNode(ModelNode.Kind.Representation, id))
@@ -84,7 +88,7 @@ module App = {
       }
     }
     let save = _ =>
-      ReactDOM.querySelector("[name=\"svg-container-modelGraph\"]")->Option.iter(svg => {
+      ReactDOM.querySelector("[name=\"svg-container-model-graph\"]")->Option.iter(svg => {
         let serializer = XMLSerializer.create()
         let source = serializer->XMLSerializer.serializeToString(svg)
         let source = if (
@@ -92,18 +96,9 @@ module App = {
           ->String.match_(%re("/^<svg[^>]+xmlns=\"http\:\/\/www\.w3\.org\/2000\/svg\"/"))
           ->Option.isNone
         ) {
-          source->String.replaceByRe(%re("/^<svg/"), "<svg xmlns=\"http://www.w3.org/2000/svg\"")
-        } else {
-          source
-        }
-        let source = if (
-          source
-          ->String.match_(%re("/^<svg[^>]+\"http\:\/\/www\.w3\.org\/1999\/xlink\"/"))
-          ->Option.isNone
-        ) {
           source->String.replaceByRe(
             %re("/^<svg/"),
-            "<svg xmlns:xlink=\"http://www.w3.org/1999/xlink\"",
+            "<svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\"",
           )
         } else {
           source
@@ -117,36 +112,48 @@ module App = {
       })
 
     <main>
-      <div className="graph-header">
-        <button onClick={addRepNode}> {React.string("Add Representation Node")} </button>
-        <button onClick={addSchNode}> {React.string("Add Scheme Node")} </button>
-        <button onClick={addDimNode}> {React.string("Add Dimension Node")} </button>
-        <button onClick={addTokNode}> {React.string("Add Token Node")} </button>
-        <button onClick={linkNodes}> {React.string("Link")} </button>
-        <button onClick={deleteNodes}> {React.string("Delete")} </button>
-        <button onClick={save}> {React.string("Prepare to download")} </button>
-        <a id="download-link" download={State.name(state)->Option.getWithDefault("Untitled")}>
-          {React.string("Click to download")}
-        </a>
-      </div>
-      <div
-        className="container"
-        style={ReactDOM.Style.make(
-          ~height="calc(100%-72px)",
-          ~fontSize="0.9rem",
-          ~fontFamily="sans-serif",
-          (),
-        )}>
-        <ReactD3Graph.Graph
-          id={"modelGraph"}
-          data={state->State.modelState->ModelState.data}
-          config
-          onSelectionChange={selectionChange}
-          onNodePositionChange={movedNodes}
-        />
-        <InspectorPanel
-          id={"nodeInspector"} data={state->State.inspectorState} onChange=slotsChange
-        />
+      <FilePanel
+        id="file-panel"
+        models={State.models(state)}
+        active={State.focusedId(state)}
+        onCreate={newModel}
+        onDelete={deleteModel}
+        onSelect={focusModel}
+      />
+      <div className="editor-panel">
+        <div className="graph-header">
+          <button onClick={addRepNode}> {React.string("Add Representation Node")} </button>
+          <button onClick={addSchNode}> {React.string("Add Scheme Node")} </button>
+          <button onClick={addDimNode}> {React.string("Add Dimension Node")} </button>
+          <button onClick={addTokNode}> {React.string("Add Token Node")} </button>
+          <button onClick={linkNodes}> {React.string("Link")} </button>
+          <button onClick={deleteNodes}> {React.string("Delete")} </button>
+          <button onClick={save}> {React.string("Prepare to download")} </button>
+          <a
+            id="download-link"
+            download={State.focusedName(state)->Option.getWithDefault("Untitled")}>
+            {React.string("Click to download")}
+          </a>
+        </div>
+        <div
+          className="container"
+          style={ReactDOM.Style.make(
+            ~height="calc(100vh - 50px)",
+            ~fontSize="0.9rem",
+            ~fontFamily="sans-serif",
+            (),
+          )}>
+          <ReactD3Graph.Graph
+            id={"model-graph"}
+            data={state->State.modelState->ModelState.data}
+            config
+            onSelectionChange={selectionChange}
+            onNodePositionChange={movedNodes}
+          />
+          <InspectorPanel
+            id={"node-inspector"} data={state->State.inspectorState} onChange=slotsChange
+          />
+        </div>
       </div>
     </main>
   }
