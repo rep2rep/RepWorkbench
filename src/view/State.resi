@@ -9,6 +9,8 @@ type t
 
 let store: t => unit
 let load: unit => option<t>
+let dump: t => Js.Json.t
+
 let empty: t
 
 let models: t => array<Model.t>

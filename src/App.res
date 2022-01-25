@@ -100,29 +100,12 @@ module App = {
       | _ => ()
       }
     }
-    let save = _ =>
-      ReactDOM.querySelector("[name=\"svg-container-model-graph\"]")->Option.iter(svg => {
-        let serializer = XMLSerializer.create()
-        let source = serializer->XMLSerializer.serializeToString(svg)
-        let source = if (
-          source
-          ->String.match_(%re("/^<svg[^>]+xmlns=\"http\:\/\/www\.w3\.org\/2000\/svg\"/"))
-          ->Option.isNone
-        ) {
-          source->String.replaceByRe(
-            %re("/^<svg/"),
-            "<svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\"",
-          )
-        } else {
-          source
-        }
-        let source = "<?xml version=\"1.0\" standalone=\"no\"?>\r\n" ++ source
-        let url = "data:image/svg+xml;charset=utf-8," ++ Js.Global.encodeURIComponent(source)
-        ReactDOM.querySelector("#download-link")->Option.iter(downloadLink => {
-          Js.Console.log({"url": url, "dl": downloadLink})
-          %raw("downloadLink.href = url")
-        })
-      })
+    let dump = _ => {
+      let content =
+        "data:text/json;charset=utf-8," ++
+        state->State.dump->Js.Json.stringify->Js.Global.encodeURIComponent
+      Downloader.download("RepNotationOnline.json", content)
+    }
 
     <main
       style={ReactDOM.Style.make(
@@ -174,12 +157,7 @@ module App = {
           <Button.Separator />
           <Button onClick={deleteNodes}> {React.string("Delete")} </Button>
           <Button.Separator />
-          <Button onClick={save}> {React.string("Prepare to download")} </Button>
-          <a
-            id="download-link"
-            download={State.focusedName(state)->Option.getWithDefault("Untitled")}>
-            {React.string("Click to download")}
-          </a>
+          <Button onClick={dump}> {React.string("Dump state")} </Button>
         </div>
         <div
           className="container"
