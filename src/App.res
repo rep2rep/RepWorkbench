@@ -66,6 +66,13 @@ module App = {
       | _ => ()
       }
     }
+    let anchorNodes = _ => {
+      let ids = state->State.modelState->ModelState.selection->ModelSelection.nodes
+      switch ids {
+      | [source, target] => dispatchM(ModelAction.Anchor(source, target))
+      | _ => ()
+      }
+    }
     let unlinkNodes = _ => {
       let nodeIds = state->State.modelState->ModelState.selection->ModelSelection.nodes
       nodeIds->Array.forEach(source =>
@@ -161,6 +168,7 @@ module App = {
           <Button onClick={addTokNode}> {React.string("Add Token Node")} </Button>
           <Button.Separator />
           <Button onClick={linkNodes}> {React.string("Link")} </Button>
+          <Button onClick={anchorNodes}> {React.string("Anchor")} </Button>
           <Button.Separator />
           <Button onClick={unlinkNodes}> {React.string("Unlink")} </Button>
           <Button.Separator />

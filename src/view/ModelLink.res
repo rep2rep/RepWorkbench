@@ -45,7 +45,14 @@ module Config = {
     ~strokeWidth=1.,
     (),
   )
-  let anchor = ReactD3Graph.Link.Config.create()
+  let anchor = ReactD3Graph.Link.Config.create(
+    ~offsetSource={"dx": 0., "dy": 25.},
+    ~offsetTarget={"dx": 0., "dy": -25.},
+    ~color=ReactD3Graph.Color.ofHexString("#000000"),
+    ~strokeWidth=2.,
+    ~strokeDasharray=5.,
+    (),
+  )
   let relation = ReactD3Graph.Link.Config.create()
 }
 
