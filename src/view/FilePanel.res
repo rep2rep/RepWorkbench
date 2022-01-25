@@ -77,6 +77,8 @@ module FileLabel = {
   }
 }
 
+@let external confirm: string => bool = "confirm"
+
 @react.component
 let make = (
   ~id,
@@ -126,7 +128,16 @@ let make = (
         (),
       )}>
       <Button onClick={_ => onCreate(Uuid.create())}> {React.string("New")} </Button>
-      <Button onClick={_ => active->Option.iter(active => onDelete(active))}>
+      <Button.Separator />
+      <Button
+        onClick={_ =>
+          active->Option.iter(active => {
+            let name =
+              models->Array.find(m => State.Model.id(m) == active)->Option.getExn->State.Model.name
+            if confirm("Definitely delete model '" ++ name ++ "'?") {
+              onDelete(active)
+            }
+          })}>
         {React.string("Delete")}
       </Button>
     </div>
