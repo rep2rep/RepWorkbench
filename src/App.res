@@ -36,6 +36,7 @@ module App = {
     let newModel = id => dispatchG(Action.NewModel(id))
     let deleteModel = id => dispatchG(Action.DeleteModel(id))
     let focusModel = id => dispatchG(Action.FocusModel(id))
+    let renameModel = (id, name) => dispatchG(Action.RenameModel(id, name))
     let addRepNode = _ => {
       let id = Uuid.create()
       dispatchG(Action.CreateNode(ModelNode.Kind.Representation, id))
@@ -119,6 +120,7 @@ module App = {
         onCreate={newModel}
         onDelete={deleteModel}
         onSelect={focusModel}
+        onChangedName={renameModel}
       />
       <div className="editor-panel">
         <div className="graph-header">

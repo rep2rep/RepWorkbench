@@ -21,6 +21,7 @@ let inspectorState: t => InspectorState.t
 let createModel: (t, Uuid.t) => t
 let deleteModel: (t, Uuid.t) => t
 let focusModel: (t, Uuid.t) => t
+let renameModel: (t, Uuid.t, string) => t
 
 let updateModel: (t, ModelState.t) => t
 let updateSlots: (t, Uuid.t, option<InspectorState.Schema.t>) => t

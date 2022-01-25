@@ -6,4 +6,5 @@ let make: (
   ~onCreate: Uuid.t => unit,
   ~onDelete: Uuid.t => unit,
   ~onSelect: Uuid.t => unit,
+  ~onChangedName: (Uuid.t, string) => unit,
 ) => React.element

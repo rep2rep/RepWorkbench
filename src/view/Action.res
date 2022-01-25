@@ -2,12 +2,14 @@ type t =
   | NewModel(Uuid.t)
   | DeleteModel(Uuid.t)
   | FocusModel(Uuid.t)
+  | RenameModel(Uuid.t, string)
   | CreateNode(ModelNode.Kind.t, Uuid.t)
   | DeleteNode(Uuid.t)
 
 let createModel = State.createModel
 let deleteModel = State.deleteModel
 let focusModel = State.focusModel
+let renameModel = State.renameModel
 
 let createNode = (state, kind, id) => {
   let slots = switch kind {
@@ -26,6 +28,7 @@ let dispatch = (state, action) =>
   | NewModel(id) => createModel(state, id)
   | DeleteModel(id) => deleteModel(state, id)
   | FocusModel(id) => focusModel(state, id)
+  | RenameModel(id, name) => renameModel(state, id, name)
   | CreateNode(kind, id) => createNode(state, kind, id)
   | DeleteNode(id) => deleteNode(state, id)
   }

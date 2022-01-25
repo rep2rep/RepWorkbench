@@ -139,6 +139,17 @@ let focusModel = (t, id) => {
   currentModel: Some(id),
 }
 
+let renameModel = (t, id, name) => {
+  ...t,
+  models: t.models->Array.map(m =>
+    if m.id == id {
+      {...m, name: name}
+    } else {
+      m
+    }
+  ),
+}
+
 let modelState = t =>
   t->currentModel->Option.map(Model.model)->Option.getWithDefault(ModelState.empty)
 
