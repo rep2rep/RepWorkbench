@@ -40,6 +40,8 @@ let empty = {
   nodeMap: Uuid.Map.empty(),
 }
 
+let graph = t => t.graph
+
 let data = t => {
   ReactD3Graph.Data.nodes: t.graph->ModelGraph.nodes->Array.flatMap(ModelNode.data),
   links: t.graph->ModelGraph.links->Array.flatMap(ModelLink.data),
@@ -65,6 +67,10 @@ let removeNode = (t, nodeId) => {
 }
 
 let addLink = (t, link) => {...t, graph: t.graph->ModelGraph.addLink(link)}
+
+let removeLinks = (t, links) => {
+  {...t, graph: t.graph->ModelGraph.removeLinks(links)}
+}
 
 let selection = t => t.selection
 

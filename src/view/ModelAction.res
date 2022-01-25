@@ -6,6 +6,7 @@ type t =
   | Connect(Uuid.t, Uuid.t)
   | Anchor(Uuid.t, Uuid.t)
   | Relate(Uuid.t, Uuid.t)
+  | Unlink(Uuid.t, Uuid.t)
   | Selection(ReactD3Graph.Graph.Selection.t)
 
 let createNewNode = (state, x, y, kind, id) => {
@@ -104,6 +105,15 @@ let connect = (state, source, target, kind) => {
   }
 }
 
+let unlink = (state, source, target) => {
+  let toRemove =
+    state
+    ->ModelState.graph
+    ->ModelGraph.links
+    ->Array.filter(link => ModelLink.source(link) == source && ModelLink.target(link) == target)
+  ModelState.removeLinks(state, toRemove)
+}
+
 let setSelection = ModelState.setSelection
 
 let dispatch = (state, action) =>
@@ -115,5 +125,6 @@ let dispatch = (state, action) =>
   | Connect(source, target) => connect(state, source, target, ModelLink.Kind.Hierarchy)
   | Anchor(source, target) => connect(state, source, target, ModelLink.Kind.Anchor)
   | Relate(source, target) => connect(state, source, target, ModelLink.Kind.Relation)
+  | Unlink(source, target) => unlink(state, source, target)
   | Selection(selection) => setSelection(state, selection)
   }

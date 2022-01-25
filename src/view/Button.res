@@ -1,3 +1,10 @@
+module Separator = {
+  @react.component
+  let make = () => {
+    <span style={ReactDOM.Style.make(~display="inline-block", ~width="2rem", ())} />
+  }
+}
+
 @react.component
 let make = (~onClick, ~style as givenStyle=?, ~children) => {
   let newStyle = ReactDOM.Style.make(

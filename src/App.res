@@ -62,10 +62,15 @@ module App = {
     let linkNodes = _ => {
       let ids = state->State.modelState->ModelState.selection->ModelSelection.nodes
       switch ids {
-      | [source] => dispatchM(ModelAction.Connect(source, source))
       | [source, target] => dispatchM(ModelAction.Connect(source, target))
       | _ => ()
       }
+    }
+    let unlinkNodes = _ => {
+      let nodeIds = state->State.modelState->ModelState.selection->ModelSelection.nodes
+      nodeIds->Array.forEach(source =>
+        nodeIds->Array.forEach(target => dispatchM(ModelAction.Unlink(source, target)))
+      )
     }
     let deleteNodes = _ =>
       state
@@ -154,8 +159,13 @@ module App = {
           <Button onClick={addSchNode}> {React.string("Add Scheme Node")} </Button>
           <Button onClick={addDimNode}> {React.string("Add Dimension Node")} </Button>
           <Button onClick={addTokNode}> {React.string("Add Token Node")} </Button>
+          <Button.Separator />
           <Button onClick={linkNodes}> {React.string("Link")} </Button>
+          <Button.Separator />
+          <Button onClick={unlinkNodes}> {React.string("Unlink")} </Button>
+          <Button.Separator />
           <Button onClick={deleteNodes}> {React.string("Delete")} </Button>
+          <Button.Separator />
           <Button onClick={save}> {React.string("Prepare to download")} </Button>
           <a
             id="download-link"

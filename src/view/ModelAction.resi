@@ -6,6 +6,7 @@ type t =
   | Connect(Uuid.t, Uuid.t)
   | Anchor(Uuid.t, Uuid.t)
   | Relate(Uuid.t, Uuid.t)
+  | Unlink(Uuid.t, Uuid.t)
   | Selection(ReactD3Graph.Graph.Selection.t)
 
 let dispatch: (ModelState.t, t) => ModelState.t

@@ -15,3 +15,4 @@ let mapNodes: (t, ModelNode.t => ModelNode.t) => t
 
 let addLinks: (t, array<ModelLink.t>) => t
 let addLink: (t, ModelLink.t) => t
+let removeLinks: (t, array<ModelLink.t>) => t
