@@ -21,7 +21,7 @@ module App = {
   }
 
   let config = ReactD3Graph.Config.create(
-    ~global=ReactD3Graph.Config.Global.create(~width="100%", ~height="calc(100vh - 50px)", ()),
+    ~global=ReactD3Graph.Config.Global.create(~width="100%", ~height="calc(100vh - 40px)", ()),
     ~d3=ReactD3Graph.Config.D3.create(~disableLinkForce=true, ()),
     (),
   )
@@ -112,7 +112,14 @@ module App = {
         })
       })
 
-    <main>
+    <main
+      style={ReactDOM.Style.make(
+        ~display="flex",
+        ~flexDirection="row",
+        ~fontFamily="sans-serif",
+        ~height="100%",
+        (),
+      )}>
       <FilePanel
         id="file-panel"
         models={State.models(state)}
@@ -122,15 +129,34 @@ module App = {
         onSelect={focusModel}
         onChangedName={renameModel}
       />
-      <div className="editor-panel">
-        <div className="graph-header">
-          <button onClick={addRepNode}> {React.string("Add Representation Node")} </button>
-          <button onClick={addSchNode}> {React.string("Add Scheme Node")} </button>
-          <button onClick={addDimNode}> {React.string("Add Dimension Node")} </button>
-          <button onClick={addTokNode}> {React.string("Add Token Node")} </button>
-          <button onClick={linkNodes}> {React.string("Link")} </button>
-          <button onClick={deleteNodes}> {React.string("Delete")} </button>
-          <button onClick={save}> {React.string("Prepare to download")} </button>
+      <div
+        className="editor-panel"
+        style={ReactDOM.Style.make(
+          ~order="2",
+          ~flexGrow="1",
+          ~display="flex",
+          ~flexDirection="column",
+          ~height="100%",
+          (),
+        )}>
+        <div
+          className="graph-header"
+          style={ReactDOM.Style.make(
+            ~order="1",
+            ~display="flex",
+            ~alignItems="center",
+            ~height="40px",
+            ~borderBottom="1px solid black",
+            ~padding="0 0.5rem",
+            (),
+          )}>
+          <Button onClick={addRepNode}> {React.string("Add Representation Node")} </Button>
+          <Button onClick={addSchNode}> {React.string("Add Scheme Node")} </Button>
+          <Button onClick={addDimNode}> {React.string("Add Dimension Node")} </Button>
+          <Button onClick={addTokNode}> {React.string("Add Token Node")} </Button>
+          <Button onClick={linkNodes}> {React.string("Link")} </Button>
+          <Button onClick={deleteNodes}> {React.string("Delete")} </Button>
+          <Button onClick={save}> {React.string("Prepare to download")} </Button>
           <a
             id="download-link"
             download={State.focusedName(state)->Option.getWithDefault("Untitled")}>
@@ -140,9 +166,10 @@ module App = {
         <div
           className="container"
           style={ReactDOM.Style.make(
-            ~height="calc(100vh - 50px)",
-            ~fontSize="0.9rem",
-            ~fontFamily="sans-serif",
+            ~order="2",
+            ~flexGrow="1",
+            ~display="flex",
+            ~flexDirection="row",
             (),
           )}>
           <ReactD3Graph.Graph
@@ -151,6 +178,7 @@ module App = {
             config
             onSelectionChange={selectionChange}
             onNodePositionChange={movedNodes}
+            style={ReactDOM.Style.make(~flexGrow="1", ())}
           />
           <InspectorPanel
             id={"node-inspector"} data={state->State.inspectorState} onChange=slotsChange

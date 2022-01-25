@@ -1,38 +1,106 @@
+module Row = {
+  @react.component
+  let make = (~children) => {
+    <div
+      style={ReactDOM.Style.make(
+        ~margin="0.125rem 0.5rem",
+        ~minHeight="20px",
+        ~display="flex",
+        ~alignItems="center",
+        (),
+      )}
+      className="inspector-row">
+      {children}
+    </div>
+  }
+}
+
+module Label = {
+  @react.component
+  let make = (~htmlFor=?, ~children) => {
+    <label style={ReactDOM.Style.make(~fontSize="small", ~marginRight="0.5rem", ())} ?htmlFor>
+      {children}
+    </label>
+  }
+}
+
+module Input = {
+  @react.component
+  let make = (~name=?, ~value=?, ~onChange=?) => {
+    <input
+      type_="text"
+      ?name
+      ?value
+      ?onChange
+      style={ReactDOM.Style.make(
+        ~flexGrow="1",
+        ~border="1px solid black",
+        ~borderRadius="2px",
+        ~padding="0.125rem 0.25rem",
+        (),
+      )}
+    />
+  }
+}
+
+module Notes = {
+  @react.component
+  let make = (~name, ~value=?, ~onChange=?) => {
+    <div
+      style={ReactDOM.Style.make(
+        ~display="flex",
+        ~flexDirection="column",
+        ~margin="0.125rem 0.5rem",
+        (),
+      )}>
+      <Label htmlFor={name}> {React.string("Notes")} </Label>
+      <textarea
+        name
+        ?onChange
+        ?value
+        style={ReactDOM.Style.make(
+          ~height="200px",
+          ~border="1px solid black",
+          ~borderRadius="2px",
+          ~padding="0.25rem",
+          ~marginTop="0.125rem",
+          ~fontSize="small",
+          ~fontFamily="sans-serif",
+          (),
+        )}
+      />
+    </div>
+  }
+}
+
 module Representation = {
   @react.component
   let make = (~slots: InspectorState.Representation.t, ~onChange) => {
     <>
-      <div className="inspect-row">
-        <label htmlFor="inspector-rep-domain"> {React.string("Domain")} </label>
-        <input
-          type_="text"
+      <Row>
+        <Label htmlFor="inspector-rep-domain"> {React.string("Domain")} </Label>
+        <Input
           value={slots.domain}
           name="inspector-rep-domain"
           onChange={e =>
             onChange(InspectorEvent.Representation.Domain(ReactEvent.Form.target(e)["value"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-rep-display"> {React.string("Display")} </label>
-        <input
-          type_="text"
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-rep-display"> {React.string("Display")} </Label>
+        <Input
           value={slots.display}
           name="inspector-rep-display"
           onChange={e =>
             onChange(InspectorEvent.Representation.Display(ReactEvent.Form.target(e)["value"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-rep-notes"> {React.string("Notes")} </label>
-      </div>
-      <div className="inspect-row">
-        <textarea
-          name="inspector-rep-notes"
-          onChange={e =>
-            onChange(InspectorEvent.Representation.Notes(ReactEvent.Form.target(e)["value"]))}
-          value={slots.notes}
-        />
-      </div>
+      </Row>
+      <Notes
+        name="inspector-rep-notes"
+        onChange={e =>
+          onChange(InspectorEvent.Representation.Notes(ReactEvent.Form.target(e)["value"]))}
+        value={slots.notes}
+      />
     </>
   }
 }
@@ -41,28 +109,26 @@ module Scheme = {
   @react.component
   let make = (~slots: InspectorState.Scheme.t, ~onChange) => {
     <>
-      <div className="inspect-row">
-        <label htmlFor="inspector-sch-concept"> {React.string("Concept")} </label>
-        <input
-          type_="text"
+      <Row>
+        <Label htmlFor="inspector-sch-concept"> {React.string("Concept")} </Label>
+        <Input
           value={slots.concept_structure}
           name="inspector-sch-concept"
           onChange={e =>
             onChange(InspectorEvent.Scheme.Concept_structure(ReactEvent.Form.target(e)["value"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-sch-graphic"> {React.string("Graphic")} </label>
-        <input
-          type_="text"
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-sch-graphic"> {React.string("Graphic")} </Label>
+        <Input
           value={slots.graphic_structure}
           name="inspector-sch-graphic"
           onChange={e =>
             onChange(InspectorEvent.Scheme.Graphic_structure(ReactEvent.Form.target(e)["value"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-sch-function"> {React.string("Function")} </label>
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-sch-function"> {React.string("Function")} </Label>
         <select
           name="inspector-sch-function"
           value={Function.toString(slots.function)}
@@ -80,9 +146,9 @@ module Scheme = {
           )
           ->React.array}
         </select>
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-sch-explicit"> {React.string("Explicit")} </label>
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-sch-explicit"> {React.string("Explicit")} </Label>
         <input
           name="inspector-sch-explicit"
           type_="checkbox"
@@ -90,9 +156,9 @@ module Scheme = {
           onChange={e =>
             onChange(InspectorEvent.Scheme.Explicit(ReactEvent.Form.target(e)["checked"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-sch-scope"> {React.string("Scope")} </label>
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-sch-scope"> {React.string("Scope")} </Label>
         <select
           name="inspector-sch-scope"
           value={Scope.toString(slots.scope)}
@@ -110,27 +176,21 @@ module Scheme = {
           )
           ->React.array}
         </select>
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-sch-organisation"> {React.string("Organisation")} </label>
-        <input
-          type_="text"
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-sch-organisation"> {React.string("Organisation")} </Label>
+        <Input
           value={slots.organisation}
           name="inspector-sch-organisation"
           onChange={e =>
             onChange(InspectorEvent.Scheme.Organisation(ReactEvent.Form.target(e)["value"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-sch-notes"> {React.string("Notes")} </label>
-      </div>
-      <div className="inspect-row">
-        <textarea
-          name="inspector-sch-notes"
-          onChange={e => onChange(InspectorEvent.Scheme.Notes(ReactEvent.Form.target(e)["value"]))}
-          value={slots.notes}
-        />
-      </div>
+      </Row>
+      <Notes
+        name="inspector-sch-notes"
+        onChange={e => onChange(InspectorEvent.Scheme.Notes(ReactEvent.Form.target(e)["value"]))}
+        value={slots.notes}
+      />
     </>
   }
 }
@@ -139,18 +199,17 @@ module Dimension = {
   @react.component
   let make = (~slots: InspectorState.Dimension.t, ~onChange) => {
     <>
-      <div className="inspect-row">
-        <label htmlFor="inspector-dim-concept"> {React.string("Concept")} </label>
-        <input
-          type_="text"
+      <Row>
+        <Label htmlFor="inspector-dim-concept"> {React.string("Concept")} </Label>
+        <Input
           value={slots.concept}
           name="inspector-dim-concept"
           onChange={e =>
             onChange(InspectorEvent.Dimension.Concept(ReactEvent.Form.target(e)["value"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-dim-concept-scale"> {React.string("Concept Scale")} </label>
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-dim-concept-scale"> {React.string("Concept Scale")} </Label>
         <select
           name="inspector-dim-concept-scale"
           value={Quantity_scale.toString(slots.concept_scale)}
@@ -168,20 +227,19 @@ module Dimension = {
           )
           ->React.array}
         </select>
-      </div>
+      </Row>
       // Need to add concept attributes
-      <div className="inspect-row">
-        <label htmlFor="inspector-dim-graphic"> {React.string("Graphic")} </label>
-        <input
-          type_="text"
+      <Row>
+        <Label htmlFor="inspector-dim-graphic"> {React.string("Graphic")} </Label>
+        <Input
           value={slots.graphic}
           name="inspector-dim-graphic"
           onChange={e =>
             onChange(InspectorEvent.Dimension.Graphic(ReactEvent.Form.target(e)["value"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-dim-graphic-scale"> {React.string("Graphic Scale")} </label>
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-dim-graphic-scale"> {React.string("Graphic Scale")} </Label>
         <select
           name="inspector-dim-graphic-scale"
           value={Quantity_scale.toString(slots.graphic_scale)}
@@ -199,10 +257,10 @@ module Dimension = {
           )
           ->React.array}
         </select>
-      </div>
+      </Row>
       // Need to add graphic attributes
-      <div className="inspect-row">
-        <label htmlFor="inspector-dim-function"> {React.string("Function")} </label>
+      <Row>
+        <Label htmlFor="inspector-dim-function"> {React.string("Function")} </Label>
         <select
           name="inspector-dim-function"
           value={Function.toString(slots.function)}
@@ -220,9 +278,9 @@ module Dimension = {
           )
           ->React.array}
         </select>
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-dim-explicit"> {React.string("Explicit")} </label>
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-dim-explicit"> {React.string("Explicit")} </Label>
         <input
           name="inspector-dim-explicit"
           type_="checkbox"
@@ -230,9 +288,9 @@ module Dimension = {
           onChange={e =>
             onChange(InspectorEvent.Dimension.Explicit(ReactEvent.Form.target(e)["checked"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-dim-scope"> {React.string("Scope")} </label>
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-dim-scope"> {React.string("Scope")} </Label>
         <select
           name="inspector-dim-scope"
           value={Scope.toString(slots.scope)}
@@ -250,28 +308,21 @@ module Dimension = {
           )
           ->React.array}
         </select>
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-dim-organisation"> {React.string("Organisation")} </label>
-        <input
-          type_="text"
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-dim-organisation"> {React.string("Organisation")} </Label>
+        <Input
           value={slots.organisation}
           name="inspector-dim-organisation"
           onChange={e =>
             onChange(InspectorEvent.Dimension.Organisation(ReactEvent.Form.target(e)["value"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-dim-notes"> {React.string("Notes")} </label>
-      </div>
-      <div className="inspect-row">
-        <textarea
-          name="inspector-dim-notes"
-          onChange={e =>
-            onChange(InspectorEvent.Dimension.Notes(ReactEvent.Form.target(e)["value"]))}
-          value={slots.notes}
-        />
-      </div>
+      </Row>
+      <Notes
+        name="inspector-dim-notes"
+        onChange={e => onChange(InspectorEvent.Dimension.Notes(ReactEvent.Form.target(e)["value"]))}
+        value={slots.notes}
+      />
     </>
   }
 }
@@ -280,26 +331,24 @@ module Token = {
   @react.component
   let make = (~slots: InspectorState.Token.t, ~onChange) => {
     <>
-      <div className="inspect-row">
-        <label htmlFor="inspector-tok-concept"> {React.string("Concept")} </label>
-        <input
-          type_="text"
+      <Row>
+        <Label htmlFor="inspector-tok-concept"> {React.string("Concept")} </Label>
+        <Input
           value={slots.concept}
           name="inspector-tok-concept"
           onChange={e => onChange(InspectorEvent.Token.Concept(ReactEvent.Form.target(e)["value"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-tok-graphic"> {React.string("Graphic")} </label>
-        <input
-          type_="text"
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-tok-graphic"> {React.string("Graphic")} </Label>
+        <Input
           value={slots.graphic}
           name="inspector-tok-graphic"
           onChange={e => onChange(InspectorEvent.Token.Graphic(ReactEvent.Form.target(e)["value"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-tok-class"> {React.string("Is class")} </label>
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-tok-class"> {React.string("Is class")} </Label>
         <input
           name="inspector-tok-class"
           type_="checkbox"
@@ -307,9 +356,9 @@ module Token = {
           onChange={e =>
             onChange(InspectorEvent.Token.Is_class(ReactEvent.Form.target(e)["checked"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-tok-function"> {React.string("Function")} </label>
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-tok-function"> {React.string("Function")} </Label>
         <select
           name="inspector-tok-function"
           value={Function.toString(slots.function)}
@@ -327,9 +376,9 @@ module Token = {
           )
           ->React.array}
         </select>
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-tok-explicit"> {React.string("Explicit")} </label>
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-tok-explicit"> {React.string("Explicit")} </Label>
         <input
           name="inspector-tok-explicit"
           type_="checkbox"
@@ -337,17 +386,12 @@ module Token = {
           onChange={e =>
             onChange(InspectorEvent.Token.Explicit(ReactEvent.Form.target(e)["checked"]))}
         />
-      </div>
-      <div className="inspect-row">
-        <label htmlFor="inspector-sch-notes"> {React.string("Notes")} </label>
-      </div>
-      <div className="inspect-row">
-        <textarea
-          name="inspector-tok-notes"
-          onChange={e => onChange(InspectorEvent.Token.Notes(ReactEvent.Form.target(e)["value"]))}
-          value={slots.notes}
-        />
-      </div>
+      </Row>
+      <Notes
+        name="inspector-tok-notes"
+        onChange={e => onChange(InspectorEvent.Token.Notes(ReactEvent.Form.target(e)["value"]))}
+        value={slots.notes}
+      />
     </>
   }
 }
@@ -355,12 +399,43 @@ module Token = {
 @react.component
 let make = (~id, ~data, ~onChange=?) => {
   let onChange = onChange->Option.getWithDefault(_ => ())
-  <div className="inspector-panel" id>
+  <div
+    id
+    className="inspector-panel"
+    style={ReactDOM.Style.make(
+      ~order="2",
+      ~padding="0.5rem 0",
+      ~width="350px",
+      ~display="flex",
+      ~flexDirection="column",
+      ~borderLeft="1px solid black",
+      (),
+    )}>
     {switch data {
     | InspectorState.Empty =>
-      <span className="inspector-panel-empty-message"> {React.string("Select a schema")} </span>
+      <span
+        style={ReactDOM.Style.make(
+          ~display="block",
+          ~marginTop="50%",
+          ~color="grey",
+          ~fontSize="small",
+          ~textAlign="center",
+          (),
+        )}
+        className="inspector-panel-empty-message">
+        {React.string("Select a schema")}
+      </span>
     | InspectorState.Multiple =>
-      <span className="inspector-panel-multiple-message">
+      <span
+        style={ReactDOM.Style.make(
+          ~display="block",
+          ~marginTop="50%",
+          ~color="grey",
+          ~fontSize="small",
+          ~textAlign="center",
+          (),
+        )}
+        className="inspector-panel-multiple-message">
         {React.string("Multiple schema selected")}
       </span>
     | InspectorState.Single(schema) =>

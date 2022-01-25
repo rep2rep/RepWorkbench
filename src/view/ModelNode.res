@@ -198,7 +198,7 @@ module SchemaShape = {
 }
 
 module SchemaText = {
-  let max_label = 12
+  let max_label = 15
 
   let trim = (s, length) =>
     if String.length(s) > length {
@@ -358,7 +358,7 @@ module Configs = {
     }
 }
 
-let width = 150.
+let width = 170.
 let height = 50.
 
 let createSchema = (x, y, payload, config, id) => {

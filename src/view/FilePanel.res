@@ -21,6 +21,18 @@ module FileLabel = {
   let make = (~id, ~name, ~active, ~onSelect, ~onChanged) => {
     let (state, dispatch) = React.useReducer(reducer, init(name))
     <span
+      style={ReactDOM.Style.make(
+        ~display="block",
+        ~padding="0.5rem",
+        ~background={
+          if active {
+            "lightgrey"
+          } else {
+            "white"
+          }
+        },
+        (),
+      )}
       id={"file-label-" ++ Uuid.toString(id)}
       key={Uuid.toString(id)}
       className={if active {
@@ -31,7 +43,14 @@ module FileLabel = {
       onClick={_ => onSelect()}>
       {if state.editing {
         <input
-          className={"inner-name-focus inner-name-editing"}
+          style={ReactDOM.Style.make(
+            ~fontSize="1rem",
+            ~padding="0",
+            ~margin="0",
+            ~borderWidth="0",
+            (),
+          )}
+          autoFocus={true}
           value={state.currName}
           onChange={e => dispatch(MidEdit(ReactEvent.Form.target(e)["value"]))}
           onKeyPress={e =>
@@ -68,8 +87,20 @@ let make = (
   ~onSelect,
   ~onChangedName,
 ) => {
-  <div id>
-    <div className="file-list">
+  <div
+    id
+    style={ReactDOM.Style.make(
+      ~order="1",
+      ~width="230px",
+      ~display="flex",
+      ~flexDirection="column",
+      ~borderRight="1px solid black",
+      (),
+    )}>
+    <h1 style={ReactDOM.Style.make(~padding="1rem", ())}> {React.string("RepNotation")} </h1>
+    <div
+      className="file-list"
+      style={ReactDOM.Style.make(~flexGrow="1", ~display="flex", ~flexDirection="column", ())}>
       {models
       ->Array.map(model =>
         <FileLabel
@@ -84,11 +115,20 @@ let make = (
       )
       ->React.array}
     </div>
-    <div className="file-controls">
-      <button onClick={_ => onCreate(Uuid.create())}> {React.string("New")} </button>
-      <button onClick={_ => active->Option.iter(active => onDelete(active))}>
+    <div
+      className="file-controls"
+      style={ReactDOM.Style.make(
+        ~height="50px",
+        ~borderTop="1px solid black",
+        ~display="flex",
+        ~alignItems="center",
+        ~padding="0 0.5rem",
+        (),
+      )}>
+      <Button onClick={_ => onCreate(Uuid.create())}> {React.string("New")} </Button>
+      <Button onClick={_ => active->Option.iter(active => onDelete(active))}>
         {React.string("Delete")}
-      </button>
+      </Button>
     </div>
   </div>
 }
