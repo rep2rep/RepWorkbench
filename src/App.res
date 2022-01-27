@@ -37,26 +37,15 @@ module App = {
     let deleteModel = id => dispatchG(Action.DeleteModel(id))
     let focusModel = id => dispatchG(Action.FocusModel(id))
     let renameModel = (id, name) => dispatchG(Action.RenameModel(id, name))
-    let addRepNode = _ => {
+    let addNodeAt = (kind, ~x, ~y) => {
       let id = Uuid.create()
-      dispatchG(Action.CreateNode(ModelNode.Kind.Representation, id))
-      dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Representation, id))
+      dispatchG(Action.CreateNode(kind, id))
+      dispatchM(ModelAction.Create(x, y, kind, id))
     }
-    let addSchNode = _ => {
-      let id = Uuid.create()
-      dispatchG(Action.CreateNode(ModelNode.Kind.Scheme, id))
-      dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Scheme, id))
-    }
-    let addDimNode = _ => {
-      let id = Uuid.create()
-      dispatchG(Action.CreateNode(ModelNode.Kind.Dimension, id))
-      dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Dimension, id))
-    }
-    let addTokNode = _ => {
-      let id = Uuid.create()
-      dispatchG(Action.CreateNode(ModelNode.Kind.Token, id))
-      dispatchM(ModelAction.Create(0.0, 0.0, ModelNode.Kind.Token, id))
-    }
+    let addRepNodeAt = (_, ~x, ~y) => ModelNode.Kind.Representation->addNodeAt(~x, ~y)
+    let addSchNodeAt = (_, ~x, ~y) => ModelNode.Kind.Scheme->addNodeAt(~x, ~y)
+    let addDimNodeAt = (_, ~x, ~y) => ModelNode.Kind.Dimension->addNodeAt(~x, ~y)
+    let addTokNodeAt = (_, ~x, ~y) => ModelNode.Kind.Token->addNodeAt(~x, ~y)
     let selectionChange = (~oldSelection as _, ~newSelection) =>
       dispatchM(ModelAction.Selection(newSelection))
     let linkNodes = _ => {
@@ -107,6 +96,17 @@ module App = {
       Downloader.download("RepNotationOnline.json", content)
     }
 
+    let keybindings = Js.Dict.fromArray([
+      ("r", addRepNodeAt),
+      ("s", addSchNodeAt),
+      ("d", addDimNodeAt),
+      ("t", addTokNodeAt),
+      ("c", (e, ~x as _, ~y as _) => linkNodes(e)),
+      ("a", (e, ~x as _, ~y as _) => anchorNodes(e)),
+      ("x", (e, ~x as _, ~y as _) => deleteNodes(e)),
+      ("v", (e, ~x as _, ~y as _) => unlinkNodes(e)),
+    ])
+
     <main
       style={ReactDOM.Style.make(
         ~display="flex",
@@ -145,10 +145,18 @@ module App = {
             ~padding="0 0.5rem",
             (),
           )}>
-          <Button onClick={addRepNode}> {React.string("Add Representation Node")} </Button>
-          <Button onClick={addSchNode}> {React.string("Add Scheme Node")} </Button>
-          <Button onClick={addDimNode}> {React.string("Add Dimension Node")} </Button>
-          <Button onClick={addTokNode}> {React.string("Add Token Node")} </Button>
+          <Button onClick={addRepNodeAt(_, ~x=0., ~y=0.)}>
+            {React.string("Add Representation Node")}
+          </Button>
+          <Button onClick={addSchNodeAt(_, ~x=0., ~y=0.)}>
+            {React.string("Add Scheme Node")}
+          </Button>
+          <Button onClick={addDimNodeAt(_, ~x=0., ~y=0.)}>
+            {React.string("Add Dimension Node")}
+          </Button>
+          <Button onClick={addTokNodeAt(_, ~x=0., ~y=0.)}>
+            {React.string("Add Token Node")}
+          </Button>
           <Button.Separator />
           <Button onClick={linkNodes}> {React.string("Link")} </Button>
           <Button onClick={anchorNodes}> {React.string("Anchor")} </Button>
@@ -174,6 +182,7 @@ module App = {
             config
             onSelectionChange={selectionChange}
             onNodePositionChange={movedNodes}
+            keybindings={keybindings}
             style={ReactDOM.Style.make(~flexGrow="1", ())}
           />
           <InspectorPanel
