@@ -38,9 +38,11 @@ module App = {
     let focusModel = id => dispatchG(Action.FocusModel(id))
     let renameModel = (id, name) => dispatchG(Action.RenameModel(id, name))
     let addNodeAt = (kind, ~x, ~y) => {
+      let ids = state->State.modelState->ModelState.selection->ModelSelection.nodes
       let id = Uuid.create()
       dispatchG(Action.CreateNode(kind, id))
       dispatchM(ModelAction.Create(x, y, kind, id))
+      ids->Array.forEach(source => dispatchM(ModelAction.Connect(source, id)))
     }
     let addRepNodeAt = (_, ~x, ~y) => ModelNode.Kind.Representation->addNodeAt(~x, ~y)
     let addSchNodeAt = (_, ~x, ~y) => ModelNode.Kind.Scheme->addNodeAt(~x, ~y)
