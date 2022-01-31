@@ -3,8 +3,8 @@ module Model = {
     type t = {
       id: Uuid.t,
       name: string,
-      model: ModelState.t,
-      slots: Uuid.Map.t<InspectorState.Schema.t>,
+      model: UndoRedo.t<ModelState.t>,
+      slots: Uuid.Map.t<UndoRedo.t<InspectorState.Schema.t>>,
     }
 
     let toJson = t =>
@@ -48,6 +48,7 @@ module Model = {
   let id = t => t.id
   let model = t => t.model
   let name = t => t.name
+  let slots = t => t.slots
 
   let create = (id, name) => {
     id: id,
@@ -58,7 +59,7 @@ module Model = {
 }
 
 type t = {
-  models: array<Model.t>,
+  models: array<UndoRedo.t<Model.t>>,
   currentModel: option<Uuid.t>,
 }
 
@@ -69,9 +70,12 @@ let store = t => {
   )
   LocalStorage.Raw.setItem(
     "RepNotation:AllModels",
-    t.models->Array.map(Model.id)->Array.toJson(Uuid.toJson)->Js.Json.stringify,
+    t.models
+    ->Array.map(m => UndoRedo.state(m)->Model.id)
+    ->Array.toJson(Uuid.toJson)
+    ->Js.Json.stringify,
   )
-  t.models->Array.forEach(Model.store)
+  t.models->Array.forEach(m => UndoRedo.state(m)->Model.store)
 }
 
 let load = () => {
@@ -93,7 +97,7 @@ let load = () => {
     ->Option.flatten
   })
   Option.both((currentModel, models))->Option.map(((currentModel, models)) => {
-    models: models,
+    models: models->Array.map(UndoRedo.create),
     currentModel: currentModel,
   })
 }
@@ -101,8 +105,11 @@ let load = () => {
 let dump = t => {
   Js.Dict.fromList(list{
     ("RepNotation:CurrentModel", t.currentModel->Option.toJson(Uuid.toJson)),
-    ("RepNotation:AllModels", t.models->Array.map(Model.id)->Array.toJson(Uuid.toJson)),
-    ("model_data", t.models->Array.toJson(Model.toJson)),
+    (
+      "RepNotation:AllModels",
+      t.models->Array.map(m => UndoRedo.state(m)->Model.id)->Array.toJson(Uuid.toJson),
+    ),
+    ("model_data", t.models->Array.toJson(m => UndoRedo.state(m)->Model.toJson)),
   })->Js.Json.object_
 }
 
@@ -113,18 +120,23 @@ let empty = {
 
 let currentModel = t =>
   t.models->Array.find(model =>
-    t.currentModel->Option.map(id => model.id == id)->Option.getWithDefault(false)
+    t.currentModel
+    ->Option.map(id => UndoRedo.state(model)->Model.id == id)
+    ->Option.getWithDefault(false)
   )
 
-let focusedName = t => t->currentModel->Option.map(Model.name)
+let focusedName = t => t->currentModel->Option.map(m => UndoRedo.state(m)->Model.name)
 
 let focusedId = t => t.currentModel
 
-let models = t => t.models
+let models = t => t.models->Array.map(UndoRedo.state)
 
 let createModel = (t, id) => {
-  models: Array.concat(t.models, [Model.create(id, "Model")]),
-  currentModel: Some(id),
+  let model = Model.create(id, "Model")->UndoRedo.create
+  {
+    models: Array.concat(t.models, [model]),
+    currentModel: Some(id),
+  }
 }
 
 let deleteModel = (t, id) => {
@@ -137,7 +149,7 @@ let deleteModel = (t, id) => {
     t.currentModel
   }
   {
-    models: t.models->Array.filter(m => m.id != id),
+    models: t.models->Array.filter(m => UndoRedo.state(m)->Model.id != id),
     currentModel: currentModel,
   }
 }
@@ -147,57 +159,72 @@ let focusModel = (t, id) => {
   currentModel: Some(id),
 }
 
-let renameModel = (t, id, name) => {
+let updateModel = (t, id, action) => {
   ...t,
   models: t.models->Array.map(m =>
-    if m.id == id {
-      {...m, name: name}
+    if UndoRedo.state(m)->Model.id == id {
+      m->UndoRedo.doAction(action)
     } else {
       m
     }
   ),
 }
 
+let renameModel = newName => {
+  let oldName = SetOnce.create()
+  let apply = m => {
+    oldName->SetOnce.set(m->Model.name)
+    {...m, Model.name: newName}
+  }
+  let unapply = m => {
+    {...m, Model.name: oldName->SetOnce.getExn}
+  }
+  UndoRedo.Action.create(apply, unapply)
+}
+
 let modelState = t =>
-  t->currentModel->Option.map(Model.model)->Option.getWithDefault(ModelState.empty)
+  t
+  ->currentModel
+  ->Option.map(m => UndoRedo.state(m)->Model.model)
+  ->Option.getWithDefault(ModelState.empty)
 
 let inspectorState = t =>
   t
   ->currentModel
   ->Option.flatMap(model => {
-    let selection = model.model->ModelState.selection
+    let model = UndoRedo.state(model)
+    let selection = model->Model.model->ModelState.selection
     switch ModelSelection.nodes(selection) {
-    | [nodeId] => model.slots->Uuid.Map.get(nodeId)->Option.map(s => InspectorState.Single(s))
+    | [nodeId] =>
+      model->Model.slots->Uuid.Map.get(nodeId)->Option.map(s => InspectorState.Single(s))
     | [] => Some(InspectorState.Empty)
     | _ => Some(InspectorState.Multiple)
     }
   })
   ->Option.getWithDefault(InspectorState.Empty)
 
-let _set = (arr, id, f) => {
-  arr->Array.map(m =>
-    if id->Option.map(id => m->Model.id == id)->Option.getWithDefault(false) {
-      f(m)
-    } else {
-      m
-    }
-  )
-}
+// let _set = (arr, id, f) => {
+//   arr->Array.map(m =>
+//     if id->Option.map(id => m->Model.id == id)->Option.getWithDefault(false) {
+//       f(m)
+//     } else {
+//       m
+//     }
+//   )
+// }
 
-let _setM = (arr, id, model) => _set(arr, id, oldModel => {...oldModel, Model.model: model})
+// let _setI = (arr, id, key, inspector) =>
+//   _set(arr, id, oldModel => {
+//     ...oldModel,
+//     Model.slots: oldModel.Model.slots->Uuid.Map.update(key, _ => inspector),
+//   })
 
-let _setI = (arr, id, key, inspector) =>
-  _set(arr, id, oldModel => {
-    ...oldModel,
-    Model.slots: oldModel.Model.slots->Uuid.Map.update(key, _ => inspector),
-  })
+// let updateModel = (t, model) => {
+//   ...t,
+//   models: t.models->_set(t.currentModel, oldModel => {...oldModel, Model.model: model}),
+// }
 
-let updateModel = (t, model) => {
-  ...t,
-  models: t.models->_setM(t.currentModel, model),
-}
-
-let updateSlots = (t, key, inspector) => {
-  ...t,
-  models: t.models->_setI(t.currentModel, key, inspector),
-}
+// let updateSlots = (t, key, inspector) => {
+//   ...t,
+//   models: t.models->_setI(t.currentModel, key, inspector),
+// }
