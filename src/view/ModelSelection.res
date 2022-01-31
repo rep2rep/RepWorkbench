@@ -38,5 +38,10 @@ let fromJson = json =>
 
 let empty = ReactD3Graph.Graph.Selection.empty
 
+let singleton = nodeId => {
+  ReactD3Graph.Graph.Selection.nodes: [nodeId->Uuid.toString->ReactD3Graph.Node.Id.ofString],
+  links: [],
+}
+
 let nodes = t => t.nodes->Array.map(id => id->ReactD3Graph.Node.Id.toString->Uuid.fromString)
 let links = t => t.links

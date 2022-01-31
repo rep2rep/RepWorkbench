@@ -37,19 +37,23 @@ module App = {
     let deleteModel = id => dispatchG(Action.DeleteModel(id))
     let focusModel = id => dispatchG(Action.FocusModel(id))
     let renameModel = (id, name) => dispatchG(Action.RenameModel(id, name))
+    let selectionChange = (~oldSelection as _, ~newSelection) =>
+      dispatchM(ModelAction.Selection(newSelection))
     let addNodeAt = (kind, ~x, ~y) => {
-      let ids = state->State.modelState->ModelState.selection->ModelSelection.nodes
+      let oldSelection = state->State.modelState->ModelState.selection
+      let ids = oldSelection->ModelSelection.nodes
       let id = Uuid.create()
       dispatchG(Action.CreateNode(kind, id))
       dispatchM(ModelAction.Create(x, y, kind, id))
-      ids->Array.forEach(source => dispatchM(ModelAction.Connect(source, id)))
+      switch ids {
+      | [] => selectionChange(~oldSelection, ~newSelection=ModelSelection.singleton(id))
+      | _ => ids->Array.forEach(source => dispatchM(ModelAction.Connect(source, id)))
+      }
     }
     let addRepNodeAt = (_, ~x, ~y) => ModelNode.Kind.Representation->addNodeAt(~x, ~y)
     let addSchNodeAt = (_, ~x, ~y) => ModelNode.Kind.Scheme->addNodeAt(~x, ~y)
     let addDimNodeAt = (_, ~x, ~y) => ModelNode.Kind.Dimension->addNodeAt(~x, ~y)
     let addTokNodeAt = (_, ~x, ~y) => ModelNode.Kind.Token->addNodeAt(~x, ~y)
-    let selectionChange = (~oldSelection as _, ~newSelection) =>
-      dispatchM(ModelAction.Selection(newSelection))
     let linkNodes = _ => {
       let ids = state->State.modelState->ModelState.selection->ModelSelection.nodes
       switch ids {
@@ -70,15 +74,16 @@ module App = {
         nodeIds->Array.forEach(target => dispatchM(ModelAction.Unlink(source, target)))
       )
     }
-    let deleteNodes = _ =>
-      state
-      ->State.modelState
-      ->ModelState.selection
+    let deleteNodes = _ => {
+      let oldSelection = state->State.modelState->ModelState.selection
+      oldSelection
       ->ModelSelection.nodes
       ->Array.forEach(id => {
         dispatchG(Action.DeleteNode(id))
         dispatchM(ModelAction.Delete(id))
       })
+      selectionChange(~oldSelection, ~newSelection=ModelSelection.empty)
+    }
     let movedNodes = (nodeId, ~x, ~y) =>
       dispatchM(ModelAction.Move(nodeId->ReactD3Graph.Node.Id.toString->Uuid.fromString, x, y))
     let slotsChange = e => {
@@ -180,8 +185,9 @@ module App = {
           )}>
           <ReactD3Graph.Graph
             id={"model-graph"}
-            data={state->State.modelState->ModelState.data}
             config
+            data={state->State.modelState->ModelState.data}
+            selection={state->State.modelState->ModelState.selection}
             onSelectionChange={selectionChange}
             onNodePositionChange={movedNodes}
             keybindings={keybindings}
