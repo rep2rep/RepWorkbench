@@ -77,7 +77,7 @@ module FileLabel = {
   }
 }
 
-@let external confirm: string => bool = "confirm"
+@val external confirm: string => bool = "confirm"
 
 @react.component
 let make = (
