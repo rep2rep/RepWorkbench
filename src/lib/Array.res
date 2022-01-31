@@ -16,3 +16,7 @@ let filter = Js.Array2.filter
 let find = Js.Array2.find
 let includes = Js.Array2.includes
 let flatMap = (t, f) => Js.Array2.map(t, f) |> Js.Array2.concatMany([])
+
+let push = (t, a) => concat(t, [a])
+let pop = t => (t->getUnsafe(t->length - 1), t->slice(~offset=0, ~len=t->length - 1))
+let last = t => t->getUnsafe(t->length - 1)
