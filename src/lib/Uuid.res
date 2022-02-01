@@ -63,6 +63,7 @@ module Map = {
   let get = Belt.Map.get
   let update = Belt.Map.update
   let remove = Belt.Map.remove
+  let map = Belt.Map.map
   let merge = Belt.Map.merge
   let keys = Belt.Map.keysToArray
   let values = Belt.Map.valuesToArray
