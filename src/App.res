@@ -166,7 +166,7 @@ module App = {
             {React.string("Add Token Node")}
           </Button>
           <Button.Separator />
-          <Button onClick={linkNodes}> {React.string("Link")} </Button>
+          <Button onClick={linkNodes}> {React.string("Connect")} </Button>
           <Button onClick={anchorNodes}> {React.string("Anchor")} </Button>
           <Button.Separator />
           <Button onClick={unlinkNodes}> {React.string("Unlink")} </Button>
