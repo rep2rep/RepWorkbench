@@ -47,9 +47,10 @@ module App = {
       dispatchG(Action.CreateNode(kind, id))
       dispatchM(ModelAction.Create(x, y, kind, id))
       switch ids {
-      | [] => selectionChange(~oldSelection, ~newSelection=ModelSelection.ofNodes([id]))
+      | [] => ()
       | _ => ids->Array.forEach(source => dispatchM(ModelAction.Connect(source, id)))
       }
+      selectionChange(~oldSelection, ~newSelection=ModelSelection.ofNodes([id]))
     }
     let addRepNodeAt = (_, ~x, ~y) => ModelNode.Kind.Representation->addNodeAt(~x, ~y)
     let addSchNodeAt = (_, ~x, ~y) => ModelNode.Kind.Scheme->addNodeAt(~x, ~y)
