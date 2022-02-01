@@ -64,6 +64,8 @@ module Map = {
   let update = Belt.Map.update
   let remove = Belt.Map.remove
   let merge = Belt.Map.merge
+  let keys = Belt.Map.keysToArray
+  let values = Belt.Map.valuesToArray
 
   let toList = Belt.Map.toList
   let fromList = lst => lst->List.reduce(empty(), (t, (k, v)) => set(t, k, v))

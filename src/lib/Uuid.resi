@@ -40,6 +40,8 @@ module Map: {
   let remove: (t<'v>, key) => t<'v>
   let update: (t<'v>, key, option<'v> => option<'v>) => t<'v>
   let merge: (t<'x>, t<'y>, (key, option<'x>, option<'y>) => option<'z>) => t<'z>
+  let keys: t<'v> => array<key>
+  let values: t<'v> => array<'v>
   let toList: t<'v> => list<(key, 'v)>
   let toArray: t<'v> => array<(key, 'v)>
   let fromList: list<(key, 'v)> => t<'v>
