@@ -25,3 +25,4 @@ let create: (~source: ModelNode.t, ~target: ModelNode.t, Kind.t) => t
 
 let source: t => Uuid.t
 let target: t => Uuid.t
+let kind: t => Kind.t

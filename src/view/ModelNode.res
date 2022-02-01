@@ -414,6 +414,9 @@ let create = (~name, ~reference, ~x, ~y, kind, id) => {
   createSchema(x, y, payload, config, id)
 }
 
+let dupWithNewId = (t, id) =>
+  ReactD3Graph.Node.setId(t, id->Uuid.toString->ReactD3Graph.Node.Id.ofString)
+
 let toJson = t =>
   Js.Dict.fromList(list{
     ("payload", t->ReactD3Graph.Node.payload->Option.getExn->Payload.toJson),
@@ -447,6 +450,7 @@ let fromJson = json =>
 
 let id = t => t->ReactD3Graph.Node.id->ReactD3Graph.Node.Id.toString->Uuid.fromString
 let kind = t => t->ReactD3Graph.Node.payload->Option.getExn->Payload.kind
+let position = t => (t->ReactD3Graph.Node.x, t->ReactD3Graph.Node.y)
 let setPosition = (t, ~x, ~y) => t->ReactD3Graph.Node.setX(x)->ReactD3Graph.Node.setY(y)
 let updateConfig = (t, f) => t->ReactD3Graph.Node.updateConfig(f)
 let updatePayload = (t, f) => {

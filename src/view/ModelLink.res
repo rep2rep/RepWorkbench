@@ -75,6 +75,7 @@ let source = t => t->ReactD3Graph.Link.source->ReactD3Graph.Node.Id.toString->Uu
 let target = t => t->ReactD3Graph.Link.target->ReactD3Graph.Node.Id.toString->Uuid.fromString
 let id = t => t->ReactD3Graph.Link.id
 let payload = t => t->ReactD3Graph.Link.payload
+let kind = t => t->payload->Option.getWithDefault(Kind.Hierarchy)
 
 let toJson = t =>
   Js.Dict.fromList(list{
