@@ -3,6 +3,7 @@ type t =
   | Delete(Uuid.t)
   | Move(Uuid.t, float, float)
   | Update(Uuid.t, InspectorEvent.t)
+  | Duplicate(Uuid.Map.t<Uuid.t>)
   | Connect(Uuid.t, Uuid.t)
   | Anchor(Uuid.t, Uuid.t)
   | Relate(Uuid.t, Uuid.t)

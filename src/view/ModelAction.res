@@ -3,6 +3,7 @@ type t =
   | Delete(Uuid.t)
   | Move(Uuid.t, float, float)
   | Update(Uuid.t, InspectorEvent.t)
+  | Duplicate(Uuid.Map.t<Uuid.t>)
   | Connect(Uuid.t, Uuid.t)
   | Anchor(Uuid.t, Uuid.t)
   | Relate(Uuid.t, Uuid.t)
@@ -93,6 +94,21 @@ let updateNode = (state, nodeId, event) =>
     }
   )
 
+let duplicateNodes = (state, nodeMap) =>
+  nodeMap
+  ->Uuid.Map.toArray
+  ->Array.reduce(state, (state, (oldId, newId)) => {
+    state
+    ->ModelState.nodeWithId(oldId)
+    ->Option.map(node => {
+      let (x, y) = ModelNode.position(node)
+      let (x, y) = (x +. 10., y +. 10.)
+      let newNode = ModelNode.dupWithNewId(node, newId)->ModelNode.setPosition(~x, ~y)
+      state->ModelState.addNode(newNode)
+    })
+    ->Option.getWithDefault(state)
+  })
+
 let connect = (state, source, target, kind) => {
   let modelSource = state->ModelState.nodeWithId(source)
   let modelTarget = state->ModelState.nodeWithId(target)
@@ -122,6 +138,7 @@ let dispatch = (state, action) =>
   | Delete(id) => deleteNode(state, id)
   | Move(id, x, y) => moveNode(state, id, x, y)
   | Update(id, event) => updateNode(state, id, event)
+  | Duplicate(nodeMap) => duplicateNodes(state, nodeMap)
   | Connect(source, target) => connect(state, source, target, ModelLink.Kind.Hierarchy)
   | Anchor(source, target) => connect(state, source, target, ModelLink.Kind.Anchor)
   | Relate(source, target) => connect(state, source, target, ModelLink.Kind.Relation)

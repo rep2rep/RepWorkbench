@@ -1,4 +1,6 @@
-type t = Update(Uuid.t, InspectorEvent.t)
+type t =
+  | Update(Uuid.t, InspectorEvent.t)
+  | Duplicate(Uuid.Map.t<Uuid.t>)
 
 let dispatch = (state, t) =>
   switch t {
@@ -13,5 +15,17 @@ let dispatch = (state, t) =>
       | _ => None
       }
       [(key, newState)]
+    }
+  | Duplicate(keyMap) => {
+      let dup = (source, slots) =>
+        keyMap
+        ->Uuid.Map.get(source)
+        ->Option.map(target => [(target, Some(slots))])
+        ->Option.getWithDefault([])
+      switch state {
+      | InspectorState.Single(source, s) => dup(source, s)
+      | InspectorState.Multiple(ss) => ss->Array.flatMap(((source, s)) => dup(source, s))
+      | _ => []
+      }
     }
   }

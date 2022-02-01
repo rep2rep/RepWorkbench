@@ -87,6 +87,32 @@ module App = {
     }
     let movedNodes = (nodeId, ~x, ~y) =>
       dispatchM(ModelAction.Move(nodeId->ReactD3Graph.Node.Id.toString->Uuid.fromString, x, y))
+    let duplicateNodes = _ => {
+      let oldSelection = state->State.modelState->ModelState.selection
+      let nodeIds = oldSelection->ModelSelection.nodes
+      let nodeMap = nodeIds->Array.map(id => (id, Uuid.create()))->Uuid.Map.fromArray
+      dispatchM(ModelAction.Duplicate(nodeMap))
+      dispatchI(InspectorAction.Duplicate(nodeMap))
+      state
+      ->State.modelState
+      ->ModelState.graph
+      ->ModelGraph.links
+      ->Array.forEach(link => {
+        let source = ModelLink.source(link)
+        let target = ModelLink.target(link)
+        let constructor = switch ModelLink.kind(link) {
+        | ModelLink.Kind.Hierarchy => (s, t) => ModelAction.Connect(s, t)
+        | ModelLink.Kind.Anchor => (s, t) => ModelAction.Anchor(s, t)
+        | ModelLink.Kind.Relation => (s, t) => ModelAction.Relate(s, t)
+        }
+        switch (nodeMap->Uuid.Map.get(source), nodeMap->Uuid.Map.get(target)) {
+        | (Some(newSource), Some(newTarget)) => dispatchM(constructor(newSource, newTarget))
+        | _ => ()
+        }
+      })
+      let newSelection = Uuid.Map.values(nodeMap)->ModelSelection.ofNodes
+      selectionChange(~oldSelection, ~newSelection)
+    }
     let slotsChange = e => {
       let selection = state->State.modelState->ModelState.selection->ModelSelection.nodes
       switch selection {
@@ -113,6 +139,7 @@ module App = {
       ("a", (e, ~x as _, ~y as _) => anchorNodes(e)),
       ("x", (e, ~x as _, ~y as _) => deleteNodes(e)),
       ("v", (e, ~x as _, ~y as _) => unlinkNodes(e)),
+      ("Ctrl+d", (e, ~x as _, ~y as _) => duplicateNodes(e)),
     ])
 
     <main
@@ -165,6 +192,7 @@ module App = {
           <Button onClick={addTokNodeAt(_, ~x=0., ~y=0.)}>
             {React.string("Add Token Node")}
           </Button>
+          <Button onClick={duplicateNodes}> {React.string("Duplicate")} </Button>
           <Button.Separator />
           <Button onClick={linkNodes}> {React.string("Connect")} </Button>
           <Button onClick={anchorNodes}> {React.string("Anchor")} </Button>
