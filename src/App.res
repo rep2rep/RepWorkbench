@@ -47,7 +47,7 @@ module App = {
       dispatchG(Action.CreateNode(kind, id))
       dispatchM(ModelAction.Create(x, y, kind, id))
       switch ids {
-      | [] => selectionChange(~oldSelection, ~newSelection=ModelSelection.singleton(id))
+      | [] => selectionChange(~oldSelection, ~newSelection=ModelSelection.ofNodes([id]))
       | _ => ids->Array.forEach(source => dispatchM(ModelAction.Connect(source, id)))
       }
     }
