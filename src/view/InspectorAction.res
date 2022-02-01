@@ -1,10 +1,17 @@
 type t = Update(Uuid.t, InspectorEvent.t)
 
-let dispatch = (state, t) => {
-  let Update(key, event) = t
-  let newState = switch state {
-  | InspectorState.Single(s) => Some(InspectorState.Schema.applyEvent(s, event))
-  | _ => None
+let dispatch = (state, t) =>
+  switch t {
+  | Update(key, event) => {
+      let newState = switch state {
+      | InspectorState.Single(key', s) =>
+        if key == key' {
+          Some(InspectorState.Schema.applyEvent(s, event))
+        } else {
+          None
+        }
+      | _ => None
+      }
+      [(key, newState)]
+    }
   }
-  (key, newState)
-}

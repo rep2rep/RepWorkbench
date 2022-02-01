@@ -166,10 +166,15 @@ let inspectorState = t =>
   ->currentModel
   ->Option.flatMap(model => {
     let selection = model.model->ModelState.selection
+    let getSlot = id => model.slots->Uuid.Map.get(id)
     switch ModelSelection.nodes(selection) {
-    | [nodeId] => model.slots->Uuid.Map.get(nodeId)->Option.map(s => InspectorState.Single(s))
     | [] => Some(InspectorState.Empty)
-    | _ => Some(InspectorState.Multiple)
+    | [nodeId] => getSlot(nodeId)->Option.map(s => InspectorState.Single(nodeId, s))
+    | ids =>
+      ids
+      ->Array.map(id => getSlot(id)->Option.map(slots => (id, slots)))
+      ->Option.all
+      ->Option.map(slots => InspectorState.Multiple(slots))
     }
   })
   ->Option.getWithDefault(InspectorState.Empty)

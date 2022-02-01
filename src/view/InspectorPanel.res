@@ -425,7 +425,7 @@ let make = (~id, ~data, ~onChange=?) => {
         className="inspector-panel-empty-message">
         {React.string("Select a schema")}
       </span>
-    | InspectorState.Multiple =>
+    | InspectorState.Multiple(_) =>
       <span
         style={ReactDOM.Style.make(
           ~display="block",
@@ -438,7 +438,7 @@ let make = (~id, ~data, ~onChange=?) => {
         className="inspector-panel-multiple-message">
         {React.string("Multiple schema selected")}
       </span>
-    | InspectorState.Single(schema) =>
+    | InspectorState.Single(_, schema) =>
       switch schema {
       | InspectorState.Schema.Representation(slots) =>
         <Representation slots onChange={c => onChange(InspectorEvent.Representation(c))} />

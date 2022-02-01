@@ -11,10 +11,11 @@ module App = {
     | GlobalAction(action) => Action.dispatch(state, action)
     | ModelAction(action) =>
       state->State.updateModel(ModelAction.dispatch(state->State.modelState, action))
-    | InspectorAction(action) => {
-        let (key, newSlots) = InspectorAction.dispatch(state->State.inspectorState, action)
-        state->State.updateSlots(key, newSlots)
-      }
+    | InspectorAction(action) =>
+      InspectorAction.dispatch(state->State.inspectorState, action)->Array.reduce(state, (
+        state,
+        (key, newSlots),
+      ) => state->State.updateSlots(key, newSlots))
     }
     State.store(newState)
     newState

@@ -68,5 +68,5 @@ module Schema: {
 
 type t =
   | Empty
-  | Multiple
-  | Single(Schema.t)
+  | Multiple(array<(Uuid.t, Schema.t)>)
+  | Single(Uuid.t, Schema.t)
