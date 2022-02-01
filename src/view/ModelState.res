@@ -57,6 +57,7 @@ let addNode = (t, node) => {
 
 let updateNodes = (t, f) => {
   ...t,
+  nodeMap: t.nodeMap->Uuid.Map.map(f),
   graph: t.graph->ModelGraph.mapNodes(f),
 }
 
