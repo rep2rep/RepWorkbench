@@ -195,6 +195,8 @@ module App = {
           <Button onClick={deleteNodes} value="Delete" />
           <Button.Separator />
           <Button onClick={dump} value="Dump state" />
+          <Button.Separator />
+          <a href="manual.html" target="_blank"> {React.string("Manual")} </a>
         </div>
         <div
           className="container"

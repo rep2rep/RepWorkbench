@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>RepNotation Workbench User Guide</title>
+    <style>
+      * {
+          box-sizing: border-box;
+      }
+      html, body {
+          max-width: 80ch;
+          margin: 0 auto;
+          padding: 0;
+          font-family: sans-serif;
+          font-size: 18px;
+          line-height: 1.3;
+      }
+      h1 {
+          counter-reset: section;
+          counter-reset: subsection;
+      }
+      h2 {
+          counter-increment: section;
+          counter-reset: subsection;
+      }
+      h3 {
+          counter-increment: subsection;
+      }
+      h2:before {
+          content: counter(section);
+          display: inline-block;
+          position: relative;
+          left: -1.5em;
+          width: 0;
+      }
+      h3:before {
+          content: counter(section) "." counter(subsection);
+          margin-right: 1em;
+      }
+      .key {
+          font-family: monospace;
+          font-size: 0.9em;
+          padding: 0.05em 0.2em;
+          display: inline-block;
+          background: #eee;
+          border: 1px solid #aaa;
+          border-radius: 2px;
+      }
+      th, td {
+          text-align: left;
+          vertical-align: top;
+          padding: 0.1em 0.5em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>RepNotation Workbench User Guide</h1>
+    <p>
+      This document gives a brief overview of how to use the RepNotation Workbench.
+      The Workbench is under heavy development right now, so the features as described in this manual
+      might now behave differently, or no longer exist. Further, there may be features
+      that are present in the Workbench that are not described in this manual.
+    </p>
+
+    <h2 id="hotkeys">Hotkeys</h2>
+    <p>
+      As a quick reference, the current hotkeys are:
+    </p>
+    <table>
+      <tr><th>Hotkey</th><th>Action</th></tr>
+      <tr><td><span class="key">R</span></td><td>Create a new Representation node.</td></tr>
+      <tr><td><span class="key">S</span></td><td>Create a new R-Scheme node.</td></tr>
+      <tr><td><span class="key">D</span></td><td>Create a new R-Dimension node.</td></tr>
+      <tr><td><span class="key">T</span></td><td>Create a new Token node under.</td></tr>
+      <tr><td><span class="key">Ctrl</span> <span class="key">D</span></td><td>Duplicate the selected nodes.</td></tr>
+      <tr><td><span class="key">C</span></td><td>Connect two nodes.</td></tr>
+      <tr><td><span class="key">A</span></td><td>Connect two nodes by anchoring.</td></tr>
+      <tr><td><span class="key">V</span></td><td>Remove all links between selected nodes.</td></tr>
+      <tr><td><span class="key">X</span></td><td>Delete all selected nodes, and links connected to them.</td></tr>
+    </table>
+    <p>
+      Creating new nodes puts them under your cursor.
+    </p>
+    <p>
+      These are available when you have your cursor over the Model editor.
+      See <a href="#toolbar">The Toolbar</a> and <a href="#model-editor">The Model Editor</a> for more details.
+    </p>
+
+    <h2 id="model-list">The Model List</h2>
+    <p>
+      On the left of the Workbench you have the model list. This list contains all the
+      models you have built. Initially the list will be empty, but new models can be created
+      by pressing the <button>New</button> button in the bottom left corner. All models are
+      initially called 'Model'.
+    </p>
+    <p>
+      Models can be renamed by double-clicking on their existing name, and editing the name to be
+      what you now want it to be. Several models can have the same name; this is perfectly fine
+      for the Workbench, but potentially confusing for you, so this is not recommended.
+    </p>
+    <p>
+      To switch between models, click on the model you wish to view. The currently viewed model
+      be highlighted with a grey background, while all other models will have a white background.
+    </p>
+    <p>
+      If you no longer need a model, you can delete it. This is done by making the model you wish
+      to delete the viewed model (it will have a grey background in the model list), then clicking
+      the <button>Delete</button> button in the bottom left, found next to the <button>New</button>
+      button. You will be asked to confirm that you wish to delete the model.
+      <strong>The model is permanently deleted. It cannot be recovered.</strong>
+    </p>
+
+    <h2 id="toolbar">The Toolbar</h2>
+    <p>
+      Across the top of most of the Workbench (outside the Model list) there is the toolbar.
+      All the core functionality of the Workbench can be accessed via buttons found here.
+      We shall discuss each button in turn.
+    </p>
+    <p>
+      Note that these buttons only work when there is an active model. If no model (in the model list)
+      has a grey background, the buttons will not do anything.
+    </p>
+    <table>
+      <tr><td><p><input type="button" value="Add X Node" /></p></td><td>
+          <p>
+            These four buttons create a new node in the Model. The kind of node
+            created is determined by 'X' &ndash; Representation, (R-)Scheme, (R-)Dimension, or Token.
+            The new node is created at the 'origin', which is the top left of the Model editor (before
+            zooming and panning). If any existing nodes were selected when this button is clicked, the
+            created node is automatically linked as a child of the selected nodes. The created node
+            becomes the new current selection.
+      </p></td></tr>
+      <tr><td><p><input type="button" value="Duplicate" /></p></td><td>
+          <p>
+            Creates new nodes in the model that are an exact copy of your current selection.
+            If you have selected nodes with connections between them, these connections are duplicated.
+            Any connections these nodes have to <emph>other</emph> nodes in the model are <emph>not</emph>
+            duplicated. That is, the new nodes will always be disconnected from the rest of the model,
+            but may be connected to each other. The newly created nodes are positions slightly offset from
+            the nodes they were duplicated from, and they become the current selection.
+      </p></td></tr>
+      <tr><td><p><input type="button" value="Connect" /><br><input type="button" value="Anchor" /></p></td><td>
+          <p>
+            These two buttons are used to connect nodes together. The first button creates a
+            Hierarchy connection (the 'typical' connection in RepNotation), while the second button
+            creates an 'anchored' connection. (Currently, the appearance is incorrect. This will be fixed
+            in a future update.) When clicking these buttons, you must have exactly two nodes selected:
+            more than two, or fewer than two, and these buttons have no effect. The 'direction' of the
+            connection is determined by the order in which the nodes were selected: the first selected
+            node is the 'parent', while the second is the 'child'. The parent is connected from the
+            bottom of the node, while the child is connected from the top. If you have connected the
+            nodes back to front, the connection will appear to 'cut through' the nodes; unlink them,
+            select them in the opposite order, and click the button again to correct the direction.
+      </p></td></tr>
+      <tr><td><p><input type="button" value="Unlink" /></p></td><td>
+          <p>
+            Remove all the links between the selected nodes. Unlike the <input type="button" value="Connect" />
+            and <input type="button" value="Anchor" /> buttons, you can have two <emph>or more</emph>
+            nodes selected, and it will remove all the links between all the nodes in the selection.
+            It does this for every type of link, whether hierarchical or anchoring.
+      </p></td></tr>
+      <tr><td><p><input type="button" value="Delete" /></p></td><td>
+          <p>
+            A dangerous button. This deletes the nodes currently selected, along with all the links
+            attached to them. <strong>There is currently no undo. Delete is <emph>permanent</emph>.</strong>
+      </p></td></tr>
+      <tr><td><p><input type="button" value="Dump State" /></p></td><td>
+          <p>
+            This final button is a safety mechanism while the Workbench
+            is under development. Clicking this button downloads all the internal state of the Workbench,
+            which can (in theory) be used to recover any work you had at that point in time. Currently,
+            recovering using the state file is unavailable, but may be possible in the future. This button
+            will work at any time, even if no models are active.
+      </p></td></tr>
+    </table>
+    <p>
+      After the buttons is a link to this manual.
+    </p>
+
+    <h2 id="model-editor">The Model Editor</h2>
+    <p>
+      Most of the screen in the Workbench is dedicated to the Model editor. Here is where the effect
+      of clicking buttons in the <a href="#toolbar">Toolbar</a>, or pressing <a href="#hotkeys">Hotkeys</a>,
+      will occur. Hotkeys are only active while your cursor is in the Model editor.
+    </p>
+    <p>
+      Navigating the Model is largely done with the mouse. Clicking and dragging anywhere outside of
+      a node will move the 'view' around. The scroll wheel is used to zoom in and out. Clicking a node
+      will cause it to become the only selected node. Shift-clicking an unselected node will add it to
+      the current selection, while shift-clicking a selected node will remove it from the current selection.
+      Dragging any node in a selection will move every node in that selection.
+    </p>
+    <p>
+      When using the hotkeys, any 'node creation' hotkey will cause the node to be added under the cursor.
+      This is different to the toolbar, in which clicking a 'node creation' button will add the node at
+      the 'origin' of the Model.
+    </p>
+
+    <h2 id="slots-inspector">The Slots Inspector</h2>
+    <p>
+      On the far right is the Slots inspector. Each node in the Model has associated 'slots':
+      each slot holds one particular piece of information about that node. When one node
+      in the Model editor is selected, the Slots inspector displays the information for that one node.
+      If zero or multiple nodes are selected, the panel is empty.
+    </p>
+    <p>
+      The information associated with a node varies based on whether it is a Representation,
+      R-Scheme, Dimension, or Token, so only some subset of these listed is available for each node.
+    </p>
+  </body>
+</html>
