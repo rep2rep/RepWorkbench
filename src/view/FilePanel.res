@@ -69,7 +69,8 @@ module FileLabel = {
         />
       } else {
         <span
-          className={"inner-name-focus inner-name-not-editing"} onClick={_ => dispatch(StartEdit)}>
+          className={"inner-name-focus inner-name-not-editing"}
+          onDoubleClick={_ => dispatch(StartEdit)}>
           {React.string(state.currName)}
         </span>
       }}
