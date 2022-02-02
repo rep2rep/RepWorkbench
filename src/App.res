@@ -181,28 +181,20 @@ module App = {
             ~padding="0 0.5rem",
             (),
           )}>
-          <Button onClick={addRepNodeAt(_, ~x=0., ~y=0.)}>
-            {React.string("Add Representation Node")}
-          </Button>
-          <Button onClick={addSchNodeAt(_, ~x=0., ~y=0.)}>
-            {React.string("Add Scheme Node")}
-          </Button>
-          <Button onClick={addDimNodeAt(_, ~x=0., ~y=0.)}>
-            {React.string("Add Dimension Node")}
-          </Button>
-          <Button onClick={addTokNodeAt(_, ~x=0., ~y=0.)}>
-            {React.string("Add Token Node")}
-          </Button>
-          <Button onClick={duplicateNodes}> {React.string("Duplicate")} </Button>
+          <Button onClick={addRepNodeAt(_, ~x=0., ~y=0.)} value="Add Representation Node" />
+          <Button onClick={addSchNodeAt(_, ~x=0., ~y=0.)} value="Add Scheme Node" />
+          <Button onClick={addDimNodeAt(_, ~x=0., ~y=0.)} value="Add Dimension Node" />
+          <Button onClick={addTokNodeAt(_, ~x=0., ~y=0.)} value="Add Token Node" />
+          <Button onClick={duplicateNodes} value="Duplicate" />
           <Button.Separator />
-          <Button onClick={linkNodes}> {React.string("Connect")} </Button>
-          <Button onClick={anchorNodes}> {React.string("Anchor")} </Button>
+          <Button onClick={linkNodes} value="Connect" />
+          <Button onClick={anchorNodes} value="Anchor" />
           <Button.Separator />
-          <Button onClick={unlinkNodes}> {React.string("Unlink")} </Button>
+          <Button onClick={unlinkNodes} value="Unlink" />
           <Button.Separator />
-          <Button onClick={deleteNodes}> {React.string("Delete")} </Button>
+          <Button onClick={deleteNodes} value="Delete" />
           <Button.Separator />
-          <Button onClick={dump}> {React.string("Dump state")} </Button>
+          <Button onClick={dump} value="Dump state" />
         </div>
         <div
           className="container"

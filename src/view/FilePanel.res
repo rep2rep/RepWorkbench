@@ -128,7 +128,7 @@ let make = (
         ~padding="0 0.5rem",
         (),
       )}>
-      <Button onClick={_ => onCreate(Uuid.create())}> {React.string("New")} </Button>
+      <Button onClick={_ => onCreate(Uuid.create())} value="New" />
       <Button.Separator />
       <Button
         onClick={_ =>
@@ -138,9 +138,9 @@ let make = (
             if confirm("Definitely delete model '" ++ name ++ "'?") {
               onDelete(active)
             }
-          })}>
-        {React.string("Delete")}
-      </Button>
+          })}
+        value="Delete"
+      />
     </div>
   </div>
 }
