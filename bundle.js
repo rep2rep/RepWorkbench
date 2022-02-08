@@ -14,7 +14,7 @@ let targets = [path.join(src, "App.bs.js")];
 esbuild.build({
   entryPoints: targets,
   bundle: true,
-  minify: true,
+  minify: false,
   sourcemap: true,
   outfile: path.join(dist, "main.js"),
 });
