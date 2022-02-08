@@ -38,6 +38,7 @@ module App = {
     let deleteModel = id => dispatchG(Action.DeleteModel(id))
     let focusModel = id => dispatchG(Action.FocusModel(id))
     let renameModel = (id, name) => dispatchG(Action.RenameModel(id, name))
+    let reorder = newOrder => dispatchG(Action.ReorderModels(newOrder))
     let selectionChange = (~oldSelection as _, ~newSelection) =>
       dispatchM(ModelAction.Selection(newSelection))
     let addNodeAt = (kind, ~x, ~y) => {
@@ -159,6 +160,7 @@ module App = {
         onDelete={deleteModel}
         onSelect={focusModel}
         onChangedName={renameModel}
+        onReorder={reorder}
       />
       <div
         className="editor-panel"

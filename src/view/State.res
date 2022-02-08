@@ -158,6 +158,11 @@ let renameModel = (t, id, name) => {
   ),
 }
 
+let reorderModels = (t, newOrder) => {
+  ...t,
+  models: newOrder,
+}
+
 let modelState = t =>
   t->currentModel->Option.map(Model.model)->Option.getWithDefault(ModelState.empty)
 

@@ -22,6 +22,7 @@
   },
   "bs-dependencies": [
     "@rescript/react",
-    "rescript-react-d3-graph"
+    "rescript-react-d3-graph",
+    "rescript-react-draggable-list"
   ]
 }

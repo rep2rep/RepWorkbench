@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@rescript/react": "^0.10.3",
-    "rescript-react-d3-graph": "file:../rescript-react-d3-graph"
+    "rescript-react-d3-graph": "file:../rescript-react-d3-graph",
+    "rescript-react-draggable-list": "file:../rescript-react-draggable-list"
   }
 }

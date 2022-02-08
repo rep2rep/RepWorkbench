@@ -7,4 +7,5 @@ let make: (
   ~onDelete: Uuid.t => unit,
   ~onSelect: Uuid.t => unit,
   ~onChangedName: (Uuid.t, string) => unit,
+  ~onReorder: array<State.Model.t> => unit,
 ) => React.element
