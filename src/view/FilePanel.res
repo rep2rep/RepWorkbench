@@ -111,6 +111,7 @@ let make = (
       ->Array.map(model =>
         <FileLabel
           id={model->State.Model.id}
+          key={model->State.Model.id->Uuid.toString}
           name={model->State.Model.name}
           active={active
           ->Option.map(active => model->State.Model.id == active)
