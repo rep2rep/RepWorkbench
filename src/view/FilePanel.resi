@@ -3,8 +3,9 @@ let make: (
   ~id: string,
   ~models: array<State.Model.t>,
   ~active: option<Uuid.t>,
-  ~onCreate: Uuid.t => unit,
+  ~onCreate: unit => unit,
   ~onDelete: Uuid.t => unit,
   ~onSelect: Uuid.t => unit,
+  ~onDuplicate: Uuid.t => unit,
   ~onChangedName: (Uuid.t, string) => unit,
 ) => React.element

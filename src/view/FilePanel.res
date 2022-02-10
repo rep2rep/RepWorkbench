@@ -88,6 +88,7 @@ let make = (
   ~onCreate,
   ~onDelete,
   ~onSelect,
+  ~onDuplicate,
   ~onChangedName,
 ) => {
   <div
@@ -128,7 +129,8 @@ let make = (
         ~padding="0 0.5rem",
         (),
       )}>
-      <Button onClick={_ => onCreate(Uuid.create())} value="New" />
+      <Button onClick={_ => onCreate()} value="New" />
+      <Button onClick={_ => active->Option.iter(onDuplicate)} value="Duplicate" />
       <Button.Separator />
       <Button
         onClick={_ =>

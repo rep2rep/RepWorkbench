@@ -34,10 +34,14 @@ module App = {
     let dispatchM = a => dispatch(ModelAction(a))
     let dispatchI = a => dispatch(InspectorAction(a))
 
-    let newModel = id => dispatchG(Action.NewModel(id))
+    let newModel = () => dispatchG(Action.NewModel(Uuid.create()))
     let deleteModel = id => dispatchG(Action.DeleteModel(id))
     let focusModel = id => dispatchG(Action.FocusModel(id))
     let renameModel = (id, name) => dispatchG(Action.RenameModel(id, name))
+    let duplicateModel = id => {
+      let newId = Uuid.create()
+      dispatchG(Action.DuplicateModel(id, newId))
+    }
     let selectionChange = (~oldSelection as _, ~newSelection) =>
       dispatchM(ModelAction.Selection(newSelection))
     let addNodeAt = (kind, ~x, ~y) => {
@@ -158,6 +162,7 @@ module App = {
         onCreate={newModel}
         onDelete={deleteModel}
         onSelect={focusModel}
+        onDuplicate={duplicateModel}
         onChangedName={renameModel}
       />
       <div

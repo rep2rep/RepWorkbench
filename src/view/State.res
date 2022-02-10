@@ -55,6 +55,19 @@ module Model = {
     model: ModelState.empty,
     slots: Uuid.Map.empty(),
   }
+
+  let duplicate = (t, newId, newName) => {
+    let newIdMap = t.slots->Uuid.Map.map(_ => Uuid.create())
+    {
+      id: newId,
+      name: newName,
+      model: t.model->ModelState.duplicate(newIdMap),
+      slots: t.slots
+      ->Uuid.Map.toArray
+      ->Array.map(((id, slots)) => (newIdMap->Uuid.Map.get(id)->Option.getExn, slots))
+      ->Uuid.Map.fromArray,
+    }
+  }
 }
 
 type t = {
@@ -145,6 +158,18 @@ let deleteModel = (t, id) => {
 let focusModel = (t, id) => {
   ...t,
   currentModel: Some(id),
+}
+
+let duplicateModel = (t, ~existing, ~new_) => {
+  let dupIndex = t.models->Array.getIndexBy(model => model.id === existing)->Option.getExn
+  let oldModel = t.models->Array.getExn(dupIndex)
+  let newModel = oldModel->Model.duplicate(new_, oldModel.name ++ " (Copy)")
+  let before = t.models->Array.slice(~offset=0, ~len=dupIndex + 1)
+  let after = t.models->Array.sliceToEnd(dupIndex + 1)
+  {
+    currentModel: Some(new_),
+    models: Array.concatMany([before, [newModel], after]),
+  }
 }
 
 let renameModel = (t, id, name) => {
