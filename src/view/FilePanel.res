@@ -90,6 +90,8 @@ let make = (
   ~onSelect,
   ~onDuplicate,
   ~onChangedName,
+  ~onImport,
+  ~onExport,
 ) => {
   <div
     id
@@ -122,27 +124,89 @@ let make = (
     <div
       className="file-controls"
       style={ReactDOM.Style.make(
-        ~height="50px",
+        ~height="60px",
         ~borderTop="1px solid black",
         ~display="flex",
+        ~flexDirection="column",
         ~alignItems="center",
         ~padding="0 0.5rem",
         (),
       )}>
-      <Button onClick={_ => onCreate()} value="New" />
-      <Button onClick={_ => active->Option.iter(onDuplicate)} value="Duplicate" />
-      <Button.Separator />
-      <Button
-        onClick={_ =>
-          active->Option.iter(active => {
-            let name =
-              models->Array.find(m => State.Model.id(m) == active)->Option.getExn->State.Model.name
-            if confirm("Definitely delete model '" ++ name ++ "'?") {
-              onDelete(active)
+      <div
+        style={ReactDOM.Style.make(
+          ~height="30px",
+          ~display="flex",
+          ~flexDirection="row",
+          ~alignItems="center",
+          ~width="100%",
+          (),
+        )}>
+        <Button onClick={_ => onCreate()} value="New" />
+        <Button onClick={_ => active->Option.iter(onDuplicate)} value="Duplicate" />
+        <Button.Separator />
+        <Button
+          onClick={_ =>
+            active->Option.iter(active => {
+              let name =
+                models
+                ->Array.find(m => State.Model.id(m) == active)
+                ->Option.getExn
+                ->State.Model.name
+              if confirm("Definitely delete model '" ++ name ++ "'?") {
+                onDelete(active)
+              }
+            })}
+          value="Delete"
+        />
+      </div>
+      <div
+        style={ReactDOM.Style.make(
+          ~height="30px",
+          ~display="flex",
+          ~flexDirection="row",
+          ~alignItems="center",
+          ~width="100%",
+          (),
+        )}>
+        <Button onClick={_ => active->Option.iter(onExport)} value="Export" />
+        <input
+          name="import_models"
+          id="import_models"
+          type_="file"
+          accept=".repn"
+          style={ReactDOM.Style.make(
+            ~width="0.1px",
+            ~height="0.1px",
+            ~opacity="0",
+            ~overflow="hidden",
+            ~position="absolute",
+            ~zIndex="-1",
+            (),
+          )}
+          onChange={e => {
+            let files = e->ReactEvent.Form.currentTarget->(t => t["files"])
+            switch files {
+            | [f] => onImport(f)
+            | _ => ()
             }
-          })}
-        value="Delete"
-      />
+          }}
+        />
+        <label
+          htmlFor="import_models"
+          style={ReactDOM.Style.make(
+            ~appearance="push-button",
+            ~fontSize="small",
+            ~cursor="default",
+            (),
+          )->ReactDOM.Style.unsafeAddStyle({
+            "WebkitAppearance": "push-button",
+            "MozAppearance": "push-button",
+            "MsAppearance": "push-button",
+            "OAppearance": "push-button",
+          })}>
+          {React.string("Import")}
+        </label>
+      </div>
     </div>
   </div>
 }

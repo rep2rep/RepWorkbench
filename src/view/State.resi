@@ -3,6 +3,9 @@ module Model: {
 
   let id: t => Uuid.t
   let name: t => string
+
+  let toJson: t => Js.Json.t
+  let fromJson: Js.Json.t => Or_error.t<t>
 }
 
 type t
@@ -14,6 +17,7 @@ let dump: t => Js.Json.t
 let empty: t
 
 let models: t => array<Model.t>
+let model: (t, Uuid.t) => option<Model.t>
 let focusedName: t => option<string>
 let focusedId: t => option<Uuid.t>
 
@@ -24,6 +28,7 @@ let createModel: (t, Uuid.t) => t
 let deleteModel: (t, Uuid.t) => t
 let focusModel: (t, Uuid.t) => t
 let duplicateModel: (t, ~existing: Uuid.t, ~new_: Uuid.t) => t
+let importModel: (t, Model.t) => t
 let renameModel: (t, Uuid.t, string) => t
 
 let updateModel: (t, ModelState.t) => t

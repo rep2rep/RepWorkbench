@@ -3,6 +3,7 @@ type t =
   | DeleteModel(Uuid.t)
   | FocusModel(Uuid.t)
   | DuplicateModel(Uuid.t, Uuid.t)
+  | ImportModel(State.Model.t)
   | RenameModel(Uuid.t, string)
   | CreateNode(ModelNode.Kind.t, Uuid.t)
   | DeleteNode(Uuid.t)

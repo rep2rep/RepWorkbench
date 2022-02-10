@@ -21,6 +21,8 @@ module App = {
     newState
   }
 
+  @val external alert: string => unit = "alert"
+
   let config = ReactD3Graph.Config.create(
     ~global=ReactD3Graph.Config.Global.create(~width="100%", ~height="calc(100vh - 40px)", ()),
     ~d3=ReactD3Graph.Config.D3.create(~disableLinkForce=true, ()),
@@ -128,6 +130,33 @@ module App = {
       | _ => ()
       }
     }
+    let importModel = f => {
+      File.text(f)
+      |> Js.Promise.then_(text => {
+        let model = try text->Js.Json.parseExn->State.Model.fromJson catch {
+        | _ => Or_error.error_s("fail")
+        }
+        if Or_error.isOk(model) {
+          let model = Or_error.okExn(model)
+          dispatchG(Action.ImportModel(model))
+        } else {
+          alert("Failed to import '" ++ File.name(f) ++ "'.")
+        }
+        Js.Promise.resolve()
+      })
+      |> ignore
+    }
+    let exportModel = id => {
+      state
+      ->State.model(id)
+      ->Option.iter(model => {
+        let name = State.Model.name(model)
+        let json = State.Model.toJson(model)
+        let content =
+          "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
+        Downloader.download(name ++ ".repn", content)
+      })
+    }
     let dump = _ => {
       let content =
         "data:text/json;charset=utf-8," ++
@@ -164,6 +193,8 @@ module App = {
         onSelect={focusModel}
         onDuplicate={duplicateModel}
         onChangedName={renameModel}
+        onImport={importModel}
+        onExport={exportModel}
       />
       <div
         className="editor-panel"

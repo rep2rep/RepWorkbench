@@ -8,4 +8,6 @@ let make: (
   ~onSelect: Uuid.t => unit,
   ~onDuplicate: Uuid.t => unit,
   ~onChangedName: (Uuid.t, string) => unit,
+  ~onImport: File.t => unit,
+  ~onExport: Uuid.t => unit,
 ) => React.element

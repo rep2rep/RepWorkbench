@@ -135,6 +135,8 @@ let focusedId = t => t.currentModel
 
 let models = t => t.models
 
+let model = (t, id) => t.models->Array.find(model => Model.id(model) == id)
+
 let createModel = (t, id) => {
   models: Array.concat(t.models, [Model.create(id, "Model")]),
   currentModel: Some(id),
@@ -169,6 +171,16 @@ let duplicateModel = (t, ~existing, ~new_) => {
   {
     currentModel: Some(new_),
     models: Array.concatMany([before, [newModel], after]),
+  }
+}
+
+let importModel = (t, model) => {
+  // Duplicate the model to ensure fresh ids
+  let newId = Uuid.create()
+  let model = Model.duplicate(model, newId, model.name)
+  {
+    currentModel: Some(newId),
+    models: t.models->Array.concat([model]),
   }
 }
 
