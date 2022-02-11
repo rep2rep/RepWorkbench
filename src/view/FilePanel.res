@@ -22,19 +22,26 @@ module FileLabel = {
     let (state, dispatch) = React.useReducer(reducer, init(name))
     let handleProps = {
       "style": ReactDOM.Style.make(
-        ~background="rgb(100, 100, 100)",
+        ~color="rgba(100, 100, 100)",
         ~width="100%",
         ~height="100%",
-        ~borderRadius="50%",
+        ~cursor="grab",
         (),
       ),
     }->Js.Obj.assign(dragHandleProps)
-    let handle = React.cloneElement(<div />, handleProps)
+    let handle = React.cloneElement(
+      // Vertical ellipsis
+      <div> {React.string(Js.String2.fromCharCode(8942))} </div>,
+      handleProps,
+    )
     let clickTimer = ref(None)
     <span
       style={ReactDOM.Style.make(
         ~display="block",
         ~padding="0.5rem",
+        ~overflow="hidden",
+        ~textOverflow="ellipsis",
+        ~whiteSpace="nowrap",
         ~background={
           if active {
             "lightgrey"
@@ -58,7 +65,7 @@ module FileLabel = {
       }}>
       <div
         style={ReactDOM.Style.make(
-          ~width="12px",
+          ~width="6px",
           ~height="12px",
           ~display="inline-block",
           ~marginRight="0.5rem",
@@ -74,6 +81,7 @@ module FileLabel = {
             ~padding="0",
             ~margin="0",
             ~borderWidth="0",
+            ~width="calc(100% - 20px)",
             (),
           )}
           autoFocus={true}
