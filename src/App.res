@@ -134,7 +134,7 @@ module App = {
     let importModel = f => {
       File.text(f)
       |> Js.Promise.then_(text => {
-        let model = try text->Js.Json.parseExn->State.Model.Stable.V1.fromJson catch {
+        let model = try text->Js.Json.parseExn->State.Model.Stable.V2.fromJson catch {
         | _ => Or_error.error_s("fail")
         }
         if Or_error.isOk(model) {
@@ -152,7 +152,7 @@ module App = {
       ->State.model(id)
       ->Option.iter(model => {
         let name = State.Model.name(model)
-        let json = State.Model.Stable.V1.toJson(model)
+        let json = State.Model.Stable.V2.toJson(model)
         let content =
           "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
         Downloader.download(name ++ ".repn", content)

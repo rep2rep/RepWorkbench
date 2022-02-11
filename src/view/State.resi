@@ -3,9 +3,16 @@ module Model: {
 
   let id: t => Uuid.t
   let name: t => string
+  let notes: t => string
 
   module Stable: {
     module V1: {
+      type t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+
+    module V2: {
       type t = t
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>

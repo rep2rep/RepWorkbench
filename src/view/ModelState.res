@@ -5,7 +5,7 @@ type t = {
 
 module Stable = {
   module V1 = {
-    type t = t = {
+    type t = {
       graph: ModelGraph.Stable.V1.t,
       selection: ModelSelection.Stable.V1.t,
     }
@@ -35,6 +35,56 @@ module Stable = {
             selection: selection,
           }
         })
+      })
+  }
+
+  module V2 = {
+    type t = t = {
+      graph: ModelGraph.Stable.V1.t,
+      selection: ModelSelection.Stable.V1.t,
+    }
+
+    let v1_to_v2 = t => {
+      graph: t.V1.graph,
+      selection: t.V1.selection,
+    }
+
+    let toJson = t =>
+      Js.Dict.fromList(list{
+        ("version", Int.toJson(2)),
+        ("graph", ModelGraph.Stable.V1.toJson(t.graph)),
+      })->Js.Json.object_
+
+    let fromJson = json =>
+      json
+      ->Js.Json.decodeObject
+      ->Or_error.fromOption_s("Failed to decode state object JSON")
+      ->Or_error.flatMap(dict => {
+        let getValue = (key, reader) =>
+          dict
+          ->Js.Dict.get(key)
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+          ->Or_error.flatMap(reader)
+        let version = getValue("version", Int.fromJson)
+        if !Or_error.isOk(version) {
+          Js.Console.log("Upgrading ModelState from V1 to V2...")
+          V1.fromJson(json)->Or_error.map(v1_to_v2)
+        } else if Or_error.okExn(version) != 2 {
+          Or_error.error_ss([
+            "Attempting to read unsupported ModelState version ",
+            Int.toString(Or_error.okExn(version)),
+            "!",
+          ])
+        } else {
+          let graph = getValue("graph", ModelGraph.Stable.V1.fromJson)
+
+          graph->Or_error.map(graph => {
+            {
+              graph: graph,
+              selection: ModelSelection.empty,
+            }
+          })
+        }
       })
   }
 }

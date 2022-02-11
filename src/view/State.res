@@ -2,13 +2,14 @@ module Model = {
   type t = {
     id: Uuid.t,
     name: string,
+    notes: string,
     model: ModelState.t,
     slots: Uuid.Map.t<InspectorState.Schema.t>,
   }
 
   module Stable = {
     module V1 = {
-      type t = t = {
+      type t = {
         id: Uuid.t,
         name: string,
         model: ModelState.Stable.V1.t,
@@ -48,9 +49,82 @@ module Model = {
           })
         })
     }
+
+    module V2 = {
+      type t = t = {
+        id: Uuid.t,
+        name: string,
+        notes: string,
+        model: ModelState.Stable.V2.t,
+        slots: Uuid.Map.t<InspectorState.Schema.Stable.V1.t>,
+      }
+
+      let v1_to_v2 = t => {
+        id: t.V1.id,
+        name: t.V1.name,
+        notes: "",
+        model: t.V1.model->ModelState.Stable.V2.v1_to_v2,
+        slots: t.V1.slots,
+      }
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(2)),
+          ("id", t.id->Uuid.toJson),
+          ("name", t.name->String.toJson),
+          ("notes", t.name->String.toJson),
+          ("model", t.model->ModelState.Stable.V2.toJson),
+          ("slots", t.slots->Uuid.Map.toJson(InspectorState.Schema.Stable.V1.toJson)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Model state object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          if !Or_error.isOk(version) {
+            Js.Console.log("Attempting to upgrade model from V1 to V2")
+            V1.fromJson(json)->Or_error.map(v1_to_v2)
+          } else if Or_error.okExn(version) != 2 {
+            Or_error.error_ss([
+              "Attempting to load unsupported Model version ",
+              Int.toString(Or_error.okExn(version)),
+              "!",
+            ])
+          } else {
+            let id = getValue("id", Uuid.fromJson)
+            let name = getValue("name", String.fromJson)
+            let notes = getValue("notes", String.fromJson)
+            let model = getValue("model", ModelState.Stable.V2.fromJson)
+            let slots = getValue("slots", j =>
+              j->Uuid.Map.fromJson(InspectorState.Schema.Stable.V1.fromJson)
+            )
+
+            Or_error.both5((id, name, notes, model, slots))->Or_error.map(((
+              id,
+              name,
+              notes,
+              model,
+              slots,
+            )) => {
+              id: id,
+              name: name,
+              notes: notes,
+              model: model,
+              slots: slots,
+            })
+          }
+        })
+    }
   }
 
-  module Storage = LocalStorage.MakeJsonable(Stable.V1)
+  module Storage = LocalStorage.MakeJsonable(Stable.V2)
 
   let store = t => Storage.set("RepNotation:Model:" ++ Uuid.toString(t.id), t)
   let load = id => Storage.get("RepNotation:Model:" ++ Uuid.toString(id))
@@ -58,10 +132,12 @@ module Model = {
   let id = t => t.id
   let model = t => t.model
   let name = t => t.name
+  let notes = t => t.notes
 
   let create = (id, name) => {
     id: id,
     name: name,
+    notes: "",
     model: ModelState.empty,
     slots: Uuid.Map.empty(),
   }
@@ -71,6 +147,7 @@ module Model = {
     {
       id: newId,
       name: newName,
+      notes: t.notes,
       model: t.model->ModelState.duplicate(newIdMap),
       slots: t.slots
       ->Uuid.Map.toArray
