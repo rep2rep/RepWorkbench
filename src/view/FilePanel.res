@@ -30,6 +30,7 @@ module FileLabel = {
       ),
     }->Js.Obj.assign(dragHandleProps)
     let handle = React.cloneElement(<div />, handleProps)
+    let clickTimer = ref(None)
     <span
       style={ReactDOM.Style.make(
         ~display="block",
@@ -50,7 +51,11 @@ module FileLabel = {
       } else {
         "file-inactive"
       }}
-      onClick={_ => onSelect()}>
+      onClick={_ => {
+        clickTimer.contents->Option.iter(Js.Global.clearTimeout)
+        // Any value greater than 0 seems to work???
+        clickTimer := Js.Global.setTimeout(onSelect, 50)->Some
+      }}>
       <div
         style={ReactDOM.Style.make(
           ~width="12px",
@@ -91,8 +96,10 @@ module FileLabel = {
       } else {
         <span
           className={"inner-name-focus inner-name-not-editing"}
-          onDoubleClick={_ => {
-            Js.Console.log("DoubleClick!")
+          title={state.currName}
+          onDoubleClick={e => {
+            clickTimer.contents->Option.iter(Js.Global.clearTimeout)
+            clickTimer := None
             dispatch(StartEdit)
           }}>
           {React.string(state.currName)}
