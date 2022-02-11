@@ -59,9 +59,11 @@ module FileLabel = {
         "file-inactive"
       }}
       onClick={_ => {
-        clickTimer.contents->Option.iter(Js.Global.clearTimeout)
-        // Any value greater than 0 seems to work???
-        clickTimer := Js.Global.setTimeout(onSelect, 50)->Some
+        if !state.editing {
+          clickTimer.contents->Option.iter(Js.Global.clearTimeout)
+          // Any value greater than 0 seems to work???
+          clickTimer := Js.Global.setTimeout(onSelect, 50)->Some
+        }
       }}>
       <div
         style={ReactDOM.Style.make(
