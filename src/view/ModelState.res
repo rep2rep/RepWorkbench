@@ -1,7 +1,6 @@
 type t = {
   graph: ModelGraph.t,
   selection: ModelSelection.t,
-  nodeMap: Uuid.Map.t<ModelNode.t>,
 }
 
 let toJson = t =>
@@ -24,20 +23,21 @@ let fromJson = json =>
     let selection = getValue("selection", ModelSelection.fromJson)
 
     Or_error.both((graph, selection))->Or_error.map(((graph, selection)) => {
-      let nodeMap =
-        graph->ModelGraph.nodes->Array.map(node => (ModelNode.id(node), node))->Uuid.Map.fromArray
       {
         graph: graph,
         selection: selection,
-        nodeMap: nodeMap,
       }
     })
   })
 
+let duplicate = (t, newIdMap) => {
+  graph: t.graph->ModelGraph.duplicate(newIdMap),
+  selection: t.selection->ModelSelection.duplicate(newIdMap),
+}
+
 let empty = {
   graph: ModelGraph.empty,
   selection: ModelSelection.empty,
-  nodeMap: Uuid.Map.empty(),
 }
 
 let graph = t => t.graph
@@ -47,23 +47,21 @@ let data = t => {
   links: t.graph->ModelGraph.links->Array.flatMap(ModelLink.data),
 }
 
-let nodeWithId = (t, nodeId) => t.nodeMap->Uuid.Map.get(nodeId)
+let nodeWithId = (t, nodeId) =>
+  t.graph->ModelGraph.nodes->Array.find(node => ModelNode.id(node) == nodeId)
 
 let addNode = (t, node) => {
   ...t,
-  nodeMap: t.nodeMap->Uuid.Map.set(ModelNode.id(node), node),
   graph: t.graph->ModelGraph.addNode(node),
 }
 
 let updateNodes = (t, f) => {
   ...t,
-  nodeMap: t.nodeMap->Uuid.Map.map(f),
   graph: t.graph->ModelGraph.mapNodes(f),
 }
 
 let removeNode = (t, nodeId) => {
   ...t,
-  nodeMap: t.nodeMap->Uuid.Map.remove(nodeId),
   graph: t.graph->ModelGraph.removeNode(nodeId),
 }
 

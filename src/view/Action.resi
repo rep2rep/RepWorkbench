@@ -2,6 +2,8 @@ type t =
   | NewModel(Uuid.t)
   | DeleteModel(Uuid.t)
   | FocusModel(Uuid.t)
+  | DuplicateModel(Uuid.t, Uuid.t)
+  | ImportModel(State.Model.t)
   | RenameModel(Uuid.t, string)
   | ReorderModels(array<State.Model.t>)
   | CreateNode(ModelNode.Kind.t, Uuid.t)

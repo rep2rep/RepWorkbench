@@ -36,6 +36,17 @@ let fromJson = json =>
     })
   })
 
+let duplicate = (t, newIdMap) => {
+  nodes: t.nodes->Array.map(id =>
+    newIdMap
+    ->Uuid.Map.get(ReactD3Graph.Node.Id.toString(id)->Uuid.fromString)
+    ->Option.getExn
+    ->Uuid.toString
+    ->ReactD3Graph.Node.Id.ofString
+  ),
+  links: [], // Links are hard! So we ignore them :)
+}
+
 let empty = ReactD3Graph.Graph.Selection.empty
 
 let ofNodes = nodeIds => {

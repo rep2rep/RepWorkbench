@@ -2,6 +2,8 @@ type t =
   | NewModel(Uuid.t)
   | DeleteModel(Uuid.t)
   | FocusModel(Uuid.t)
+  | DuplicateModel(Uuid.t, Uuid.t)
+  | ImportModel(State.Model.t)
   | RenameModel(Uuid.t, string)
   | ReorderModels(array<State.Model.t>)
   | CreateNode(ModelNode.Kind.t, Uuid.t)
@@ -10,6 +12,8 @@ type t =
 let createModel = State.createModel
 let deleteModel = State.deleteModel
 let focusModel = State.focusModel
+let duplicateModel = State.duplicateModel
+let importModel = State.importModel
 let renameModel = State.renameModel
 let reorderModels = State.reorderModels
 
@@ -30,6 +34,8 @@ let dispatch = (state, action) =>
   | NewModel(id) => createModel(state, id)
   | DeleteModel(id) => deleteModel(state, id)
   | FocusModel(id) => focusModel(state, id)
+  | DuplicateModel(oldId, newId) => duplicateModel(state, ~existing=oldId, ~new_=newId)
+  | ImportModel(model) => importModel(state, model)
   | RenameModel(id, name) => renameModel(state, id, name)
   | ReorderModels(newOrder) => reorderModels(state, newOrder)
   | CreateNode(kind, id) => createNode(state, kind, id)
