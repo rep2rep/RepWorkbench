@@ -4,31 +4,46 @@ module Kind = {
     | Anchor
     | Relation
 
-  let toJson = t =>
-    switch t {
-    | Hierarchy => "Hierarchy"
-    | Anchor => "Anchor"
-    | Relation => "Relation"
-    }->String.toJson
+  module Stable = {
+    module V1 = {
+      type t = t =
+        | Hierarchy
+        | Anchor
+        | Relation
 
-  let fromJson = json =>
-    json
-    ->String.fromJson
-    ->Or_error.flatMap(s =>
-      switch s {
-      | "Hierarchy" => Or_error.create(Hierarchy)
-      | "Anchor" => Or_error.create(Anchor)
-      | "Relation" => Or_error.create(Relation)
-      | s => Or_error.error_ss(["Unknown relation value '", s, "'"])
-      }
-    )
+      let toJson = t =>
+        switch t {
+        | Hierarchy => "Hierarchy"
+        | Anchor => "Anchor"
+        | Relation => "Relation"
+        }->String.toJson
+
+      let fromJson = json =>
+        json
+        ->String.fromJson
+        ->Or_error.flatMap(s =>
+          switch s {
+          | "Hierarchy" => Or_error.create(Hierarchy)
+          | "Anchor" => Or_error.create(Anchor)
+          | "Relation" => Or_error.create(Relation)
+          | s => Or_error.error_ss(["Unknown relation value '", s, "'"])
+          }
+        )
+    }
+  }
 }
 
 module Payload = {
   type t = Kind.t
 
-  let toJson = Kind.toJson
-  let fromJson = Kind.fromJson
+  module Stable = {
+    module V1 = {
+      type t = Kind.t
+
+      let toJson = Kind.Stable.V1.toJson
+      let fromJson = Kind.Stable.V1.fromJson
+    }
+  }
 
   let create = s => s
 }
@@ -77,42 +92,53 @@ let id = t => t->ReactD3Graph.Link.id
 let payload = t => t->ReactD3Graph.Link.payload
 let kind = t => t->payload->Option.getWithDefault(Kind.Hierarchy)
 
-let toJson = t =>
-  Js.Dict.fromList(list{
-    ("source", source(t)->Uuid.toJson),
-    ("target", target(t)->Uuid.toJson),
-    ("id", id(t)->Option.map(ReactD3Graph.Link.Id.toString)->Option.toJson(String.toJson)),
-    ("payload", payload(t)->Option.toJson(Payload.toJson)),
-  })->Js.Json.object_
+module Stable = {
+  module V1 = {
+    type t = ReactD3Graph.Link.t<Payload.Stable.V1.t>
 
-let fromJson = json =>
-  json
-  ->Js.Json.decodeObject
-  ->Or_error.fromOption_s("Failed to decode ModelLink object JSON")
-  ->Or_error.flatMap(dict => {
-    let getValue = (key, reader) =>
-      dict
-      ->Js.Dict.get(key)
-      ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
-      ->Or_error.flatMap(reader)
-    let source = getValue("source", Uuid.fromJson)
-    let target = getValue("target", Uuid.fromJson)
-    let id = getValue("id", json =>
+    let toJson = t =>
+      Js.Dict.fromList(list{
+        ("source", source(t)->Uuid.toJson),
+        ("target", target(t)->Uuid.toJson),
+        ("id", id(t)->Option.map(ReactD3Graph.Link.Id.toString)->Option.toJson(String.toJson)),
+        ("payload", payload(t)->Option.toJson(Payload.Stable.V1.toJson)),
+      })->Js.Json.object_
+
+    let fromJson = json =>
       json
-      ->Option.fromJson(String.fromJson)
-      ->Or_error.map(s => s->Option.map(ReactD3Graph.Link.Id.ofString))
-    )
-    let payload = getValue("payload", json => json->Option.fromJson(Payload.fromJson))
+      ->Js.Json.decodeObject
+      ->Or_error.fromOption_s("Failed to decode ModelLink object JSON")
+      ->Or_error.flatMap(dict => {
+        let getValue = (key, reader) =>
+          dict
+          ->Js.Dict.get(key)
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+          ->Or_error.flatMap(reader)
+        let source = getValue("source", Uuid.fromJson)
+        let target = getValue("target", Uuid.fromJson)
+        let id = getValue("id", json =>
+          json
+          ->Option.fromJson(String.fromJson)
+          ->Or_error.map(s => s->Option.map(ReactD3Graph.Link.Id.ofString))
+        )
+        let payload = getValue("payload", json => json->Option.fromJson(Payload.Stable.V1.fromJson))
 
-    Or_error.both4((source, target, id, payload))->Or_error.map(((source, target, id, payload)) => {
-      let source = source->Uuid.toString->ReactD3Graph.Node.Id.ofString
-      let target = target->Uuid.toString->ReactD3Graph.Node.Id.ofString
-      let payload = payload->Option.getWithDefault(Kind.Hierarchy)
-      let config = switch payload {
-      | Kind.Hierarchy => Config.hierarchy
-      | Kind.Anchor => Config.anchor
-      | Kind.Relation => Config.relation
-      }
-      ReactD3Graph.Link.create(~source, ~target, ~payload, ~config, ~id?, ())
-    })
-  })
+        Or_error.both4((source, target, id, payload))->Or_error.map(((
+          source,
+          target,
+          id,
+          payload,
+        )) => {
+          let source = source->Uuid.toString->ReactD3Graph.Node.Id.ofString
+          let target = target->Uuid.toString->ReactD3Graph.Node.Id.ofString
+          let payload = payload->Option.getWithDefault(Kind.Hierarchy)
+          let config = switch payload {
+          | Kind.Hierarchy => Config.hierarchy
+          | Kind.Anchor => Config.anchor
+          | Kind.Relation => Config.relation
+          }
+          ReactD3Graph.Link.create(~source, ~target, ~payload, ~config, ~id?, ())
+        })
+      })
+  }
+}

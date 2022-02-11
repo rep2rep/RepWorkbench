@@ -4,6 +4,12 @@ module Kind: {
     | Scheme
     | Dimension
     | Token
+
+  module Stable: {
+    module V1: {
+      type t = t
+    }
+  }
 }
 
 module Payload: {
@@ -16,16 +22,25 @@ module Payload: {
     dashed: bool,
   }
 
-  let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => Or_error.t<t>
+  module Stable: {
+    module V1: {
+      type t = t = {
+        kind: Kind.Stable.V1.t,
+        name: string,
+        name_suffix: option<string>,
+        reference: string,
+        reference_suffix: option<string>,
+        dashed: bool,
+      }
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+  }
 }
 
 type t
 
 let data: t => array<ReactD3Graph.Node.t<Payload.t>>
-
-let toJson: t => Js.Json.t
-let fromJson: Js.Json.t => Or_error.t<t>
 
 let create: (~name: string, ~reference: string, ~x: float, ~y: float, Kind.t, Uuid.t) => t
 let dupWithNewId: (t, Uuid.t) => t
@@ -34,3 +49,11 @@ let kind: t => Kind.t
 let position: t => (float, float)
 let setPosition: (t, ~x: float, ~y: float) => t
 let updatePayload: (t, Payload.t => Payload.t) => t
+
+module Stable: {
+  module V1: {
+    type t = t
+    let toJson: t => Js.Json.t
+    let fromJson: Js.Json.t => Or_error.t<t>
+  }
+}

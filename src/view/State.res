@@ -1,46 +1,56 @@
 module Model = {
-  module T = {
-    type t = {
-      id: Uuid.t,
-      name: string,
-      model: ModelState.t,
-      slots: Uuid.Map.t<InspectorState.Schema.t>,
-    }
-
-    let toJson = t =>
-      Js.Dict.fromList(list{
-        ("id", t.id->Uuid.toJson),
-        ("name", t.name->String.toJson),
-        ("model", t.model->ModelState.toJson),
-        ("slots", t.slots->Uuid.Map.toJson(InspectorState.Schema.toJson)),
-      })->Js.Json.object_
-
-    let fromJson = json =>
-      json
-      ->Js.Json.decodeObject
-      ->Or_error.fromOption_s("Failed to decode Model state object JSON")
-      ->Or_error.flatMap(dict => {
-        let getValue = (key, reader) =>
-          dict
-          ->Js.Dict.get(key)
-          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
-          ->Or_error.flatMap(reader)
-        let id = getValue("id", Uuid.fromJson)
-        let name = getValue("name", String.fromJson)
-        let model = getValue("model", ModelState.fromJson)
-        let slots = getValue("slots", j => j->Uuid.Map.fromJson(InspectorState.Schema.fromJson))
-
-        Or_error.both4((id, name, model, slots))->Or_error.map(((id, name, model, slots)) => {
-          id: id,
-          name: name,
-          model: model,
-          slots: slots,
-        })
-      })
+  type t = {
+    id: Uuid.t,
+    name: string,
+    model: ModelState.t,
+    slots: Uuid.Map.t<InspectorState.Schema.t>,
   }
-  include T
 
-  module Storage = LocalStorage.MakeJsonable(T)
+  module Stable = {
+    module V1 = {
+      type t = t = {
+        id: Uuid.t,
+        name: string,
+        model: ModelState.Stable.V1.t,
+        slots: Uuid.Map.t<InspectorState.Schema.Stable.V1.t>,
+      }
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("id", t.id->Uuid.toJson),
+          ("name", t.name->String.toJson),
+          ("model", t.model->ModelState.Stable.V1.toJson),
+          ("slots", t.slots->Uuid.Map.toJson(InspectorState.Schema.Stable.V1.toJson)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Model state object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let id = getValue("id", Uuid.fromJson)
+          let name = getValue("name", String.fromJson)
+          let model = getValue("model", ModelState.Stable.V1.fromJson)
+          let slots = getValue("slots", j =>
+            j->Uuid.Map.fromJson(InspectorState.Schema.Stable.V1.fromJson)
+          )
+
+          Or_error.both4((id, name, model, slots))->Or_error.map(((id, name, model, slots)) => {
+            id: id,
+            name: name,
+            model: model,
+            slots: slots,
+          })
+        })
+    }
+  }
+
+  module Storage = LocalStorage.MakeJsonable(Stable.V1)
 
   let store = t => Storage.set("RepNotation:Model:" ++ Uuid.toString(t.id), t)
   let load = id => Storage.get("RepNotation:Model:" ++ Uuid.toString(id))

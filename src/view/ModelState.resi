@@ -1,8 +1,5 @@
 type t
 
-let toJson: t => Js.Json.t
-let fromJson: Js.Json.t => Or_error.t<t>
-
 let duplicate: (t, Uuid.Map.t<Uuid.t>) => t
 
 let empty: t
@@ -18,3 +15,11 @@ let nodeWithId: (t, Uuid.t) => option<ModelNode.t>
 
 let selection: t => ModelSelection.t
 let setSelection: (t, ModelSelection.t) => t
+
+module Stable: {
+  module V1: {
+    type t = t
+    let toJson: t => Js.Json.t
+    let fromJson: Js.Json.t => Or_error.t<t>
+  }
+}

@@ -3,32 +3,41 @@ type t = {
   selection: ModelSelection.t,
 }
 
-let toJson = t =>
-  Js.Dict.fromList(list{
-    ("graph", ModelGraph.toJson(t.graph)),
-    ("selection", ModelSelection.toJson(t.selection)),
-  })->Js.Json.object_
+module Stable = {
+  module V1 = {
+    type t = t = {
+      graph: ModelGraph.Stable.V1.t,
+      selection: ModelSelection.Stable.V1.t,
+    }
 
-let fromJson = json =>
-  json
-  ->Js.Json.decodeObject
-  ->Or_error.fromOption_s("Failed to decode state object JSON")
-  ->Or_error.flatMap(dict => {
-    let getValue = (key, reader) =>
-      dict
-      ->Js.Dict.get(key)
-      ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
-      ->Or_error.flatMap(reader)
-    let graph = getValue("graph", ModelGraph.fromJson)
-    let selection = getValue("selection", ModelSelection.fromJson)
+    let toJson = t =>
+      Js.Dict.fromList(list{
+        ("graph", ModelGraph.Stable.V1.toJson(t.graph)),
+        ("selection", ModelSelection.Stable.V1.toJson(t.selection)),
+      })->Js.Json.object_
 
-    Or_error.both((graph, selection))->Or_error.map(((graph, selection)) => {
-      {
-        graph: graph,
-        selection: selection,
-      }
-    })
-  })
+    let fromJson = json =>
+      json
+      ->Js.Json.decodeObject
+      ->Or_error.fromOption_s("Failed to decode state object JSON")
+      ->Or_error.flatMap(dict => {
+        let getValue = (key, reader) =>
+          dict
+          ->Js.Dict.get(key)
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+          ->Or_error.flatMap(reader)
+        let graph = getValue("graph", ModelGraph.Stable.V1.fromJson)
+        let selection = getValue("selection", ModelSelection.Stable.V1.fromJson)
+
+        Or_error.both((graph, selection))->Or_error.map(((graph, selection)) => {
+          {
+            graph: graph,
+            selection: selection,
+          }
+        })
+      })
+  }
+}
 
 let duplicate = (t, newIdMap) => {
   graph: t.graph->ModelGraph.duplicate(newIdMap),

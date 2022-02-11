@@ -4,8 +4,13 @@ module Model: {
   let id: t => Uuid.t
   let name: t => string
 
-  let toJson: t => Js.Json.t
-  let fromJson: Js.Json.t => Or_error.t<t>
+  module Stable: {
+    module V1: {
+      type t = t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+  }
 }
 
 type t
