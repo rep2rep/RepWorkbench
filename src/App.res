@@ -158,12 +158,6 @@ module App = {
         Downloader.download(name ++ ".repn", content)
       })
     }
-    let dump = _ => {
-      let content =
-        "data:text/json;charset=utf-8," ++
-        state->State.dump->Js.Json.stringify->Js.Global.encodeURIComponent
-      Downloader.download("RepNotationOnline.json", content)
-    }
 
     let keybindings = Js.Dict.fromArray([
       ("r", addRepNodeAt),
@@ -231,8 +225,6 @@ module App = {
           <Button onClick={unlinkNodes} value="Unlink" />
           <Button.Separator />
           <Button onClick={deleteNodes} value="Delete" />
-          <Button.Separator />
-          <Button onClick={dump} value="Dump state" />
           <Button.Separator />
           <a href="manual.html" target="_blank"> {React.string("Manual")} </a>
         </div>

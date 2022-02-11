@@ -111,14 +111,6 @@ let load = () => {
   })
 }
 
-let dump = t => {
-  Js.Dict.fromList(list{
-    ("RepNotation:CurrentModel", t.currentModel->Option.toJson(Uuid.toJson)),
-    ("RepNotation:AllModels", t.models->Array.map(Model.id)->Array.toJson(Uuid.toJson)),
-    ("model_data", t.models->Array.toJson(Model.toJson)),
-  })->Js.Json.object_
-}
-
 let empty = {
   models: [],
   currentModel: None,
