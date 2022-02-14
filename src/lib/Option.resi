@@ -8,4 +8,5 @@ let flatten: option<option<'a>> => option<'a>
 let iter: (option<'a>, 'a => unit) => unit
 let both: ((option<'a>, option<'b>)) => option<('a, 'b)>
 let both3: ((option<'a>, option<'b>, option<'c>)) => option<('a, 'b, 'c)>
+let first: array<option<'a>> => option<'a>
 let all: array<option<'a>> => option<array<'a>>
