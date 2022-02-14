@@ -8,6 +8,7 @@ let iter = (x, f) =>
   | None => ()
   }
 let both = ((a, b)) => a->flatMap(a => b->map(b => (a, b)))
+let both3 = ((a, b, c)) => a->flatMap(a => b->flatMap(b => c->map(c => (a, b, c))))
 let all = xs =>
   xs->Array.reduce(Some([]), (ys, x) => both((ys, x))->map(((ys, x)) => Array.concat(ys, [x])))
 
