@@ -8,6 +8,7 @@ let filter: (array<'a>, 'a => bool) => array<'a>
 let find: (array<'a>, 'a => bool) => option<'a>
 let includes: (array<'a>, 'a) => bool
 let flatMap: (array<'a>, 'a => array<'b>) => array<'b>
+let mapPartial: (array<'a>, 'a => option<'b>) => array<'b>
 
 let push: (array<'a>, 'a) => array<'a>
 let pop: array<'a> => ('a, array<'a>)
