@@ -254,47 +254,6 @@ module App = {
             keybindings={keybindings}
             style={ReactDOM.Style.make(~flexGrow="1", ())}
           />
-          // <InspectorPanel
-          //   id={"node-inspector"}
-          //   data={switch selection->ModelSelection.nodes {
-          //   | [] =>
-          //     switch focused {
-          //     | None => InspectorState.Empty
-          //     | Some(focused) =>
-          //       state
-          //       ->State.model(focused)
-          //       ->Option.map(model => model->State.Model.info->InspectorState.Global)
-          //       ->Option.getWithDefault(InspectorState.Empty)
-          //     }
-          //   | [nodeId] =>
-          //     focused
-          //     ->Option.flatMap(focused =>
-          //       state
-          //       ->State.model(focused)
-          //       ->Option.flatMap(model =>
-          //         model
-          //         ->State.Model.slots
-          //         ->Uuid.Map.get(nodeId)
-          //         ->Option.map(s => InspectorState.Single(nodeId, s))
-          //       )
-          //     )
-          //     ->Option.getWithDefault(InspectorState.Empty)
-          //   | nodeIds =>
-          //     focused
-          //     ->Option.flatMap(focused =>
-          //       state
-          //       ->State.model(focused)
-          //       ->Option.map(model => {
-          //         let slots = model->State.Model.slots
-          //         nodeIds
-          //         ->Array.mapPartial(id => slots->Uuid.Map.get(id)->Option.map(s => (id, s)))
-          //         ->InspectorState.Multiple
-          //       })
-          //     )
-          //     ->Option.getWithDefault(InspectorState.Empty)
-          //   }}
-          //   onChange=slotsChange
-          // />
           <InspectorPanel
             id={"node_inspector"}
             onChange=slotsChange
