@@ -7,5 +7,5 @@ module Separator: {
 let make: (
   ~onClick: ReactEvent.Mouse.t => unit,
   ~style: ReactDOM.Style.t=?,
-  ~children: React.element,
+  ~value: string,
 ) => React.element

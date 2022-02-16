@@ -1,7 +1,6 @@
 type t
 
-let toJson: t => Js.Json.t
-let fromJson: Js.Json.t => Or_error.t<t>
+let duplicate: (t, Uuid.Map.t<Uuid.t>) => t
 
 let empty: t
 
@@ -16,3 +15,11 @@ let mapNodes: (t, ModelNode.t => ModelNode.t) => t
 let addLinks: (t, array<ModelLink.t>) => t
 let addLink: (t, ModelLink.t) => t
 let removeLinks: (t, array<ModelLink.t>) => t
+
+module Stable: {
+  module V1: {
+    type t = t
+    let toJson: t => Js.Json.t
+    let fromJson: Js.Json.t => Or_error.t<t>
+  }
+}

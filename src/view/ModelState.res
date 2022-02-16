@@ -1,43 +1,102 @@
 type t = {
   graph: ModelGraph.t,
   selection: ModelSelection.t,
-  nodeMap: Uuid.Map.t<ModelNode.t>,
 }
 
-let toJson = t =>
-  Js.Dict.fromList(list{
-    ("graph", ModelGraph.toJson(t.graph)),
-    ("selection", ModelSelection.toJson(t.selection)),
-  })->Js.Json.object_
+module Stable = {
+  module V1 = {
+    type t = {
+      graph: ModelGraph.Stable.V1.t,
+      selection: ModelSelection.Stable.V1.t,
+    }
 
-let fromJson = json =>
-  json
-  ->Js.Json.decodeObject
-  ->Or_error.fromOption_s("Failed to decode state object JSON")
-  ->Or_error.flatMap(dict => {
-    let getValue = (key, reader) =>
-      dict
-      ->Js.Dict.get(key)
-      ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
-      ->Or_error.flatMap(reader)
-    let graph = getValue("graph", ModelGraph.fromJson)
-    let selection = getValue("selection", ModelSelection.fromJson)
+    let toJson = t =>
+      Js.Dict.fromList(list{
+        ("graph", ModelGraph.Stable.V1.toJson(t.graph)),
+        ("selection", ModelSelection.Stable.V1.toJson(t.selection)),
+      })->Js.Json.object_
 
-    Or_error.both((graph, selection))->Or_error.map(((graph, selection)) => {
-      let nodeMap =
-        graph->ModelGraph.nodes->Array.map(node => (ModelNode.id(node), node))->Uuid.Map.fromArray
-      {
-        graph: graph,
-        selection: selection,
-        nodeMap: nodeMap,
-      }
-    })
-  })
+    let fromJson = json =>
+      json
+      ->Js.Json.decodeObject
+      ->Or_error.fromOption_s("Failed to decode state object JSON")
+      ->Or_error.flatMap(dict => {
+        let getValue = (key, reader) =>
+          dict
+          ->Js.Dict.get(key)
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+          ->Or_error.flatMap(reader)
+        let graph = getValue("graph", ModelGraph.Stable.V1.fromJson)
+        let selection = getValue("selection", ModelSelection.Stable.V1.fromJson)
+
+        Or_error.both((graph, selection))->Or_error.map(((graph, selection)) => {
+          {
+            graph: graph,
+            selection: selection,
+          }
+        })
+      })
+  }
+
+  module V2 = {
+    type t = t = {
+      graph: ModelGraph.Stable.V1.t,
+      selection: ModelSelection.Stable.V1.t,
+    }
+
+    let v1_to_v2 = t => {
+      graph: t.V1.graph,
+      selection: t.V1.selection,
+    }
+
+    let toJson = t =>
+      Js.Dict.fromList(list{
+        ("version", Int.toJson(2)),
+        ("graph", ModelGraph.Stable.V1.toJson(t.graph)),
+      })->Js.Json.object_
+
+    let fromJson = json =>
+      json
+      ->Js.Json.decodeObject
+      ->Or_error.fromOption_s("Failed to decode state object JSON")
+      ->Or_error.flatMap(dict => {
+        let getValue = (key, reader) =>
+          dict
+          ->Js.Dict.get(key)
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+          ->Or_error.flatMap(reader)
+        let version = getValue("version", Int.fromJson)
+        if !Or_error.isOk(version) {
+          Js.Console.log("Upgrading ModelState from V1 to V2...")
+          V1.fromJson(json)->Or_error.map(v1_to_v2)
+        } else if Or_error.okExn(version) != 2 {
+          Or_error.error_ss([
+            "Attempting to read unsupported ModelState version ",
+            Int.toString(Or_error.okExn(version)),
+            "!",
+          ])
+        } else {
+          let graph = getValue("graph", ModelGraph.Stable.V1.fromJson)
+
+          graph->Or_error.map(graph => {
+            {
+              graph: graph,
+              selection: ModelSelection.empty,
+            }
+          })
+        }
+      })
+  }
+}
+
+let duplicate = (t, newIdMap) => {
+  graph: t.graph->ModelGraph.duplicate(newIdMap),
+  selection: t.selection->ModelSelection.duplicate(newIdMap),
+}
 
 let empty = {
   graph: ModelGraph.empty,
   selection: ModelSelection.empty,
-  nodeMap: Uuid.Map.empty(),
 }
 
 let graph = t => t.graph
@@ -47,12 +106,17 @@ let data = t => {
   links: t.graph->ModelGraph.links->Array.flatMap(ModelLink.data),
 }
 
-let nodeWithId = (t, nodeId) => t.nodeMap->Uuid.Map.get(nodeId)
+let nodeWithId = (t, nodeId) =>
+  t.graph->ModelGraph.nodes->Array.find(node => ModelNode.id(node) == nodeId)
 
 let addNode = (t, node) => {
   ...t,
-  nodeMap: t.nodeMap->Uuid.Map.set(ModelNode.id(node), node),
   graph: t.graph->ModelGraph.addNode(node),
+}
+
+let addNodes = (t, nodes) => {
+  ...t,
+  graph: t.graph->ModelGraph.addNodes(nodes),
 }
 
 let updateNodes = (t, f) => {
@@ -60,13 +124,23 @@ let updateNodes = (t, f) => {
   graph: t.graph->ModelGraph.mapNodes(f),
 }
 
+let moveNode = (t, id, ~x, ~y) =>
+  t->updateNodes(node =>
+    if ModelNode.id(node) == id {
+      node->ModelNode.setPosition(~x, ~y)
+    } else {
+      node
+    }
+  )
+
 let removeNode = (t, nodeId) => {
   ...t,
-  nodeMap: t.nodeMap->Uuid.Map.remove(nodeId),
   graph: t.graph->ModelGraph.removeNode(nodeId),
 }
 
 let addLink = (t, link) => {...t, graph: t.graph->ModelGraph.addLink(link)}
+
+let addLinks = (t, links) => {...t, graph: t.graph->ModelGraph.addLinks(links)}
 
 let removeLinks = (t, links) => {
   {...t, graph: t.graph->ModelGraph.removeLinks(links)}
@@ -75,3 +149,38 @@ let removeLinks = (t, links) => {
 let selection = t => t.selection
 
 let setSelection = (t, selection) => {...t, selection: selection}
+
+let duplicateNodes = (t, nodeMap) => {
+  let newNodes =
+    nodeMap
+    ->Uuid.Map.toArray
+    ->Array.mapPartial(((oldId, newId)) =>
+      t
+      ->nodeWithId(oldId)
+      ->Option.map(node => {
+        let (x, y) = ModelNode.position(node)
+        let (x, y) = (x +. 10., y +. 10.)
+        let newNode = ModelNode.dupWithNewId(node, newId)->ModelNode.setPosition(~x, ~y)
+        (newId, newNode)
+      })
+    )
+    ->Uuid.Map.fromArray
+  let newLinks =
+    t
+    ->graph
+    ->ModelGraph.links
+    ->Array.mapPartial(link => {
+      let source = ModelLink.source(link)
+      let target = ModelLink.target(link)
+      switch (nodeMap->Uuid.Map.get(source), nodeMap->Uuid.Map.get(target)) {
+      | (Some(newSource), Some(newTarget)) =>
+        ModelLink.create(
+          ~source=newNodes->Uuid.Map.get(newSource)->Option.getExn,
+          ~target=newNodes->Uuid.Map.get(newTarget)->Option.getExn,
+          ModelLink.kind(link),
+        )->Some
+      | _ => None
+      }
+    })
+  t->addNodes(newNodes->Uuid.Map.values)->addLinks(newLinks)
+}

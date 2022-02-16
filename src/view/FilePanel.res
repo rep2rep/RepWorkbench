@@ -18,12 +18,30 @@ module FileLabel = {
     }
 
   @react.component
-  let make = (~id, ~name, ~active, ~onSelect, ~onChanged) => {
+  let make = (~id, ~name, ~active, ~onSelect, ~onChanged, ~dragHandleProps) => {
     let (state, dispatch) = React.useReducer(reducer, init(name))
+    let handleProps = {
+      "style": ReactDOM.Style.make(
+        ~color="rgba(100, 100, 100)",
+        ~width="100%",
+        ~height="100%",
+        ~cursor="grab",
+        (),
+      ),
+    }->Js.Obj.assign(dragHandleProps)
+    let handle = React.cloneElement(
+      // Vertical ellipsis
+      <div> {React.string(Js.String2.fromCharCode(8942))} </div>,
+      handleProps,
+    )
+    let clickTimer = ref(None)
     <span
       style={ReactDOM.Style.make(
         ~display="block",
         ~padding="0.5rem",
+        ~overflow="hidden",
+        ~textOverflow="ellipsis",
+        ~whiteSpace="nowrap",
         ~background={
           if active {
             "lightgrey"
@@ -40,7 +58,24 @@ module FileLabel = {
       } else {
         "file-inactive"
       }}
-      onClick={_ => onSelect()}>
+      onClick={_ => {
+        if !state.editing {
+          clickTimer.contents->Option.iter(Js.Global.clearTimeout)
+          // Any value greater than 0 seems to work???
+          clickTimer := Js.Global.setTimeout(onSelect, 50)->Some
+        }
+      }}>
+      <div
+        style={ReactDOM.Style.make(
+          ~width="6px",
+          ~height="12px",
+          ~display="inline-block",
+          ~marginRight="0.5rem",
+          ~marginTop="-0.5ex",
+          (),
+        )}>
+        {handle}
+      </div>
       {if state.editing {
         <input
           style={ReactDOM.Style.make(
@@ -48,6 +83,7 @@ module FileLabel = {
             ~padding="0",
             ~margin="0",
             ~borderWidth="0",
+            ~width="calc(100% - 20px)",
             (),
           )}
           autoFocus={true}
@@ -69,7 +105,13 @@ module FileLabel = {
         />
       } else {
         <span
-          className={"inner-name-focus inner-name-not-editing"} onClick={_ => dispatch(StartEdit)}>
+          className={"inner-name-focus inner-name-not-editing"}
+          title={state.currName}
+          onDoubleClick={e => {
+            clickTimer.contents->Option.iter(Js.Global.clearTimeout)
+            clickTimer := None
+            dispatch(StartEdit)
+          }}>
           {React.string(state.currName)}
         </span>
       }}
@@ -77,20 +119,53 @@ module FileLabel = {
   }
 }
 
-@let external confirm: string => bool = "confirm"
+module Template = {
+  @react.component
+  let make = (
+    ~item as (id, model),
+    ~itemSelected as _,
+    ~anySelected as _,
+    ~dragHandleProps,
+    ~commonProps=?,
+  ) => {
+    let commonProps = Option.getExn(commonProps) // MUST have them, else we have nothing! Ahh!
+    let active = commonProps["active"]
+    let onSelect = commonProps["onSelect"]
+    let onChangedName = commonProps["onChangedName"]
+    let props = {
+      "id": id,
+      "name": {model->State.Model.info->InspectorState.Model.name},
+      "active": {
+        active->Option.map(active => id == active)->Option.getWithDefault(false)
+      },
+      "onSelect": {() => onSelect(id)},
+      "onChanged": {name => onChangedName(id, name)},
+      "dragHandleProps": dragHandleProps,
+    }
+    React.createElement(FileLabel.make, props)
+  }
+}
+
+@val external confirm: string => bool = "confirm"
 
 @react.component
 let make = (
   ~id,
-  ~models: array<State.Model.t>,
+  ~models: array<(Uuid.t, State.Model.t)>,
   ~active,
   ~onCreate,
   ~onDelete,
   ~onSelect,
+  ~onDuplicate,
   ~onChangedName,
+  ~onReorder,
+  ~onImport,
+  ~onExport,
 ) => {
+  let container = React.useRef(Js.Nullable.null)
   <div
     id
+    ref={ReactDOM.Ref.domRef(container)}
     style={ReactDOM.Style.make(
       ~order="1",
       ~width="230px",
@@ -100,46 +175,111 @@ let make = (
       (),
     )}>
     <h1 style={ReactDOM.Style.make(~padding="1rem", ())}> {React.string("RepNotation")} </h1>
-    <div
-      className="file-list"
-      style={ReactDOM.Style.make(~flexGrow="1", ~display="flex", ~flexDirection="column", ())}>
-      {models
-      ->Array.map(model =>
-        <FileLabel
-          id={model->State.Model.id}
-          name={model->State.Model.name}
-          active={active
-          ->Option.map(active => model->State.Model.id == active)
-          ->Option.getWithDefault(false)}
-          onSelect={() => onSelect(model->State.Model.id)}
-          onChanged={name => onChangedName(model->State.Model.id, name)}
-        />
-      )
-      ->React.array}
+    <div style={ReactDOM.Style.make(~flexGrow="1", ~display="flex", ~flexDirection="column", ())}>
+      <ReactDraggableList.DraggableList
+        items={models}
+        itemKey={((id, _)) => id->Uuid.toString}
+        template={Template.make}
+        onMoveEnd={(~newList, ~movedItem as _, ~oldIndex as _, ~newIndex as _) =>
+          onReorder(newList->Array.map(((id, _)) => id))}
+        container={() => container.current}
+        constrainDrag={true}
+        padding={0}
+        commonProps={
+          "active": active,
+          "onSelect": onSelect,
+          "onChangedName": onChangedName,
+        }
+      />
     </div>
     <div
       className="file-controls"
       style={ReactDOM.Style.make(
-        ~height="50px",
+        ~height="60px",
         ~borderTop="1px solid black",
         ~display="flex",
+        ~flexDirection="column",
         ~alignItems="center",
         ~padding="0 0.5rem",
         (),
       )}>
-      <Button onClick={_ => onCreate(Uuid.create())}> {React.string("New")} </Button>
-      <Button.Separator />
-      <Button
-        onClick={_ =>
-          active->Option.iter(active => {
-            let name =
-              models->Array.find(m => State.Model.id(m) == active)->Option.getExn->State.Model.name
-            if confirm("Definitely delete model '" ++ name ++ "'?") {
-              onDelete(active)
+      <div
+        style={ReactDOM.Style.make(
+          ~height="30px",
+          ~display="flex",
+          ~flexDirection="row",
+          ~alignItems="center",
+          ~width="100%",
+          (),
+        )}>
+        <Button onClick={_ => onCreate()} value="New" />
+        <Button onClick={_ => active->Option.iter(onDuplicate)} value="Duplicate" />
+        <Button.Separator />
+        <Button
+          onClick={_ =>
+            active->Option.iter(active => {
+              let name =
+                models
+                ->Array.find(((id, _)) => id === active)
+                ->Option.getExn
+                ->(((_, model)) => model)
+                ->State.Model.info
+                ->InspectorState.Model.name
+              if confirm("Definitely delete model '" ++ name ++ "'?") {
+                onDelete(active)
+              }
+            })}
+          value="Delete"
+        />
+      </div>
+      <div
+        style={ReactDOM.Style.make(
+          ~height="30px",
+          ~display="flex",
+          ~flexDirection="row",
+          ~alignItems="center",
+          ~width="100%",
+          (),
+        )}>
+        <Button onClick={_ => active->Option.iter(onExport)} value="Export" />
+        <input
+          name="import_models"
+          id="import_models"
+          type_="file"
+          accept=".repn"
+          style={ReactDOM.Style.make(
+            ~width="0.1px",
+            ~height="0.1px",
+            ~opacity="0",
+            ~overflow="hidden",
+            ~position="absolute",
+            ~zIndex="-1",
+            (),
+          )}
+          onChange={e => {
+            let files = e->ReactEvent.Form.currentTarget->(t => t["files"])
+            switch files {
+            | [f] => onImport(f)
+            | _ => ()
             }
+          }}
+        />
+        <label
+          htmlFor="import_models"
+          style={ReactDOM.Style.make(
+            ~appearance="push-button",
+            ~fontSize="small",
+            ~cursor="default",
+            (),
+          )->ReactDOM.Style.unsafeAddStyle({
+            "WebkitAppearance": "push-button",
+            "MozAppearance": "push-button",
+            "MsAppearance": "push-button",
+            "OAppearance": "push-button",
           })}>
-        {React.string("Delete")}
-      </Button>
+          {React.string("Import")}
+        </label>
+      </div>
     </div>
   </div>
 }

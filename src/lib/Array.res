@@ -15,7 +15,14 @@ let joinWith = Js.Array2.joinWith
 let filter = Js.Array2.filter
 let find = Js.Array2.find
 let includes = Js.Array2.includes
-let flatMap = (t, f) => Js.Array2.map(t, f) |> Js.Array2.concatMany([])
+let flatMap = (t, f) => Js.Array2.map(t, f)->concatMany
+let mapPartial = (t, f) =>
+  t->reduce([], (arr, x) =>
+    switch f(x) {
+    | Some(y) => concat(arr, [y])
+    | None => arr
+    }
+  )
 
 let push = (t, a) => concat(t, [a])
 let pop = t => (t->getUnsafe(t->length - 1), t->slice(~offset=0, ~len=t->length - 1))
