@@ -116,6 +116,9 @@ module Schema: {
     | Token(Token.t)
 
   let applyEvent: (t, InspectorEvent.t) => t
+  let empty: ModelNode.Kind.t => t
+  let name: t => string
+  let reference: t => string
 
   module Stable: {
     module V1: {
@@ -130,7 +133,26 @@ module Schema: {
   }
 }
 
+module Model: {
+  type t = {name: string, notes: string}
+
+  module Stable: {
+    module V1: {
+      type t = t = {name: string, notes: string}
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+  }
+
+  let name: t => string
+  let notes: t => string
+
+  let create: (~name: string) => t
+  let applyEvent: (t, InspectorEvent.Model.t) => t
+}
+
 type t =
   | Empty
+  | Global(Model.t)
   | Multiple(array<(Uuid.t, Schema.t)>)
   | Single(Uuid.t, Schema.t)

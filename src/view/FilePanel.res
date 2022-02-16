@@ -122,7 +122,7 @@ module FileLabel = {
 module Template = {
   @react.component
   let make = (
-    ~item as model,
+    ~item as (id, model),
     ~itemSelected as _,
     ~anySelected as _,
     ~dragHandleProps,
@@ -133,13 +133,13 @@ module Template = {
     let onSelect = commonProps["onSelect"]
     let onChangedName = commonProps["onChangedName"]
     let props = {
-      "id": {model->State.Model.id},
-      "name": {model->State.Model.name},
+      "id": id,
+      "name": {model->State.Model.info->InspectorState.Model.name},
       "active": {
-        active->Option.map(active => model->State.Model.id == active)->Option.getWithDefault(false)
+        active->Option.map(active => id == active)->Option.getWithDefault(false)
       },
-      "onSelect": {() => onSelect(model->State.Model.id)},
-      "onChanged": {name => onChangedName(model->State.Model.id, name)},
+      "onSelect": {() => onSelect(id)},
+      "onChanged": {name => onChangedName(id, name)},
       "dragHandleProps": dragHandleProps,
     }
     React.createElement(FileLabel.make, props)
@@ -151,7 +151,7 @@ module Template = {
 @react.component
 let make = (
   ~id,
-  ~models: array<State.Model.t>,
+  ~models: array<(Uuid.t, State.Model.t)>,
   ~active,
   ~onCreate,
   ~onDelete,
@@ -178,10 +178,10 @@ let make = (
     <div style={ReactDOM.Style.make(~flexGrow="1", ~display="flex", ~flexDirection="column", ())}>
       <ReactDraggableList.DraggableList
         items={models}
-        itemKey={model => model->State.Model.id->Uuid.toString}
+        itemKey={((id, _)) => id->Uuid.toString}
         template={Template.make}
         onMoveEnd={(~newList, ~movedItem as _, ~oldIndex as _, ~newIndex as _) =>
-          onReorder(newList)}
+          onReorder(newList->Array.map(((id, _)) => id))}
         container={() => container.current}
         constrainDrag={true}
         padding={0}
@@ -220,9 +220,11 @@ let make = (
             active->Option.iter(active => {
               let name =
                 models
-                ->Array.find(m => State.Model.id(m) == active)
+                ->Array.find(((id, _)) => id === active)
                 ->Option.getExn
-                ->State.Model.name
+                ->(((_, model)) => model)
+                ->State.Model.info
+                ->InspectorState.Model.name
               if confirm("Definitely delete model '" ++ name ++ "'?") {
                 onDelete(active)
               }

@@ -2,5 +2,5 @@
 let make: (
   ~id: string,
   ~data: InspectorState.t,
-  ~onChange: InspectorEvent.t => unit=?,
+  ~onChange: Event.Model.t => unit=?,
 ) => React.element

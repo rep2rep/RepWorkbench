@@ -114,10 +114,24 @@ let addNode = (t, node) => {
   graph: t.graph->ModelGraph.addNode(node),
 }
 
+let addNodes = (t, nodes) => {
+  ...t,
+  graph: t.graph->ModelGraph.addNodes(nodes),
+}
+
 let updateNodes = (t, f) => {
   ...t,
   graph: t.graph->ModelGraph.mapNodes(f),
 }
+
+let moveNode = (t, id, ~x, ~y) =>
+  t->updateNodes(node =>
+    if ModelNode.id(node) == id {
+      node->ModelNode.setPosition(~x, ~y)
+    } else {
+      node
+    }
+  )
 
 let removeNode = (t, nodeId) => {
   ...t,
@@ -126,6 +140,8 @@ let removeNode = (t, nodeId) => {
 
 let addLink = (t, link) => {...t, graph: t.graph->ModelGraph.addLink(link)}
 
+let addLinks = (t, links) => {...t, graph: t.graph->ModelGraph.addLinks(links)}
+
 let removeLinks = (t, links) => {
   {...t, graph: t.graph->ModelGraph.removeLinks(links)}
 }
@@ -133,3 +149,38 @@ let removeLinks = (t, links) => {
 let selection = t => t.selection
 
 let setSelection = (t, selection) => {...t, selection: selection}
+
+let duplicateNodes = (t, nodeMap) => {
+  let newNodes =
+    nodeMap
+    ->Uuid.Map.toArray
+    ->Array.mapPartial(((oldId, newId)) =>
+      t
+      ->nodeWithId(oldId)
+      ->Option.map(node => {
+        let (x, y) = ModelNode.position(node)
+        let (x, y) = (x +. 10., y +. 10.)
+        let newNode = ModelNode.dupWithNewId(node, newId)->ModelNode.setPosition(~x, ~y)
+        (newId, newNode)
+      })
+    )
+    ->Uuid.Map.fromArray
+  let newLinks =
+    t
+    ->graph
+    ->ModelGraph.links
+    ->Array.mapPartial(link => {
+      let source = ModelLink.source(link)
+      let target = ModelLink.target(link)
+      switch (nodeMap->Uuid.Map.get(source), nodeMap->Uuid.Map.get(target)) {
+      | (Some(newSource), Some(newTarget)) =>
+        ModelLink.create(
+          ~source=newNodes->Uuid.Map.get(newSource)->Option.getExn,
+          ~target=newNodes->Uuid.Map.get(newTarget)->Option.getExn,
+          ModelLink.kind(link),
+        )->Some
+      | _ => None
+      }
+    })
+  t->addNodes(newNodes->Uuid.Map.values)->addLinks(newLinks)
+}

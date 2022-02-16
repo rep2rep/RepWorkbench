@@ -83,7 +83,7 @@ module Representation = {
           value={slots.domain}
           name="inspector-rep-domain"
           onChange={e =>
-            onChange(InspectorEvent.Representation.Domain(ReactEvent.Form.target(e)["value"]))}
+            onChange(Event.Slots.Representation.Domain(ReactEvent.Form.target(e)["value"]))}
         />
       </Row>
       <Row>
@@ -92,13 +92,13 @@ module Representation = {
           value={slots.display}
           name="inspector-rep-display"
           onChange={e =>
-            onChange(InspectorEvent.Representation.Display(ReactEvent.Form.target(e)["value"]))}
+            onChange(Event.Slots.Representation.Display(ReactEvent.Form.target(e)["value"]))}
         />
       </Row>
       <Notes
         name="inspector-rep-notes"
         onChange={e =>
-          onChange(InspectorEvent.Representation.Notes(ReactEvent.Form.target(e)["value"]))}
+          onChange(Event.Slots.Representation.Notes(ReactEvent.Form.target(e)["value"]))}
         value={slots.notes}
       />
     </>
@@ -115,7 +115,7 @@ module Scheme = {
           value={slots.concept_structure}
           name="inspector-sch-concept"
           onChange={e =>
-            onChange(InspectorEvent.Scheme.Concept_structure(ReactEvent.Form.target(e)["value"]))}
+            onChange(Event.Slots.Scheme.Concept_structure(ReactEvent.Form.target(e)["value"]))}
         />
       </Row>
       <Row>
@@ -124,7 +124,7 @@ module Scheme = {
           value={slots.graphic_structure}
           name="inspector-sch-graphic"
           onChange={e =>
-            onChange(InspectorEvent.Scheme.Graphic_structure(ReactEvent.Form.target(e)["value"]))}
+            onChange(Event.Slots.Scheme.Graphic_structure(ReactEvent.Form.target(e)["value"]))}
         />
       </Row>
       <Row>
@@ -134,7 +134,7 @@ module Scheme = {
           value={Function.toString(slots.function)}
           onChange={e =>
             onChange(
-              InspectorEvent.Scheme.Function(
+              Event.Slots.Scheme.Function(
                 Function.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
               ),
             )}>
@@ -154,7 +154,7 @@ module Scheme = {
           type_="checkbox"
           checked={slots.explicit}
           onChange={e =>
-            onChange(InspectorEvent.Scheme.Explicit(ReactEvent.Form.target(e)["checked"]))}
+            onChange(Event.Slots.Scheme.Explicit(ReactEvent.Form.target(e)["checked"]))}
         />
       </Row>
       <Row>
@@ -164,7 +164,7 @@ module Scheme = {
           value={Scope.toString(slots.scope)}
           onChange={e =>
             onChange(
-              InspectorEvent.Scheme.Scope(
+              Event.Slots.Scheme.Scope(
                 Scope.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
               ),
             )}>
@@ -183,12 +183,12 @@ module Scheme = {
           value={slots.organisation}
           name="inspector-sch-organisation"
           onChange={e =>
-            onChange(InspectorEvent.Scheme.Organisation(ReactEvent.Form.target(e)["value"]))}
+            onChange(Event.Slots.Scheme.Organisation(ReactEvent.Form.target(e)["value"]))}
         />
       </Row>
       <Notes
         name="inspector-sch-notes"
-        onChange={e => onChange(InspectorEvent.Scheme.Notes(ReactEvent.Form.target(e)["value"]))}
+        onChange={e => onChange(Event.Slots.Scheme.Notes(ReactEvent.Form.target(e)["value"]))}
         value={slots.notes}
       />
     </>
@@ -205,7 +205,7 @@ module Dimension = {
           value={slots.concept}
           name="inspector-dim-concept"
           onChange={e =>
-            onChange(InspectorEvent.Dimension.Concept(ReactEvent.Form.target(e)["value"]))}
+            onChange(Event.Slots.Dimension.Concept(ReactEvent.Form.target(e)["value"]))}
         />
       </Row>
       <Row>
@@ -215,7 +215,7 @@ module Dimension = {
           value={Quantity_scale.toString(slots.concept_scale)}
           onChange={e =>
             onChange(
-              InspectorEvent.Dimension.Concept_scale(
+              Event.Slots.Dimension.Concept_scale(
                 Quantity_scale.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
               ),
             )}>
@@ -235,7 +235,7 @@ module Dimension = {
           value={slots.graphic}
           name="inspector-dim-graphic"
           onChange={e =>
-            onChange(InspectorEvent.Dimension.Graphic(ReactEvent.Form.target(e)["value"]))}
+            onChange(Event.Slots.Dimension.Graphic(ReactEvent.Form.target(e)["value"]))}
         />
       </Row>
       <Row>
@@ -245,7 +245,7 @@ module Dimension = {
           value={Quantity_scale.toString(slots.graphic_scale)}
           onChange={e =>
             onChange(
-              InspectorEvent.Dimension.Graphic_scale(
+              Event.Slots.Dimension.Graphic_scale(
                 Quantity_scale.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
               ),
             )}>
@@ -266,7 +266,7 @@ module Dimension = {
           value={Function.toString(slots.function)}
           onChange={e =>
             onChange(
-              InspectorEvent.Dimension.Function(
+              Event.Slots.Dimension.Function(
                 Function.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
               ),
             )}>
@@ -286,7 +286,7 @@ module Dimension = {
           type_="checkbox"
           checked={slots.explicit}
           onChange={e =>
-            onChange(InspectorEvent.Dimension.Explicit(ReactEvent.Form.target(e)["checked"]))}
+            onChange(Event.Slots.Dimension.Explicit(ReactEvent.Form.target(e)["checked"]))}
         />
       </Row>
       <Row>
@@ -296,7 +296,7 @@ module Dimension = {
           value={Scope.toString(slots.scope)}
           onChange={e =>
             onChange(
-              InspectorEvent.Dimension.Scope(
+              Event.Slots.Dimension.Scope(
                 Scope.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
               ),
             )}>
@@ -315,12 +315,12 @@ module Dimension = {
           value={slots.organisation}
           name="inspector-dim-organisation"
           onChange={e =>
-            onChange(InspectorEvent.Dimension.Organisation(ReactEvent.Form.target(e)["value"]))}
+            onChange(Event.Slots.Dimension.Organisation(ReactEvent.Form.target(e)["value"]))}
         />
       </Row>
       <Notes
         name="inspector-dim-notes"
-        onChange={e => onChange(InspectorEvent.Dimension.Notes(ReactEvent.Form.target(e)["value"]))}
+        onChange={e => onChange(Event.Slots.Dimension.Notes(ReactEvent.Form.target(e)["value"]))}
         value={slots.notes}
       />
     </>
@@ -336,7 +336,7 @@ module Token = {
         <Input
           value={slots.concept}
           name="inspector-tok-concept"
-          onChange={e => onChange(InspectorEvent.Token.Concept(ReactEvent.Form.target(e)["value"]))}
+          onChange={e => onChange(Event.Slots.Token.Concept(ReactEvent.Form.target(e)["value"]))}
         />
       </Row>
       <Row>
@@ -344,7 +344,7 @@ module Token = {
         <Input
           value={slots.graphic}
           name="inspector-tok-graphic"
-          onChange={e => onChange(InspectorEvent.Token.Graphic(ReactEvent.Form.target(e)["value"]))}
+          onChange={e => onChange(Event.Slots.Token.Graphic(ReactEvent.Form.target(e)["value"]))}
         />
       </Row>
       <Row>
@@ -353,8 +353,7 @@ module Token = {
           name="inspector-tok-class"
           type_="checkbox"
           checked={slots.is_class}
-          onChange={e =>
-            onChange(InspectorEvent.Token.Is_class(ReactEvent.Form.target(e)["checked"]))}
+          onChange={e => onChange(Event.Slots.Token.Is_class(ReactEvent.Form.target(e)["checked"]))}
         />
       </Row>
       <Row>
@@ -364,7 +363,7 @@ module Token = {
           value={Function.toString(slots.function)}
           onChange={e =>
             onChange(
-              InspectorEvent.Token.Function(
+              Event.Slots.Token.Function(
                 Function.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
               ),
             )}>
@@ -383,13 +382,33 @@ module Token = {
           name="inspector-tok-explicit"
           type_="checkbox"
           checked={slots.explicit}
-          onChange={e =>
-            onChange(InspectorEvent.Token.Explicit(ReactEvent.Form.target(e)["checked"]))}
+          onChange={e => onChange(Event.Slots.Token.Explicit(ReactEvent.Form.target(e)["checked"]))}
         />
       </Row>
       <Notes
         name="inspector-tok-notes"
-        onChange={e => onChange(InspectorEvent.Token.Notes(ReactEvent.Form.target(e)["value"]))}
+        onChange={e => onChange(Event.Slots.Token.Notes(ReactEvent.Form.target(e)["value"]))}
+        value={slots.notes}
+      />
+    </>
+  }
+}
+
+module Model = {
+  @react.component
+  let make = (~slots: InspectorState.Model.t, ~onChange) => {
+    <>
+      <Row>
+        <Label htmlFor="inspector-model-name"> {React.string("Name")} </Label>
+        <Input
+          value={slots.name}
+          name="inspector-model-name"
+          onChange={e => onChange(Event.Model.Rename(ReactEvent.Form.target(e)["value"]))}
+        />
+      </Row>
+      <Notes
+        name="inspector-model-notes"
+        onChange={e => onChange(Event.Model.SetNotes(ReactEvent.Form.target(e)["value"]))}
         value={slots.notes}
       />
     </>
@@ -423,8 +442,9 @@ let make = (~id, ~data, ~onChange=?) => {
           (),
         )}
         className="inspector-panel-empty-message">
-        {React.string("Select a schema")}
+        {React.string("Select a model")}
       </span>
+    | InspectorState.Global(slots) => <Model slots onChange />
     | InspectorState.Multiple(_) =>
       <span
         style={ReactDOM.Style.make(
@@ -438,16 +458,20 @@ let make = (~id, ~data, ~onChange=?) => {
         className="inspector-panel-multiple-message">
         {React.string("Multiple schema selected")}
       </span>
-    | InspectorState.Single(_, schema) =>
+    | InspectorState.Single(nodeId, schema) =>
       switch schema {
       | InspectorState.Schema.Representation(slots) =>
-        <Representation slots onChange={c => onChange(InspectorEvent.Representation(c))} />
+        <Representation
+          slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Representation(c)))}
+        />
       | InspectorState.Schema.Scheme(slots) =>
-        <Scheme slots onChange={c => onChange(InspectorEvent.Scheme(c))} />
+        <Scheme slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Scheme(c)))} />
       | InspectorState.Schema.Dimension(slots) =>
-        <Dimension slots onChange={c => onChange(InspectorEvent.Dimension(c))} />
+        <Dimension
+          slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Dimension(c)))}
+        />
       | InspectorState.Schema.Token(slots) =>
-        <Token slots onChange={c => onChange(InspectorEvent.Token(c))} />
+        <Token slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Token(c)))} />
       }
     }}
   </div>

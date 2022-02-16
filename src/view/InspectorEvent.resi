@@ -1,3 +1,9 @@
+module Model: {
+  type t =
+    | Name(string)
+    | Notes(string)
+}
+
 module Representation: {
   type t =
     | Domain(string)
@@ -42,6 +48,7 @@ module Token: {
 }
 
 type t =
+  | Model(Model.t)
   | Representation(Representation.t)
   | Scheme(Scheme.t)
   | Dimension(Dimension.t)

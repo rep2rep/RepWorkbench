@@ -451,9 +451,91 @@ module Schema = {
     | (Token(t), InspectorEvent.Token(e)) => Token(Token.applyEvent(t, e))
     | _ => t
     }
+
+  let empty = kind =>
+    switch kind {
+    | ModelNode.Kind.Representation => Representation.empty->Representation
+    | ModelNode.Kind.Scheme => Scheme.empty->Scheme
+    | ModelNode.Kind.Dimension => Dimension.empty->Dimension
+    | ModelNode.Kind.Token => Token.empty->Token
+    }
+
+  let name = t =>
+    switch t {
+    | Representation(r) => r.domain
+    | Scheme(s) => s.concept_structure
+    | Dimension(d) => d.concept
+    | Token(t) => t.concept
+    }
+
+  let reference = t =>
+    switch t {
+    | Representation(r) => r.display
+    | Scheme(s) => s.graphic_structure
+    | Dimension(d) => d.graphic
+    | Token(t) => t.graphic
+    }
+}
+
+module Model = {
+  type t = {name: string, notes: string}
+
+  module Stable = {
+    module V1 = {
+      type t = t = {name: string, notes: string}
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(1)),
+          ("name", String.toJson(t.name)),
+          ("notes", String.toJson(t.notes)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Model slots object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          version->Or_error.flatMap(version =>
+            if version !== 1 {
+              Or_error.error_ss([
+                "Unable to decode Model Slots version ",
+                Int.toString(version),
+                ".",
+              ])
+            } else {
+              let name = getValue("name", String.fromJson)
+              let notes = getValue("notes", String.fromJson)
+              Or_error.both((name, notes))->Or_error.map(((name, notes)) => {
+                name: name,
+                notes: notes,
+              })
+            }
+          )
+        })
+    }
+  }
+
+  let name = t => t.name
+  let notes = t => t.notes
+
+  let create = (~name) => {name: name, notes: ""}
+
+  let applyEvent = (t, event) =>
+    switch event {
+    | InspectorEvent.Model.Name(name) => {...t, name: name}
+    | InspectorEvent.Model.Notes(notes) => {...t, notes: notes}
+    }
 }
 
 type t =
   | Empty
+  | Global(Model.t)
   | Multiple(array<(Uuid.t, Schema.t)>)
   | Single(Uuid.t, Schema.t)

@@ -1,9 +1,7 @@
 module Model = {
   type t = {
-    id: Uuid.t,
-    name: string,
-    notes: string,
-    model: ModelState.t,
+    info: InspectorState.Model.t,
+    graph: ModelState.t,
     slots: Uuid.Map.t<InspectorState.Schema.t>,
   }
 
@@ -52,28 +50,22 @@ module Model = {
 
     module V2 = {
       type t = t = {
-        id: Uuid.t,
-        name: string,
-        notes: string,
-        model: ModelState.Stable.V2.t,
+        info: InspectorState.Model.Stable.V1.t,
+        graph: ModelState.Stable.V2.t,
         slots: Uuid.Map.t<InspectorState.Schema.Stable.V1.t>,
       }
 
       let v1_to_v2 = t => {
-        id: t.V1.id,
-        name: t.V1.name,
-        notes: "",
-        model: t.V1.model->ModelState.Stable.V2.v1_to_v2,
+        info: {InspectorState.Model.Stable.V1.name: t.V1.name, notes: ""},
+        graph: t.V1.model->ModelState.Stable.V2.v1_to_v2,
         slots: t.V1.slots,
       }
 
       let toJson = t =>
         Js.Dict.fromList(list{
           ("version", Int.toJson(2)),
-          ("id", t.id->Uuid.toJson),
-          ("name", t.name->String.toJson),
-          ("notes", t.name->String.toJson),
-          ("model", t.model->ModelState.Stable.V2.toJson),
+          ("info", t.info->InspectorState.Model.Stable.V1.toJson),
+          ("graph", t.graph->ModelState.Stable.V2.toJson),
           ("slots", t.slots->Uuid.Map.toJson(InspectorState.Schema.Stable.V1.toJson)),
         })->Js.Json.object_
 
@@ -98,25 +90,15 @@ module Model = {
               "!",
             ])
           } else {
-            let id = getValue("id", Uuid.fromJson)
-            let name = getValue("name", String.fromJson)
-            let notes = getValue("notes", String.fromJson)
-            let model = getValue("model", ModelState.Stable.V2.fromJson)
+            let info = getValue("info", InspectorState.Model.Stable.V1.fromJson)
+            let graph = getValue("graph", ModelState.Stable.V2.fromJson)
             let slots = getValue("slots", j =>
               j->Uuid.Map.fromJson(InspectorState.Schema.Stable.V1.fromJson)
             )
 
-            Or_error.both5((id, name, notes, model, slots))->Or_error.map(((
-              id,
-              name,
-              notes,
-              model,
-              slots,
-            )) => {
-              id: id,
-              name: name,
-              notes: notes,
-              model: model,
+            Or_error.both3((info, graph, slots))->Or_error.map(((info, graph, slots)) => {
+              info: info,
+              graph: graph,
               slots: slots,
             })
           }
@@ -126,29 +108,40 @@ module Model = {
 
   module Storage = LocalStorage.MakeJsonable(Stable.V2)
 
-  let store = t => Storage.set("RepNotation:Model:" ++ Uuid.toString(t.id), t)
+  let store = (t, id) => Storage.set("RepNotation:Model:" ++ Uuid.toString(id), t)
   let load = id => Storage.get("RepNotation:Model:" ++ Uuid.toString(id))
 
-  let id = t => t.id
-  let model = t => t.model
-  let name = t => t.name
-  let notes = t => t.notes
+  let info = t => t.info
+  let graph = t => t.graph
+  let slots = t => t.slots
+  let slotsForSelection = (t, selection) => {
+    let ids = ModelSelection.nodes(selection)
+    t.slots->Uuid.Map.merge(Uuid.Map.empty(), (key, left, _) =>
+      left->Option.flatMap(left =>
+        if ids->Array.includes(key) {
+          Some(left)
+        } else {
+          None
+        }
+      )
+    )
+  }
 
-  let create = (id, name) => {
-    id: id,
-    name: name,
-    notes: "",
-    model: ModelState.empty,
+  let updateInfo = (t, info) => {...t, info: info}
+  let updateGraph = (t, graph) => {...t, graph: graph}
+  let updateSlots = (t, slots) => {...t, slots: slots}
+
+  let create = name => {
+    info: InspectorState.Model.create(~name),
+    graph: ModelState.empty,
     slots: Uuid.Map.empty(),
   }
 
-  let duplicate = (t, newId, newName) => {
+  let duplicate = (t, newName) => {
     let newIdMap = t.slots->Uuid.Map.map(_ => Uuid.create())
     {
-      id: newId,
-      name: newName,
-      notes: t.notes,
-      model: t.model->ModelState.duplicate(newIdMap),
+      info: {...t.info, name: newName},
+      graph: t.graph->ModelState.duplicate(newIdMap),
       slots: t.slots
       ->Uuid.Map.toArray
       ->Array.map(((id, slots)) => (newIdMap->Uuid.Map.get(id)->Option.getExn, slots))
@@ -158,7 +151,8 @@ module Model = {
 }
 
 type t = {
-  models: array<Model.t>,
+  models: Uuid.Map.t<Model.t>,
+  positions: array<Uuid.t>,
   currentModel: option<Uuid.t>,
 }
 
@@ -169,9 +163,9 @@ let store = t => {
   )
   LocalStorage.Raw.setItem(
     "RepNotation:AllModels",
-    t.models->Array.map(Model.id)->Array.toJson(Uuid.toJson)->Js.Json.stringify,
+    t.positions->Array.toJson(Uuid.toJson)->Js.Json.stringify,
   )
-  t.models->Array.forEach(Model.store)
+  t.models->Uuid.Map.forEach((id, model) => Model.store(model, id))
 }
 
 let load = () => {
@@ -181,43 +175,52 @@ let load = () => {
     }
     json->Or_error.flatMap(json => json->Option.fromJson(Uuid.fromJson))->Or_error.toOption
   })
-  let models = LocalStorage.Raw.getItem("RepNotation:AllModels")->Option.flatMap(s => {
+  let positions = LocalStorage.Raw.getItem("RepNotation:AllModels")->Option.flatMap(s => {
     let json = try Or_error.create(Js.Json.parseExn(s)) catch {
     | _ => Or_error.error_s("Badly stored allModels")
     }
     json
     ->Or_error.flatMap(json => json->Array.fromJson(Uuid.fromJson))
-    ->Or_error.map(arr => arr->Array.map(id => Model.load(id)->Or_error.toOption))
-    ->Or_error.map(Option.all)
+    // ->Or_error.map(arr =>
+    //   arr->Array.map(id => Model.load(id)->Or_error.toOption->Option.map(m => (id, m)))
+    // )
+    // ->Or_error.map(Option.all)
     ->Or_error.toOption
-    ->Option.flatten
+    // ->Option.flatten
+    // ->Option.map(Uuid.Map.fromArray)
   })
-  Option.both((currentModel, models))->Option.map(((currentModel, models)) => {
+  let models = positions->Option.flatMap(positions => {
+    positions
+    ->Array.map(id => Model.load(id)->Or_error.toOption->Option.map(m => (id, m)))
+    ->Option.all
+    ->Option.map(Uuid.Map.fromArray)
+  })
+  Option.both3((currentModel, positions, models))->Option.map(((
+    currentModel,
+    positions,
+    models,
+  )) => {
     models: models,
+    positions: positions,
     currentModel: currentModel,
   })
 }
 
 let empty = {
-  models: [],
+  models: Uuid.Map.empty(),
+  positions: [],
   currentModel: None,
 }
 
-let currentModel = t =>
-  t.models->Array.find(model =>
-    t.currentModel->Option.map(id => model.id == id)->Option.getWithDefault(false)
-  )
+let focused = t => t.currentModel
 
-let focusedName = t => t->currentModel->Option.map(Model.name)
+let models = t => t.positions->Array.map(id => (id, t.models->Uuid.Map.get(id)->Option.getExn))
 
-let focusedId = t => t.currentModel
-
-let models = t => t.models
-
-let model = (t, id) => t.models->Array.find(model => Model.id(model) == id)
+let model = (t, id) => t.models->Uuid.Map.get(id)
 
 let createModel = (t, id) => {
-  models: Array.concat(t.models, [Model.create(id, "Model")]),
+  models: t.models->Uuid.Map.set(id, Model.create("Model")),
+  positions: t.positions->Array.concat([id]),
   currentModel: Some(id),
 }
 
@@ -231,7 +234,8 @@ let deleteModel = (t, id) => {
     t.currentModel
   }
   {
-    models: t.models->Array.filter(m => m.id != id),
+    models: t.models->Uuid.Map.remove(id),
+    positions: t.positions->Array.filter(id' => id' !== id),
     currentModel: currentModel,
   }
 }
@@ -242,88 +246,35 @@ let focusModel = (t, id) => {
 }
 
 let duplicateModel = (t, ~existing, ~new_) => {
-  let dupIndex = t.models->Array.getIndexBy(model => model.id === existing)->Option.getExn
-  let oldModel = t.models->Array.getExn(dupIndex)
-  let newModel = oldModel->Model.duplicate(new_, oldModel.name ++ " (Copy)")
-  let before = t.models->Array.slice(~offset=0, ~len=dupIndex + 1)
-  let after = t.models->Array.sliceToEnd(dupIndex + 1)
+  let dupIndex = t.positions->Array.getIndexBy(id => id === existing)->Option.getExn
+  let oldModel = t.models->Uuid.Map.get(existing)->Option.getExn
+  let newModel = oldModel->Model.duplicate(oldModel.info.name ++ " (Copy)")
+  let before = t.positions->Array.slice(~offset=0, ~len=dupIndex + 1)
+  let after = t.positions->Array.sliceToEnd(dupIndex + 1)
   {
     currentModel: Some(new_),
-    models: Array.concatMany([before, [newModel], after]),
+    positions: Array.concatMany([before, [new_], after]),
+    models: t.models->Uuid.Map.set(new_, newModel),
   }
 }
 
 let importModel = (t, model) => {
   // Duplicate the model to ensure fresh ids
   let newId = Uuid.create()
-  let model = Model.duplicate(model, newId, model.name)
+  let model = Model.duplicate(model, model.info.name)
   {
     currentModel: Some(newId),
-    models: t.models->Array.concat([model]),
+    positions: t.positions->Array.concat([newId]),
+    models: t.models->Uuid.Map.set(newId, model),
   }
-}
-
-let renameModel = (t, id, name) => {
-  ...t,
-  models: t.models->Array.map(m =>
-    if m.id == id {
-      {...m, name: name}
-    } else {
-      m
-    }
-  ),
 }
 
 let reorderModels = (t, newOrder) => {
   ...t,
-  models: newOrder,
+  positions: newOrder,
 }
 
-let modelState = t =>
-  t->currentModel->Option.map(Model.model)->Option.getWithDefault(ModelState.empty)
-
-let inspectorState = t =>
-  t
-  ->currentModel
-  ->Option.flatMap(model => {
-    let selection = model.model->ModelState.selection
-    let getSlot = id => model.slots->Uuid.Map.get(id)
-    switch ModelSelection.nodes(selection) {
-    | [] => Some(InspectorState.Empty)
-    | [nodeId] => getSlot(nodeId)->Option.map(s => InspectorState.Single(nodeId, s))
-    | ids =>
-      ids
-      ->Array.map(id => getSlot(id)->Option.map(slots => (id, slots)))
-      ->Option.all
-      ->Option.map(slots => InspectorState.Multiple(slots))
-    }
-  })
-  ->Option.getWithDefault(InspectorState.Empty)
-
-let _set = (arr, id, f) => {
-  arr->Array.map(m =>
-    if id->Option.map(id => m->Model.id == id)->Option.getWithDefault(false) {
-      f(m)
-    } else {
-      m
-    }
-  )
-}
-
-let _setM = (arr, id, model) => _set(arr, id, oldModel => {...oldModel, Model.model: model})
-
-let _setI = (arr, id, key, inspector) =>
-  _set(arr, id, oldModel => {
-    ...oldModel,
-    Model.slots: oldModel.Model.slots->Uuid.Map.update(key, _ => inspector),
-  })
-
-let updateModel = (t, model) => {
+let updateModel = (t, id, model) => {
   ...t,
-  models: t.models->_setM(t.currentModel, model),
-}
-
-let updateSlots = (t, key, inspector) => {
-  ...t,
-  models: t.models->_setI(t.currentModel, key, inspector),
+  models: t.models->Uuid.Map.set(id, model),
 }

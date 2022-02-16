@@ -94,20 +94,43 @@ let updateNode = (state, nodeId, event) =>
     }
   )
 
-let duplicateNodes = (state, nodeMap) =>
-  nodeMap
-  ->Uuid.Map.toArray
-  ->Array.reduce(state, (state, (oldId, newId)) => {
+let duplicateNodes = (state, nodeMap) => {
+  Js.Console.log({"state": state, "nodeMap": nodeMap})
+  let newNodes =
+    nodeMap
+    ->Uuid.Map.toArray
+    ->Array.mapPartial(((oldId, newId)) =>
+      state
+      ->ModelState.nodeWithId(oldId)
+      ->Option.map(node => {
+        let (x, y) = ModelNode.position(node)
+        let (x, y) = (x +. 10., y +. 10.)
+        let newNode = ModelNode.dupWithNewId(node, newId)->ModelNode.setPosition(~x, ~y)
+        (newId, newNode)
+      })
+    )
+    ->Uuid.Map.fromArray
+  Js.Console.log(newNodes)
+  let newLinks =
     state
-    ->ModelState.nodeWithId(oldId)
-    ->Option.map(node => {
-      let (x, y) = ModelNode.position(node)
-      let (x, y) = (x +. 10., y +. 10.)
-      let newNode = ModelNode.dupWithNewId(node, newId)->ModelNode.setPosition(~x, ~y)
-      state->ModelState.addNode(newNode)
+    ->ModelState.graph
+    ->ModelGraph.links
+    ->Array.mapPartial(link => {
+      let source = ModelLink.source(link)
+      let target = ModelLink.target(link)
+      switch (nodeMap->Uuid.Map.get(source), nodeMap->Uuid.Map.get(target)) {
+      | (Some(newSource), Some(newTarget)) =>
+        ModelLink.create(
+          ~source=newNodes->Uuid.Map.get(newSource)->Option.getExn,
+          ~target=newNodes->Uuid.Map.get(newTarget)->Option.getExn,
+          ModelLink.kind(link),
+        )->Some
+      | _ => None
+      }
     })
-    ->Option.getWithDefault(state)
-  })
+  Js.Console.log(newLinks)
+  state->ModelState.addNodes(newNodes->Uuid.Map.values)->ModelState.addLinks(newLinks)
+}
 
 let connect = (state, source, target, kind) => {
   let modelSource = state->ModelState.nodeWithId(source)

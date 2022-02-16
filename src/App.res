@@ -1,22 +1,55 @@
 module App = {
   type state = State.t
-  type action =
-    | GlobalAction(Action.t)
-    | ModelAction(ModelAction.t)
-    | InspectorAction(InspectorAction.t)
+  type action = Event.t
+  // | GlobalAction(Action.t)
+  // | ModelAction(Uuid.t, Action.Model.t)
+  // | GraphAction(Uuid.t, ModelAction.t)
+  // | InspectorAction(Uuid.t, InspectorAction.t)
 
   let init = State.load()->Option.getWithDefault(State.empty)
   let reducer = (state, action) => {
-    let newState = switch action {
-    | GlobalAction(action) => Action.dispatch(state, action)
-    | ModelAction(action) =>
-      state->State.updateModel(ModelAction.dispatch(state->State.modelState, action))
-    | InspectorAction(action) =>
-      InspectorAction.dispatch(state->State.inspectorState, action)->Array.reduce(state, (
-        state,
-        (key, newSlots),
-      ) => state->State.updateSlots(key, newSlots))
-    }
+    // let newState = switch action {
+    // | GlobalAction(action) => Action.dispatch(state, action)
+    // | ModelAction(focused, action) =>
+    //   state
+    //   ->State.model(focused)
+    //   ->Option.map(model => {
+    //     let model' = Action.Model.dispatch(model, action)
+    //     state->State.updateModel(focused, model')
+    //   })
+    //   ->Option.getWithDefault(state)
+    // // | GraphAction(focused, action) =>
+    //   state
+    //   ->State.model(focused)
+    //   ->Option.map(model => {
+    //     let modelState = model->State.Model.modelState->ModelAction.dispatch(action)
+    //     let model' = model->State.Model.updateModelState(modelState)
+    //     state->State.updateModel(focused, model')
+    //   })
+    //   ->Option.getWithDefault(state)
+    // | InspectorAction(focused, action) =>
+    //   state
+    //   ->State.model(focused)
+    //   ->Option.map(model => {
+    //     let slots = model->State.Model.slots
+    //     let slots' = slots->Uuid.Map.mapWithKey((id, s) =>
+    //       switch InspectorAction.dispatch(InspectorState.Single(id, s), action) {
+    //       | InspectorState.Single(_, s') => s'
+    //       | _ => raise(Not_found)
+    //       }
+    //     )
+    //     let info = model->State.Model.info
+    //     let info' = switch InspectorAction.dispatch(InspectorState.Global(info), action) {
+    //     | InspectorState.Global(s') => s'
+    //     | _ => raise(Not_found)
+    //     }
+
+    //     let model' = model->State.Model.updateSlots(slots')->State.Model.updateInfo(info')
+    //     state->State.updateModel(focused, model')
+    //   })
+    //   ->Option.getWithDefault(state)
+    // }
+    let newState = Event.dispatch(state, action)
     State.store(newState)
     newState
   }
@@ -32,105 +65,163 @@ module App = {
   @react.component
   let make = () => {
     let (state, dispatch) = React.useReducer(reducer, init)
-    let dispatchG = a => dispatch(GlobalAction(a))
-    let dispatchM = a => dispatch(ModelAction(a))
-    let dispatchI = a => dispatch(InspectorAction(a))
+    let focused = state->State.focused
+    let selection =
+      focused
+      ->Option.flatMap(focused =>
+        state
+        ->State.model(focused)
+        ->Option.map(model => model->State.Model.graph->ModelState.selection)
+      )
+      ->Option.getWithDefault(ModelSelection.empty)
 
-    let newModel = () => dispatchG(Action.NewModel(Uuid.create()))
-    let deleteModel = id => dispatchG(Action.DeleteModel(id))
-    let focusModel = id => dispatchG(Action.FocusModel(id))
-    let renameModel = (id, name) => dispatchG(Action.RenameModel(id, name))
-    let reorder = newOrder => dispatchG(Action.ReorderModels(newOrder))
+    // let dispatchA = a => dispatch(GlobalAction(a))
+    // let dispatchM = a => focused->Option.iter(focused => dispatch(ModelAction(focused, a)))
+    // let dispatchG = a => focused->Option.iter(focused => dispatch(GraphAction(focused, a)))
+    // let dispatchI = a => focused->Option.iter(focused => dispatch(InspectorAction(focused, a)))
+
+    let newModel = () => dispatch(Event.File.NewModel(Uuid.create())->Event.File)
+    let deleteModel = id => dispatch(Event.File.DeleteModel(id)->Event.File)
+    let focusModel = id => dispatch(Event.File.FocusModel(id)->Event.File)
+    let reorder = newOrder => dispatch(Event.File.ReorderModels(newOrder)->Event.File)
+    // let renameModel = (id, name) => {
+    //   dispatch(
+    //     InspectorAction(
+    //       id,
+    //       InspectorAction.UpdateGlobal(InspectorEvent.Model(InspectorEvent.Model.Name(name))),
+    //     ),
+    //   )
+    // }
+    let renameModel = (id, name) => dispatch(Event.Model(id, Event.Model.Rename(name)))
     let duplicateModel = id => {
       let newId = Uuid.create()
-      dispatchG(Action.DuplicateModel(id, newId))
+      // dispatchA(Action.DuplicateModel(id, newId))
+      dispatch(Event.File.DuplicateModel(id, newId)->Event.File)
     }
     let selectionChange = (~oldSelection as _, ~newSelection) =>
-      dispatchM(ModelAction.Selection(newSelection))
-    let addNodeAt = (kind, ~x, ~y) => {
-      let oldSelection = state->State.modelState->ModelState.selection
-      let ids = oldSelection->ModelSelection.nodes
-      let id = Uuid.create()
-      dispatchG(Action.CreateNode(kind, id))
-      dispatchM(ModelAction.Create(x, y, kind, id))
-      switch ids {
-      | [] => ()
-      | _ => ids->Array.forEach(source => dispatchM(ModelAction.Connect(source, id)))
-      }
-      selectionChange(~oldSelection, ~newSelection=ModelSelection.ofNodes([id]))
-    }
+      // dispatchG(ModelAction.Selection(newSelection))
+      focused->Option.iter(focused =>
+        dispatch(Event.Model(focused, Event.Model.Graph(Event.Graph.SetSelection(newSelection))))
+      )
+    let addNodeAt = (kind, ~x, ~y) =>
+      focused->Option.iter(focused => {
+        let oldSelection = selection
+        let ids = oldSelection->ModelSelection.nodes
+        let id = Uuid.create()
+        dispatch(Event.Model(focused, Event.Model.CreateNode(id, x, y, kind)))
+        // dispatchM(Action.Model.CreateNode(kind, id))
+        // dispatchG(ModelAction.Create(x, y, kind, id))
+        switch ids {
+        | [] => ()
+        | _ =>
+          ids->Array.forEach(source =>
+            // dispatchG(ModelAction.Connect(source, id))
+            dispatch(
+              Event.Model(
+                focused,
+                Event.Model.Graph(Event.Graph.LinkNodes(source, id, ModelLink.Kind.Hierarchy)),
+              ),
+            )
+          )
+        }
+        // selectionChange(~oldSelection, ~newSelection=ModelSelection.ofNodes([id]))
+        dispatch(
+          Event.Model(
+            focused,
+            Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.ofNodes([id]))),
+          ),
+        )
+      })
     let addRepNodeAt = (_, ~x, ~y) => ModelNode.Kind.Representation->addNodeAt(~x, ~y)
     let addSchNodeAt = (_, ~x, ~y) => ModelNode.Kind.Scheme->addNodeAt(~x, ~y)
     let addDimNodeAt = (_, ~x, ~y) => ModelNode.Kind.Dimension->addNodeAt(~x, ~y)
     let addTokNodeAt = (_, ~x, ~y) => ModelNode.Kind.Token->addNodeAt(~x, ~y)
-    let linkNodes = _ => {
-      let ids = state->State.modelState->ModelState.selection->ModelSelection.nodes
-      switch ids {
-      | [source, target] => dispatchM(ModelAction.Connect(source, target))
-      | _ => ()
-      }
-    }
-    let anchorNodes = _ => {
-      let ids = state->State.modelState->ModelState.selection->ModelSelection.nodes
-      switch ids {
-      | [source, target] => dispatchM(ModelAction.Anchor(source, target))
-      | _ => ()
-      }
-    }
-    let unlinkNodes = _ => {
-      let nodeIds = state->State.modelState->ModelState.selection->ModelSelection.nodes
-      nodeIds->Array.forEach(source =>
-        nodeIds->Array.forEach(target => dispatchM(ModelAction.Unlink(source, target)))
-      )
-    }
-    let deleteNodes = _ => {
-      let oldSelection = state->State.modelState->ModelState.selection
-      oldSelection
-      ->ModelSelection.nodes
-      ->Array.forEach(id => {
-        dispatchG(Action.DeleteNode(id))
-        dispatchM(ModelAction.Delete(id))
-      })
-      selectionChange(~oldSelection, ~newSelection=ModelSelection.empty)
-    }
-    let movedNodes = (nodeId, ~x, ~y) =>
-      dispatchM(ModelAction.Move(nodeId->ReactD3Graph.Node.Id.toString->Uuid.fromString, x, y))
-    let duplicateNodes = _ => {
-      let oldSelection = state->State.modelState->ModelState.selection
-      let nodeIds = oldSelection->ModelSelection.nodes
-      let nodeMap = nodeIds->Array.map(id => (id, Uuid.create()))->Uuid.Map.fromArray
-      dispatchM(ModelAction.Duplicate(nodeMap))
-      dispatchI(InspectorAction.Duplicate(nodeMap))
-      state
-      ->State.modelState
-      ->ModelState.graph
-      ->ModelGraph.links
-      ->Array.forEach(link => {
-        let source = ModelLink.source(link)
-        let target = ModelLink.target(link)
-        let constructor = switch ModelLink.kind(link) {
-        | ModelLink.Kind.Hierarchy => (s, t) => ModelAction.Connect(s, t)
-        | ModelLink.Kind.Anchor => (s, t) => ModelAction.Anchor(s, t)
-        | ModelLink.Kind.Relation => (s, t) => ModelAction.Relate(s, t)
-        }
-        switch (nodeMap->Uuid.Map.get(source), nodeMap->Uuid.Map.get(target)) {
-        | (Some(newSource), Some(newTarget)) => dispatchM(constructor(newSource, newTarget))
+    let connectNodes = kind =>
+      focused->Option.iter(focused => {
+        let ids = selection->ModelSelection.nodes
+        switch ids {
+        | [source, target] =>
+          dispatch(
+            Event.Model(focused, Event.Model.Graph(Event.Graph.LinkNodes(source, target, kind))),
+          ) // dispatchG(ModelAction.Connect(source, target))
         | _ => ()
         }
       })
-      let newSelection = Uuid.Map.values(nodeMap)->ModelSelection.ofNodes
-      selectionChange(~oldSelection, ~newSelection)
-    }
-    let slotsChange = e => {
-      let selection = state->State.modelState->ModelState.selection->ModelSelection.nodes
-      switch selection {
-      | [nodeId] => {
-          dispatchI(InspectorAction.Update(nodeId, e))
-          dispatchM(ModelAction.Update(nodeId, e))
+    let linkNodes = _ => connectNodes(ModelLink.Kind.Hierarchy)
+    // let anchorNodes = _ => {
+    //   let ids = selection->ModelSelection.nodes
+    //   switch ids {
+    //   | [source, target] => dispatchG(ModelAction.Anchor(source, target))
+    //   | _ => ()
+    //   }
+    // }
+    let anchorNodes = _ => connectNodes(ModelLink.Kind.Anchor)
+    let unlinkNodes = _ =>
+      focused->Option.iter(focused => {
+        let nodeIds = selection->ModelSelection.nodes
+        nodeIds->Array.forEach(source =>
+          nodeIds->Array.forEach(target =>
+            // dispatchG(ModelAction.Unlink(source, target))
+            dispatch(
+              Event.Model(focused, Event.Model.Graph(Event.Graph.UnlinkNodes(source, target))),
+            )
+          )
+        )
+      })
+    let deleteNodes = _ =>
+      focused->Option.iter(focused => {
+        let oldSelection = selection
+        oldSelection
+        ->ModelSelection.nodes
+        ->Array.forEach(id => {
+          // dispatchM(Action.Model.DeleteNode(id))
+          // dispatchG(ModelAction.Delete(id))
+          dispatch(Event.Model(focused, Event.Model.DeleteNode(id)))
+        })
+        selectionChange(~oldSelection, ~newSelection=ModelSelection.empty)
+      })
+    let movedNodes = (nodeId, ~x, ~y) =>
+      focused->Option.iter(focused => {
+        let nodeId = nodeId->ReactD3Graph.Node.Id.toString->Uuid.fromString
+        dispatch(Event.Model(focused, Event.Model.Graph(Event.Graph.MoveNode(nodeId, x, y))))
+      })
+    // dispatchG(ModelAction.Move(nodeId->ReactD3Graph.Node.Id.toString->Uuid.fromString, x, y))
+    // let duplicateNodes = _ => {
+    //   let oldSelection = selection
+    //   let nodeIds = oldSelection->ModelSelection.nodes
+    //   Js.Console.log(nodeIds)
+    //   if nodeIds != [] {
+    //     let nodeMap = nodeIds->Array.map(id => (id, Uuid.create()))->Uuid.Map.fromArray
+    //     Js.Console.log(nodeMap)
+    //     dispatchG(ModelAction.Duplicate(nodeMap))
+    //     dispatchI(InspectorAction.DuplicateSchema(nodeMap))
+    //     let newSelection = Uuid.Map.values(nodeMap)->ModelSelection.ofNodes
+    //     selectionChange(~oldSelection, ~newSelection)
+    //   }
+    // }
+    let duplicateNodes = _ =>
+      focused->Option.iter(focused => {
+        let nodeIds = selection->ModelSelection.nodes
+        if nodeIds != [] {
+          let nodeMap = nodeIds->Array.map(id => (id, Uuid.create()))->Uuid.Map.fromArray
+          dispatch(Event.Model(focused, Event.Model.DuplicateNodes(nodeMap)))
+          let newSelection = nodeMap->Uuid.Map.values->ModelSelection.ofNodes
+          dispatch(Event.Model(focused, Event.Model.Graph(Event.Graph.SetSelection(newSelection))))
         }
-      | _ => ()
-      }
-    }
+      })
+    let slotsChange = e =>
+      focused->Option.iter(focused => {
+        dispatch(Event.Model(focused, e))
+        Event.Model.graphEvent(e)->Option.iter(e =>
+          dispatch(Event.Model(focused, Event.Model.Graph(e)))
+        )
+        //   switch nodeId {
+        //   | Some(nodeId) => // dispatchI(InspectorAction.UpdateSchema(nodeId, e))
+        //     // dispatchG(ModelAction.Update(nodeId, e))
+        //     dispatch(Event.Model(fo))
+        //   | None => ()
+        //   }
+      })
     let importModel = f => {
       File.text(f)
       |> Js.Promise.then_(text => {
@@ -139,7 +230,7 @@ module App = {
         }
         if Or_error.isOk(model) {
           let model = Or_error.okExn(model)
-          dispatchG(Action.ImportModel(model))
+          dispatch(Event.File.ImportModel(model)->Event.File)
         } else {
           alert("Failed to import '" ++ File.name(f) ++ "'.")
         }
@@ -151,7 +242,7 @@ module App = {
       state
       ->State.model(id)
       ->Option.iter(model => {
-        let name = State.Model.name(model)
+        let name = State.Model.info(model).name
         let json = State.Model.Stable.V2.toJson(model)
         let content =
           "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
@@ -182,7 +273,7 @@ module App = {
       <FilePanel
         id="file-panel"
         models={State.models(state)}
-        active={State.focusedId(state)}
+        active={State.focused(state)}
         onCreate={newModel}
         onDelete={deleteModel}
         onSelect={focusModel}
@@ -240,15 +331,77 @@ module App = {
           <ReactD3Graph.Graph
             id={"model-graph"}
             config
-            data={state->State.modelState->ModelState.data}
-            selection={state->State.modelState->ModelState.selection}
+            data={focused
+            ->Option.flatMap(focused =>
+              state
+              ->State.model(focused)
+              ->Option.map(model => model->State.Model.graph->ModelState.data)
+            )
+            ->Option.getWithDefault(ModelState.empty->ModelState.data)}
+            selection
             onSelectionChange={selectionChange}
             onNodePositionChange={movedNodes}
             keybindings={keybindings}
             style={ReactDOM.Style.make(~flexGrow="1", ())}
           />
+          // <InspectorPanel
+          //   id={"node-inspector"}
+          //   data={switch selection->ModelSelection.nodes {
+          //   | [] =>
+          //     switch focused {
+          //     | None => InspectorState.Empty
+          //     | Some(focused) =>
+          //       state
+          //       ->State.model(focused)
+          //       ->Option.map(model => model->State.Model.info->InspectorState.Global)
+          //       ->Option.getWithDefault(InspectorState.Empty)
+          //     }
+          //   | [nodeId] =>
+          //     focused
+          //     ->Option.flatMap(focused =>
+          //       state
+          //       ->State.model(focused)
+          //       ->Option.flatMap(model =>
+          //         model
+          //         ->State.Model.slots
+          //         ->Uuid.Map.get(nodeId)
+          //         ->Option.map(s => InspectorState.Single(nodeId, s))
+          //       )
+          //     )
+          //     ->Option.getWithDefault(InspectorState.Empty)
+          //   | nodeIds =>
+          //     focused
+          //     ->Option.flatMap(focused =>
+          //       state
+          //       ->State.model(focused)
+          //       ->Option.map(model => {
+          //         let slots = model->State.Model.slots
+          //         nodeIds
+          //         ->Array.mapPartial(id => slots->Uuid.Map.get(id)->Option.map(s => (id, s)))
+          //         ->InspectorState.Multiple
+          //       })
+          //     )
+          //     ->Option.getWithDefault(InspectorState.Empty)
+          //   }}
+          //   onChange=slotsChange
+          // />
           <InspectorPanel
-            id={"node-inspector"} data={state->State.inspectorState} onChange=slotsChange
+            id={"node_inspector"}
+            onChange=slotsChange
+            data={focused
+            ->Option.flatMap(focused =>
+              state
+              ->State.model(focused)
+              ->Option.map(model => {
+                let slots = model->State.Model.slotsForSelection(selection)->Uuid.Map.toArray
+                switch slots {
+                | [] => InspectorState.Global(State.Model.info(model))
+                | [(id, slot)] => InspectorState.Single(id, slot)
+                | multi => InspectorState.Multiple(multi)
+                }
+              })
+            )
+            ->Option.getWithDefault(InspectorState.Empty)}
           />
         </div>
       </div>

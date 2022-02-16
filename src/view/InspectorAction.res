@@ -1,31 +1,35 @@
 type t =
-  | Update(Uuid.t, InspectorEvent.t)
-  | Duplicate(Uuid.Map.t<Uuid.t>)
+  | UpdateSchema(Uuid.t, InspectorEvent.t)
+  | DuplicateSchema(Uuid.Map.t<Uuid.t>)
+  | UpdateGlobal(InspectorEvent.t)
 
 let dispatch = (state, t) =>
   switch t {
-  | Update(key, event) => {
-      let newState = switch state {
-      | InspectorState.Single(key', s) =>
-        if key == key' {
-          Some(InspectorState.Schema.applyEvent(s, event))
+  | UpdateSchema(key, event) =>
+    switch state {
+    | InspectorState.Single(key', s) =>
+      InspectorState.Single(
+        key,
+        if key === key' {
+          InspectorState.Schema.applyEvent(s, event)
         } else {
-          None
-        }
-      | _ => None
-      }
-      [(key, newState)]
+          s
+        },
+      )
+    | s => s
     }
-  | Duplicate(keyMap) => {
+  | DuplicateSchema(keyMap) => {
       let dup = (source, slots) =>
-        keyMap
-        ->Uuid.Map.get(source)
-        ->Option.map(target => [(target, Some(slots))])
-        ->Option.getWithDefault([])
+        keyMap->Uuid.Map.get(source)->Option.map(target => (target, slots))
       switch state {
-      | InspectorState.Single(source, s) => dup(source, s)
-      | InspectorState.Multiple(ss) => ss->Array.flatMap(((source, s)) => dup(source, s))
-      | _ => []
+      | InspectorState.Single(source, s) =>
+        dup(source, s)
+        ->Option.map(((k, v)) => InspectorState.Single(k, v))
+        ->Option.getWithDefault(InspectorState.Single(source, s))
+      | InspectorState.Multiple(ss) =>
+        ss->Array.mapPartial(((source, s)) => dup(source, s))->InspectorState.Multiple
+      | s => s
       }
     }
+  | _ => state
   }
