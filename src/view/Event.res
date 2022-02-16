@@ -6,6 +6,8 @@ module File = {
     | DuplicateModel(Uuid.t, Uuid.t)
     | ImportModel(State.Model.t)
     | ReorderModels(array<Uuid.t>)
+    | Undo(Uuid.t)
+    | Redo(Uuid.t)
 
   let dispatch = (state, t) =>
     switch t {
@@ -15,6 +17,8 @@ module File = {
     | DuplicateModel(existing, new_) => state->State.duplicateModel(~existing, ~new_)
     | ImportModel(model) => state->State.importModel(model)
     | ReorderModels(order) => state->State.reorderModels(order)
+    | Undo(id) => state->State.undo(id)
+    | Redo(id) => state->State.redo(id)
     }
 }
 
@@ -148,7 +152,7 @@ module Graph = {
       }
   }
 
-  type t =
+  type rec t =
     | AddNode(ModelNode.t)
     | UpdateNode(Uuid.t, Node.t)
     | DeleteNode(Uuid.t)
@@ -157,9 +161,11 @@ module Graph = {
     | LinkNodes(Uuid.t, Uuid.t, ModelLink.Kind.t)
     | UnlinkNodes(Uuid.t, Uuid.t)
     | SetSelection(ModelSelection.t)
+    | Seq(array<t>)
 
-  let dispatch = (state, t) =>
+  let rec dispatch = (state, t) =>
     switch t {
+    | Seq(ts) => ts->Array.reduce(state, (state, t) => dispatch(state, t))
     | AddNode(node) => state->ModelState.addNode(node)
     | UpdateNode(id, e) =>
       state->ModelState.updateNodes(node =>
@@ -196,7 +202,7 @@ module Graph = {
 }
 
 module Model = {
-  type t =
+  type rec t =
     | Rename(string)
     | SetNotes(string)
     | CreateNode(Uuid.t, float, float, ModelNode.Kind.t)
@@ -204,9 +210,11 @@ module Model = {
     | DuplicateNodes(Uuid.Map.t<Uuid.t>)
     | Graph(Graph.t)
     | Slots(Uuid.t, Slots.t)
+    | Seq(array<t>)
 
-  let dispatch = (state, t) =>
+  let rec dispatch = (state, t) =>
     switch t {
+    | Seq(ts) => ts->Array.reduce(state, (state, t) => dispatch(state, t))
     | Rename(name) =>
       state->State.Model.updateInfo(
         state->State.Model.info->(i => {...i, InspectorState.Model.name: name}),
@@ -255,9 +263,10 @@ module Model = {
       }
     }
 
-  let graphEvent = t =>
+  let rec graphEvent = t =>
     switch t {
     | Rename(_) | SetNotes(_) | CreateNode(_, _, _, _) | DeleteNode(_) | DuplicateNodes(_) => None
+    | Seq(ts) => ts->Array.mapPartial(graphEvent)->Graph.Seq->Some
     | Graph(e) => Some(e)
     | Slots(id, e) => {
         let e' = switch e {
@@ -291,12 +300,11 @@ module Model = {
     }
 }
 
-type rec t =
+type t =
   | Model(Uuid.t, Model.t)
   | File(File.t)
-  | Seq(array<t>)
 
-let rec dispatch = (state, t) =>
+let dispatch = (state, t) =>
   switch t {
   | Model(id, ev) =>
     state
@@ -304,5 +312,4 @@ let rec dispatch = (state, t) =>
     ->Option.map(model => state->State.updateModel(id, Model.dispatch(model, ev)))
     ->Option.getWithDefault(state)
   | File(ev) => File.dispatch(state, ev)
-  | Seq(ts) => ts->Array.reduce(state, (state, ev) => dispatch(state, ev))
   }

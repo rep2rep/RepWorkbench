@@ -6,6 +6,8 @@ module File: {
     | DuplicateModel(Uuid.t, Uuid.t)
     | ImportModel(State.Model.t)
     | ReorderModels(array<Uuid.t>)
+    | Undo(Uuid.t)
+    | Redo(Uuid.t)
 }
 
 module Slots: {
@@ -69,7 +71,7 @@ module Graph: {
       | UpdateDashed(bool)
   }
 
-  type t =
+  type rec t =
     | AddNode(ModelNode.t)
     | UpdateNode(Uuid.t, Node.t)
     | DeleteNode(Uuid.t)
@@ -78,10 +80,11 @@ module Graph: {
     | LinkNodes(Uuid.t, Uuid.t, ModelLink.Kind.t)
     | UnlinkNodes(Uuid.t, Uuid.t)
     | SetSelection(ModelSelection.t)
+    | Seq(array<t>)
 }
 
 module Model: {
-  type t =
+  type rec t =
     | Rename(string)
     | SetNotes(string)
     | CreateNode(Uuid.t, float, float, ModelNode.Kind.t)
@@ -89,15 +92,15 @@ module Model: {
     | DuplicateNodes(Uuid.Map.t<Uuid.t>)
     | Graph(Graph.t)
     | Slots(Uuid.t, Slots.t)
+    | Seq(array<t>)
 
   // Take what is potentially an event for another "direction"
   // And convert it to a graph event. Mainly used to redirect "slots" events.
   let graphEvent: t => option<Graph.t>
 }
 
-type rec t =
+type t =
   | Model(Uuid.t, Model.t)
   | File(File.t)
-  | Seq(array<t>)
 
 let dispatch: (State.t, t) => State.t

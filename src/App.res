@@ -32,6 +32,13 @@ module App = {
 
     let dispatchM = e => focused->Option.iter(focused => dispatch(Event.Model(focused, e)))
 
+    let canUndo =
+      focused->Option.map(focused => state->State.canUndo(focused))->Option.getWithDefault(false)
+    let canRedo =
+      focused->Option.map(focused => state->State.canRedo(focused))->Option.getWithDefault(false)
+    let undo = _ => focused->Option.iter(focused => dispatch(Event.File.Undo(focused)->Event.File))
+    let redo = _ => focused->Option.iter(focused => dispatch(Event.File.Redo(focused)->Event.File))
+
     let newModel = () => dispatch(Event.File.NewModel(Uuid.create())->Event.File)
     let deleteModel = id => dispatch(Event.File.DeleteModel(id)->Event.File)
     let focusModel = id => dispatch(Event.File.FocusModel(id)->Event.File)
@@ -45,24 +52,21 @@ module App = {
     let selectionChange = (~oldSelection as _, ~newSelection) =>
       dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
     let addNodeAt = (kind, ~x, ~y) =>
-      focused->Option.iter(focused => {
+      dispatchM({
         let oldSelection = selection
         let ids = oldSelection->ModelSelection.nodes
         let id = Uuid.create()
-        let e0 = Event.Model(focused, Event.Model.CreateNode(id, x, y, kind))
+        let e0 = Event.Model.CreateNode(id, x, y, kind)
         let eLinks = switch ids {
         | [] => []
         | _ =>
-          ids->Array.map(source => Event.Model(
-            focused,
-            Event.Model.Graph(Event.Graph.LinkNodes(source, id, ModelLink.Kind.Hierarchy)),
+          ids->Array.map(source => Event.Model.Graph(
+            Event.Graph.LinkNodes(source, id, ModelLink.Kind.Hierarchy),
           ))
         }
-        let eFinal = Event.Model(
-          focused,
-          Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.ofNodes([id]))),
-        )
-        dispatch(Event.Seq(Array.concatMany([[e0], eLinks, [eFinal]])))
+        let eFinal = Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.ofNodes([id])))
+
+        Event.Model.Seq(Array.concatMany([[e0], eLinks, [eFinal]]))
       })
     let addRepNodeAt = (_, ~x, ~y) => ModelNode.Kind.Representation->addNodeAt(~x, ~y)
     let addSchNodeAt = (_, ~x, ~y) => ModelNode.Kind.Scheme->addNodeAt(~x, ~y)
@@ -76,63 +80,48 @@ module App = {
       | _ => ()
       }
     }
-    //)
     let connectNodes = _ => linkNodes(ModelLink.Kind.Hierarchy)
     let anchorNodes = _ => linkNodes(ModelLink.Kind.Anchor)
-    let unlinkNodes = _ =>
-      focused->Option.iter(focused => {
-        let nodeIds = selection->ModelSelection.nodes
-        dispatch(
-          Event.Seq(
-            nodeIds->Array.flatMap(source =>
-              nodeIds->Array.map(target => Event.Model(
-                focused,
-                Event.Model.Graph(Event.Graph.UnlinkNodes(source, target)),
-              ))
-            ),
+    let unlinkNodes = _ => {
+      let nodeIds = selection->ModelSelection.nodes
+      dispatchM(
+        Event.Model.Seq(
+          nodeIds->Array.flatMap(source =>
+            nodeIds->Array.map(target => Event.Model.Graph(Event.Graph.UnlinkNodes(source, target)))
           ),
-        )
-      })
-    let deleteNodes = _ =>
-      focused->Option.iter(focused => {
-        let es =
-          selection
-          ->ModelSelection.nodes
-          ->Array.map(id => {
-            Event.Model(focused, Event.Model.DeleteNode(id))
-          })
-        let eFinal = Event.Model(
-          focused,
-          Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.empty)),
-        )
-        dispatch(Event.Seq(Array.concat(es, [eFinal])))
-      })
+        ),
+      )
+    }
+    let deleteNodes = _ => {
+      let es = selection->ModelSelection.nodes->Array.map(id => Event.Model.DeleteNode(id))
+      let eFinal = Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.empty))
+
+      dispatchM(Event.Model.Seq(Array.concat(es, [eFinal])))
+    }
     let movedNodes = (nodeId, ~x, ~y) =>
       focused->Option.iter(focused => {
         let nodeId = nodeId->ReactD3Graph.Node.Id.toString->Uuid.fromString
         dispatch(Event.Model(focused, Event.Model.Graph(Event.Graph.MoveNode(nodeId, x, y))))
       })
-    let duplicateNodes = _ =>
-      focused->Option.iter(focused => {
-        let nodeIds = selection->ModelSelection.nodes
-        if nodeIds != [] {
-          let nodeMap = nodeIds->Array.map(id => (id, Uuid.create()))->Uuid.Map.fromArray
-          let newSelection = nodeMap->Uuid.Map.values->ModelSelection.ofNodes
-          dispatch(
-            Event.Seq([
-              Event.Model(focused, Event.Model.DuplicateNodes(nodeMap)),
-              Event.Model(focused, Event.Model.Graph(Event.Graph.SetSelection(newSelection))),
-            ]),
-          )
-        }
-      })
-    let slotsChange = e =>
-      focused->Option.iter(focused => {
-        dispatch(Event.Model(focused, e))
-        Event.Model.graphEvent(e)->Option.iter(e =>
-          dispatch(Event.Model(focused, Event.Model.Graph(e)))
+    let duplicateNodes = _ => {
+      let nodeIds = selection->ModelSelection.nodes
+      if nodeIds != [] {
+        let nodeMap = nodeIds->Array.map(id => (id, Uuid.create()))->Uuid.Map.fromArray
+        let newSelection = nodeMap->Uuid.Map.values->ModelSelection.ofNodes
+        dispatchM(
+          Event.Model.Seq([
+            Event.Model.DuplicateNodes(nodeMap),
+            Event.Model.Graph(Event.Graph.SetSelection(newSelection)),
+          ]),
         )
-      })
+      }
+    }
+    let slotsChange = e => {
+      switch Event.Model.graphEvent(e) {
+      | None => dispatchM(e)
+      | Some(e') => dispatchM(Event.Model.Seq([e, Event.Model.Graph(e')]))
+      }
+    }
     let importModel = f => {
       File.text(f)
       |> Js.Promise.then_(text => {
@@ -215,6 +204,9 @@ module App = {
             ~padding="0 0.5rem",
             (),
           )}>
+          <Button onClick={undo} value="Undo" enabled={canUndo} />
+          <Button onClick={redo} value="Redo" enabled={canRedo} />
+          <Button.Separator />
           <Button onClick={addRepNodeAt(_, ~x=0., ~y=0.)} value="Add Representation Node" />
           <Button onClick={addSchNodeAt(_, ~x=0., ~y=0.)} value="Add Scheme Node" />
           <Button onClick={addDimNodeAt(_, ~x=0., ~y=0.)} value="Add Dimension Node" />
