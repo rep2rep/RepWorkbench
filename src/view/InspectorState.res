@@ -48,13 +48,6 @@ module Representation = {
     display: "Reference",
     notes: "",
   }
-
-  let applyEvent = (t, event) =>
-    switch event {
-    | InspectorEvent.Representation.Domain(s) => {...t, domain: s}
-    | InspectorEvent.Representation.Display(s) => {...t, display: s}
-    | InspectorEvent.Representation.Notes(s) => {...t, notes: s}
-    }
 }
 
 module Scheme = {
@@ -147,17 +140,6 @@ module Scheme = {
     organisation: "",
     notes: "",
   }
-
-  let applyEvent = (t, e) =>
-    switch e {
-    | InspectorEvent.Scheme.Concept_structure(s) => {...t, concept_structure: s}
-    | InspectorEvent.Scheme.Graphic_structure(s) => {...t, graphic_structure: s}
-    | InspectorEvent.Scheme.Function(s) => {...t, function: s}
-    | InspectorEvent.Scheme.Explicit(s) => {...t, explicit: s}
-    | InspectorEvent.Scheme.Scope(s) => {...t, scope: s}
-    | InspectorEvent.Scheme.Organisation(s) => {...t, organisation: s}
-    | InspectorEvent.Scheme.Notes(s) => {...t, notes: s}
-    }
 }
 
 module Dimension = {
@@ -286,21 +268,6 @@ module Dimension = {
     organisation: "",
     notes: "",
   }
-
-  let applyEvent = (t, event) =>
-    switch event {
-    | InspectorEvent.Dimension.Concept(s) => {...t, concept: s}
-    | InspectorEvent.Dimension.Concept_scale(s) => {...t, concept_scale: s}
-    | InspectorEvent.Dimension.Concept_attributes(s) => {...t, concept_attributes: s}
-    | InspectorEvent.Dimension.Graphic(s) => {...t, graphic: s}
-    | InspectorEvent.Dimension.Graphic_scale(s) => {...t, graphic_scale: s}
-    | InspectorEvent.Dimension.Graphic_attributes(s) => {...t, graphic_attributes: s}
-    | InspectorEvent.Dimension.Function(s) => {...t, function: s}
-    | InspectorEvent.Dimension.Scope(s) => {...t, scope: s}
-    | InspectorEvent.Dimension.Explicit(s) => {...t, explicit: s}
-    | InspectorEvent.Dimension.Organisation(s) => {...t, organisation: s}
-    | InspectorEvent.Dimension.Notes(s) => {...t, notes: s}
-    }
 }
 
 module Token = {
@@ -378,16 +345,6 @@ module Token = {
     explicit: true,
     notes: "",
   }
-
-  let applyEvent = (t, event) =>
-    switch event {
-    | InspectorEvent.Token.Concept(s) => {...t, concept: s}
-    | InspectorEvent.Token.Graphic(s) => {...t, graphic: s}
-    | InspectorEvent.Token.Is_class(s) => {...t, is_class: s}
-    | InspectorEvent.Token.Function(s) => {...t, function: s}
-    | InspectorEvent.Token.Explicit(s) => {...t, explicit: s}
-    | InspectorEvent.Token.Notes(s) => {...t, notes: s}
-    }
 }
 
 module Schema = {
@@ -441,16 +398,6 @@ module Schema = {
         })
     }
   }
-
-  let applyEvent = (t, event) =>
-    switch (t, event) {
-    | (Representation(r), InspectorEvent.Representation(e)) =>
-      Representation(Representation.applyEvent(r, e))
-    | (Scheme(s), InspectorEvent.Scheme(e)) => Scheme(Scheme.applyEvent(s, e))
-    | (Dimension(s), InspectorEvent.Dimension(e)) => Dimension(Dimension.applyEvent(s, e))
-    | (Token(t), InspectorEvent.Token(e)) => Token(Token.applyEvent(t, e))
-    | _ => t
-    }
 
   let empty = kind =>
     switch kind {
@@ -526,12 +473,6 @@ module Model = {
   let notes = t => t.notes
 
   let create = (~name) => {name: name, notes: ""}
-
-  let applyEvent = (t, event) =>
-    switch event {
-    | InspectorEvent.Model.Name(name) => {...t, name: name}
-    | InspectorEvent.Model.Notes(notes) => {...t, notes: notes}
-    }
 }
 
 type t =

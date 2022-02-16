@@ -1,54 +1,9 @@
 module App = {
   type state = State.t
   type action = Event.t
-  // | GlobalAction(Action.t)
-  // | ModelAction(Uuid.t, Action.Model.t)
-  // | GraphAction(Uuid.t, ModelAction.t)
-  // | InspectorAction(Uuid.t, InspectorAction.t)
 
   let init = State.load()->Option.getWithDefault(State.empty)
   let reducer = (state, action) => {
-    // let newState = switch action {
-    // | GlobalAction(action) => Action.dispatch(state, action)
-    // | ModelAction(focused, action) =>
-    //   state
-    //   ->State.model(focused)
-    //   ->Option.map(model => {
-    //     let model' = Action.Model.dispatch(model, action)
-    //     state->State.updateModel(focused, model')
-    //   })
-    //   ->Option.getWithDefault(state)
-    // // | GraphAction(focused, action) =>
-    //   state
-    //   ->State.model(focused)
-    //   ->Option.map(model => {
-    //     let modelState = model->State.Model.modelState->ModelAction.dispatch(action)
-    //     let model' = model->State.Model.updateModelState(modelState)
-    //     state->State.updateModel(focused, model')
-    //   })
-    //   ->Option.getWithDefault(state)
-    // | InspectorAction(focused, action) =>
-    //   state
-    //   ->State.model(focused)
-    //   ->Option.map(model => {
-    //     let slots = model->State.Model.slots
-    //     let slots' = slots->Uuid.Map.mapWithKey((id, s) =>
-    //       switch InspectorAction.dispatch(InspectorState.Single(id, s), action) {
-    //       | InspectorState.Single(_, s') => s'
-    //       | _ => raise(Not_found)
-    //       }
-    //     )
-    //     let info = model->State.Model.info
-    //     let info' = switch InspectorAction.dispatch(InspectorState.Global(info), action) {
-    //     | InspectorState.Global(s') => s'
-    //     | _ => raise(Not_found)
-    //     }
-
-    //     let model' = model->State.Model.updateSlots(slots')->State.Model.updateInfo(info')
-    //     state->State.updateModel(focused, model')
-    //   })
-    //   ->Option.getWithDefault(state)
-    // }
     let newState = Event.dispatch(state, action)
     State.store(newState)
     newState
@@ -75,31 +30,16 @@ module App = {
       )
       ->Option.getWithDefault(ModelSelection.empty)
 
-    // let dispatchA = a => dispatch(GlobalAction(a))
-    // let dispatchM = a => focused->Option.iter(focused => dispatch(ModelAction(focused, a)))
-    // let dispatchG = a => focused->Option.iter(focused => dispatch(GraphAction(focused, a)))
-    // let dispatchI = a => focused->Option.iter(focused => dispatch(InspectorAction(focused, a)))
-
     let newModel = () => dispatch(Event.File.NewModel(Uuid.create())->Event.File)
     let deleteModel = id => dispatch(Event.File.DeleteModel(id)->Event.File)
     let focusModel = id => dispatch(Event.File.FocusModel(id)->Event.File)
     let reorder = newOrder => dispatch(Event.File.ReorderModels(newOrder)->Event.File)
-    // let renameModel = (id, name) => {
-    //   dispatch(
-    //     InspectorAction(
-    //       id,
-    //       InspectorAction.UpdateGlobal(InspectorEvent.Model(InspectorEvent.Model.Name(name))),
-    //     ),
-    //   )
-    // }
     let renameModel = (id, name) => dispatch(Event.Model(id, Event.Model.Rename(name)))
     let duplicateModel = id => {
       let newId = Uuid.create()
-      // dispatchA(Action.DuplicateModel(id, newId))
       dispatch(Event.File.DuplicateModel(id, newId)->Event.File)
     }
     let selectionChange = (~oldSelection as _, ~newSelection) =>
-      // dispatchG(ModelAction.Selection(newSelection))
       focused->Option.iter(focused =>
         dispatch(Event.Model(focused, Event.Model.Graph(Event.Graph.SetSelection(newSelection))))
       )
@@ -109,13 +49,10 @@ module App = {
         let ids = oldSelection->ModelSelection.nodes
         let id = Uuid.create()
         dispatch(Event.Model(focused, Event.Model.CreateNode(id, x, y, kind)))
-        // dispatchM(Action.Model.CreateNode(kind, id))
-        // dispatchG(ModelAction.Create(x, y, kind, id))
         switch ids {
         | [] => ()
         | _ =>
           ids->Array.forEach(source =>
-            // dispatchG(ModelAction.Connect(source, id))
             dispatch(
               Event.Model(
                 focused,
@@ -124,7 +61,6 @@ module App = {
             )
           )
         }
-        // selectionChange(~oldSelection, ~newSelection=ModelSelection.ofNodes([id]))
         dispatch(
           Event.Model(
             focused,
@@ -136,32 +72,24 @@ module App = {
     let addSchNodeAt = (_, ~x, ~y) => ModelNode.Kind.Scheme->addNodeAt(~x, ~y)
     let addDimNodeAt = (_, ~x, ~y) => ModelNode.Kind.Dimension->addNodeAt(~x, ~y)
     let addTokNodeAt = (_, ~x, ~y) => ModelNode.Kind.Token->addNodeAt(~x, ~y)
-    let connectNodes = kind =>
+    let linkNodes = kind =>
       focused->Option.iter(focused => {
         let ids = selection->ModelSelection.nodes
         switch ids {
         | [source, target] =>
           dispatch(
             Event.Model(focused, Event.Model.Graph(Event.Graph.LinkNodes(source, target, kind))),
-          ) // dispatchG(ModelAction.Connect(source, target))
+          )
         | _ => ()
         }
       })
-    let linkNodes = _ => connectNodes(ModelLink.Kind.Hierarchy)
-    // let anchorNodes = _ => {
-    //   let ids = selection->ModelSelection.nodes
-    //   switch ids {
-    //   | [source, target] => dispatchG(ModelAction.Anchor(source, target))
-    //   | _ => ()
-    //   }
-    // }
-    let anchorNodes = _ => connectNodes(ModelLink.Kind.Anchor)
+    let connectNodes = _ => linkNodes(ModelLink.Kind.Hierarchy)
+    let anchorNodes = _ => linkNodes(ModelLink.Kind.Anchor)
     let unlinkNodes = _ =>
       focused->Option.iter(focused => {
         let nodeIds = selection->ModelSelection.nodes
         nodeIds->Array.forEach(source =>
           nodeIds->Array.forEach(target =>
-            // dispatchG(ModelAction.Unlink(source, target))
             dispatch(
               Event.Model(focused, Event.Model.Graph(Event.Graph.UnlinkNodes(source, target))),
             )
@@ -174,8 +102,6 @@ module App = {
         oldSelection
         ->ModelSelection.nodes
         ->Array.forEach(id => {
-          // dispatchM(Action.Model.DeleteNode(id))
-          // dispatchG(ModelAction.Delete(id))
           dispatch(Event.Model(focused, Event.Model.DeleteNode(id)))
         })
         selectionChange(~oldSelection, ~newSelection=ModelSelection.empty)
@@ -185,20 +111,6 @@ module App = {
         let nodeId = nodeId->ReactD3Graph.Node.Id.toString->Uuid.fromString
         dispatch(Event.Model(focused, Event.Model.Graph(Event.Graph.MoveNode(nodeId, x, y))))
       })
-    // dispatchG(ModelAction.Move(nodeId->ReactD3Graph.Node.Id.toString->Uuid.fromString, x, y))
-    // let duplicateNodes = _ => {
-    //   let oldSelection = selection
-    //   let nodeIds = oldSelection->ModelSelection.nodes
-    //   Js.Console.log(nodeIds)
-    //   if nodeIds != [] {
-    //     let nodeMap = nodeIds->Array.map(id => (id, Uuid.create()))->Uuid.Map.fromArray
-    //     Js.Console.log(nodeMap)
-    //     dispatchG(ModelAction.Duplicate(nodeMap))
-    //     dispatchI(InspectorAction.DuplicateSchema(nodeMap))
-    //     let newSelection = Uuid.Map.values(nodeMap)->ModelSelection.ofNodes
-    //     selectionChange(~oldSelection, ~newSelection)
-    //   }
-    // }
     let duplicateNodes = _ =>
       focused->Option.iter(focused => {
         let nodeIds = selection->ModelSelection.nodes
@@ -215,12 +127,6 @@ module App = {
         Event.Model.graphEvent(e)->Option.iter(e =>
           dispatch(Event.Model(focused, Event.Model.Graph(e)))
         )
-        //   switch nodeId {
-        //   | Some(nodeId) => // dispatchI(InspectorAction.UpdateSchema(nodeId, e))
-        //     // dispatchG(ModelAction.Update(nodeId, e))
-        //     dispatch(Event.Model(fo))
-        //   | None => ()
-        //   }
       })
     let importModel = f => {
       File.text(f)
@@ -255,7 +161,7 @@ module App = {
       ("s", addSchNodeAt),
       ("d", addDimNodeAt),
       ("t", addTokNodeAt),
-      ("c", (e, ~x as _, ~y as _) => linkNodes(e)),
+      ("c", (e, ~x as _, ~y as _) => connectNodes(e)),
       ("a", (e, ~x as _, ~y as _) => anchorNodes(e)),
       ("x", (e, ~x as _, ~y as _) => deleteNodes(e)),
       ("v", (e, ~x as _, ~y as _) => unlinkNodes(e)),
@@ -310,7 +216,7 @@ module App = {
           <Button onClick={addTokNodeAt(_, ~x=0., ~y=0.)} value="Add Token Node" />
           <Button onClick={duplicateNodes} value="Duplicate" />
           <Button.Separator />
-          <Button onClick={linkNodes} value="Connect" />
+          <Button onClick={connectNodes} value="Connect" />
           <Button onClick={anchorNodes} value="Anchor" />
           <Button.Separator />
           <Button onClick={unlinkNodes} value="Unlink" />

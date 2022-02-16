@@ -6,8 +6,6 @@ module File: {
     | DuplicateModel(Uuid.t, Uuid.t)
     | ImportModel(State.Model.t)
     | ReorderModels(array<Uuid.t>)
-
-  // let dispatch: (State.t, t) => State.t
 }
 
 module Slots: {
@@ -16,8 +14,6 @@ module Slots: {
       | Domain(string)
       | Display(string)
       | Notes(string)
-
-    // let dispatch: (InspectorState.Representation.t, t) => InspectorState.Representation.t
   }
 
   module Scheme: {
@@ -29,8 +25,6 @@ module Slots: {
       | Scope(Scope.t)
       | Organisation(string)
       | Notes(string)
-
-    // let dispatch: (InspectorState.Scheme.t, t) => InspectorState.Scheme.t
   }
 
   module Dimension: {
@@ -46,8 +40,6 @@ module Slots: {
       | Explicit(bool)
       | Organisation(string)
       | Notes(string)
-
-    // let dispatch: (InspectorState.Dimension.t, t) => InspectorState.Dimension.t
   }
 
   module Token: {
@@ -58,8 +50,6 @@ module Slots: {
       | Function(Function.t)
       | Explicit(bool)
       | Notes(string)
-
-    // let dispatch: (InspectorState.Token.t, t) => InspectorState.Token.t
   }
 
   type t =
@@ -67,8 +57,6 @@ module Slots: {
     | Scheme(Scheme.t)
     | Dimension(Dimension.t)
     | Token(Token.t)
-
-  let dispatch: (InspectorState.Schema.t, t) => InspectorState.Schema.t
 }
 
 module Graph: {
@@ -90,8 +78,6 @@ module Graph: {
     | LinkNodes(Uuid.t, Uuid.t, ModelLink.Kind.t)
     | UnlinkNodes(Uuid.t, Uuid.t)
     | SetSelection(ModelSelection.t)
-
-  // let dispatch: (ModelState.t, t) => ModelState.t
 }
 
 module Model: {
@@ -104,7 +90,6 @@ module Model: {
     | Graph(Graph.t)
     | Slots(Uuid.t, Slots.t)
 
-  // let dispatch: (State.Model.t, t) => State.Model.t
   // Take what is potentially an event for another "direction"
   // And convert it to a graph event. Mainly used to redirect "slots" events.
   let graphEvent: t => option<Graph.t>

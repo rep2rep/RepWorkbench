@@ -115,7 +115,6 @@ module Schema: {
     | Dimension(Dimension.t)
     | Token(Token.t)
 
-  let applyEvent: (t, InspectorEvent.t) => t
   let empty: ModelNode.Kind.t => t
   let name: t => string
   let reference: t => string
@@ -148,7 +147,6 @@ module Model: {
   let notes: t => string
 
   let create: (~name: string) => t
-  let applyEvent: (t, InspectorEvent.Model.t) => t
 }
 
 type t =
