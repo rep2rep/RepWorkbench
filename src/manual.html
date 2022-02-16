@@ -143,6 +143,12 @@
       has a grey background, the buttons will not do anything.
     </p>
     <table>
+      <tr><td><p><input type="button" value="Undo" /><br><input type="button" value="Redo"></p></td><td>
+          <p>
+            The first two buttons in the toolbar should be familiar: undo, and redo. These buttons act
+            per Model, so each Model maintains a separate history. The history is lost when the Workbench
+            is reloaded, and can only maintain 50 "steps". Any history further back is discarded.
+      </p></td></tr>
       <tr><td><p><input type="button" value="Add X Node" /></p></td><td>
           <p>
             These four buttons create a new node in the Model. The kind of node
@@ -186,14 +192,6 @@
             A dangerous button. This deletes the nodes currently selected, along with all the links
             attached to them. <strong>There is currently no undo. Delete is <emph>permanent</emph>.</strong>
       </p></td></tr>
-      <tr><td><p><input type="button" value="Dump State" /></p></td><td>
-          <p>
-            This final button is a safety mechanism while the Workbench
-            is under development. Clicking this button downloads all the internal state of the Workbench,
-            which can (in theory) be used to recover any work you had at that point in time. Currently,
-            recovering using the state file is unavailable, but may be possible in the future. This button
-            will work at any time, even if no models are active.
-      </p></td></tr>
     </table>
     <p>
       After the buttons is a link to this manual.
@@ -223,7 +221,8 @@
       On the far right is the Slots inspector. Each node in the Model has associated 'slots':
       each slot holds one particular piece of information about that node. When one node
       in the Model editor is selected, the Slots inspector displays the information for that one node.
-      If zero or multiple nodes are selected, the panel is empty.
+      If multiple nodes are selected, the panel is empty. If no nodes are selected, information about
+      the entire model is shown.
     </p>
     <p>
       The information associated with a node varies based on whether it is a Representation,
