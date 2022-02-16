@@ -150,6 +150,13 @@ module App = {
       })
     }
 
+    module K = GlobalKeybindings.KeyBinding
+    GlobalKeybindings.set([
+      K.create("Cmd+z", undo),
+      K.create("Cmd+Shift+z", redo),
+      K.create("Cmd+y", redo),
+    ])
+
     let keybindings = Js.Dict.fromArray([
       ("r", addRepNodeAt),
       ("s", addSchNodeAt),
