@@ -44,3 +44,7 @@ let importModel: (t, Model.t) => t
 let reorderModels: (t, array<Uuid.t>) => t
 
 let updateModel: (t, Uuid.t, Model.t) => t
+let undo: (t, Uuid.t) => t
+let redo: (t, Uuid.t) => t
+let canUndo: (t, Uuid.t) => bool
+let canRedo: (t, Uuid.t) => bool

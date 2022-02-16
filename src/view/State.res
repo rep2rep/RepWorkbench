@@ -151,7 +151,7 @@ module Model = {
 }
 
 type t = {
-  models: Uuid.Map.t<Model.t>,
+  models: Uuid.Map.t<UndoRedo.t<Model.t>>,
   positions: array<Uuid.t>,
   currentModel: option<Uuid.t>,
 }
@@ -165,7 +165,7 @@ let store = t => {
     "RepNotation:AllModels",
     t.positions->Array.toJson(Uuid.toJson)->Js.Json.stringify,
   )
-  t.models->Uuid.Map.forEach((id, model) => Model.store(model, id))
+  t.models->Uuid.Map.forEach((id, model) => Model.store(model->UndoRedo.state, id))
 }
 
 let load = () => {
@@ -191,7 +191,7 @@ let load = () => {
   })
   let models = positions->Option.flatMap(positions => {
     positions
-    ->Array.map(id => Model.load(id)->Or_error.toOption->Option.map(m => (id, m)))
+    ->Array.map(id => Model.load(id)->Or_error.toOption->Option.map(m => (id, UndoRedo.create(m))))
     ->Option.all
     ->Option.map(Uuid.Map.fromArray)
   })
@@ -214,12 +214,13 @@ let empty = {
 
 let focused = t => t.currentModel
 
-let models = t => t.positions->Array.map(id => (id, t.models->Uuid.Map.get(id)->Option.getExn))
+let models = t =>
+  t.positions->Array.map(id => (id, t.models->Uuid.Map.get(id)->Option.getExn->UndoRedo.state))
 
-let model = (t, id) => t.models->Uuid.Map.get(id)
+let model = (t, id) => t.models->Uuid.Map.get(id)->Option.map(UndoRedo.state)
 
 let createModel = (t, id) => {
-  models: t.models->Uuid.Map.set(id, Model.create("Model")),
+  models: t.models->Uuid.Map.set(id, Model.create("Model")->UndoRedo.create),
   positions: t.positions->Array.concat([id]),
   currentModel: Some(id),
 }
@@ -247,8 +248,8 @@ let focusModel = (t, id) => {
 
 let duplicateModel = (t, ~existing, ~new_) => {
   let dupIndex = t.positions->Array.getIndexBy(id => id === existing)->Option.getExn
-  let oldModel = t.models->Uuid.Map.get(existing)->Option.getExn
-  let newModel = oldModel->Model.duplicate(oldModel.info.name ++ " (Copy)")
+  let oldModel = t.models->Uuid.Map.get(existing)->Option.getExn->UndoRedo.state
+  let newModel = oldModel->Model.duplicate(oldModel.info.name ++ " (Copy)")->UndoRedo.create
   let before = t.positions->Array.slice(~offset=0, ~len=dupIndex + 1)
   let after = t.positions->Array.sliceToEnd(dupIndex + 1)
   {
@@ -261,7 +262,7 @@ let duplicateModel = (t, ~existing, ~new_) => {
 let importModel = (t, model) => {
   // Duplicate the model to ensure fresh ids
   let newId = Uuid.create()
-  let model = Model.duplicate(model, model.info.name)
+  let model = Model.duplicate(model, model.info.name)->UndoRedo.create
   {
     currentModel: Some(newId),
     positions: t.positions->Array.concat([newId]),
@@ -274,7 +275,24 @@ let reorderModels = (t, newOrder) => {
   positions: newOrder,
 }
 
-let updateModel = (t, id, model) => {
+let updateModel = (t, id, newModel) => {
   ...t,
-  models: t.models->Uuid.Map.set(id, model),
+  models: t.models->Uuid.Map.update(id, model =>
+    model->Option.map(model => model->UndoRedo.step(newModel))
+  ),
 }
+
+let undo = (t, id) => {
+  ...t,
+  models: t.models->Uuid.Map.update(id, model => model->Option.map(model => model->UndoRedo.undo)),
+}
+
+let redo = (t, id) => {
+  ...t,
+  models: t.models->Uuid.Map.update(id, model => model->Option.map(model => model->UndoRedo.redo)),
+}
+
+let canUndo = (t, id) =>
+  t.models->Uuid.Map.get(id)->Option.map(UndoRedo.canUndo)->Option.getWithDefault(false)
+let canRedo = (t, id) =>
+  t.models->Uuid.Map.get(id)->Option.map(UndoRedo.canRedo)->Option.getWithDefault(false)
