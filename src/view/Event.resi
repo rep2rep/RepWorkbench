@@ -95,8 +95,9 @@ module Model: {
   let graphEvent: t => option<Graph.t>
 }
 
-type t =
+type rec t =
   | Model(Uuid.t, Model.t)
   | File(File.t)
+  | Seq(array<t>)
 
 let dispatch: (State.t, t) => State.t

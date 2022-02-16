@@ -291,11 +291,12 @@ module Model = {
     }
 }
 
-type t =
+type rec t =
   | Model(Uuid.t, Model.t)
   | File(File.t)
+  | Seq(array<t>)
 
-let dispatch = (state, t) =>
+let rec dispatch = (state, t) =>
   switch t {
   | Model(id, ev) =>
     state
@@ -303,4 +304,5 @@ let dispatch = (state, t) =>
     ->Option.map(model => state->State.updateModel(id, Model.dispatch(model, ev)))
     ->Option.getWithDefault(state)
   | File(ev) => File.dispatch(state, ev)
+  | Seq(ts) => ts->Array.reduce(state, (state, ev) => dispatch(state, ev))
   }

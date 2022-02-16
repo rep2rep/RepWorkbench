@@ -30,6 +30,8 @@ module App = {
       )
       ->Option.getWithDefault(ModelSelection.empty)
 
+    let dispatchM = e => focused->Option.iter(focused => dispatch(Event.Model(focused, e)))
+
     let newModel = () => dispatch(Event.File.NewModel(Uuid.create())->Event.File)
     let deleteModel = id => dispatch(Event.File.DeleteModel(id)->Event.File)
     let focusModel = id => dispatch(Event.File.FocusModel(id)->Event.File)
@@ -39,72 +41,71 @@ module App = {
       let newId = Uuid.create()
       dispatch(Event.File.DuplicateModel(id, newId)->Event.File)
     }
+
     let selectionChange = (~oldSelection as _, ~newSelection) =>
-      focused->Option.iter(focused =>
-        dispatch(Event.Model(focused, Event.Model.Graph(Event.Graph.SetSelection(newSelection))))
-      )
+      dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
     let addNodeAt = (kind, ~x, ~y) =>
       focused->Option.iter(focused => {
         let oldSelection = selection
         let ids = oldSelection->ModelSelection.nodes
         let id = Uuid.create()
-        dispatch(Event.Model(focused, Event.Model.CreateNode(id, x, y, kind)))
-        switch ids {
-        | [] => ()
+        let e0 = Event.Model(focused, Event.Model.CreateNode(id, x, y, kind))
+        let eLinks = switch ids {
+        | [] => []
         | _ =>
-          ids->Array.forEach(source =>
-            dispatch(
-              Event.Model(
-                focused,
-                Event.Model.Graph(Event.Graph.LinkNodes(source, id, ModelLink.Kind.Hierarchy)),
-              ),
-            )
-          )
-        }
-        dispatch(
-          Event.Model(
+          ids->Array.map(source => Event.Model(
             focused,
-            Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.ofNodes([id]))),
-          ),
+            Event.Model.Graph(Event.Graph.LinkNodes(source, id, ModelLink.Kind.Hierarchy)),
+          ))
+        }
+        let eFinal = Event.Model(
+          focused,
+          Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.ofNodes([id]))),
         )
+        dispatch(Event.Seq(Array.concatMany([[e0], eLinks, [eFinal]])))
       })
     let addRepNodeAt = (_, ~x, ~y) => ModelNode.Kind.Representation->addNodeAt(~x, ~y)
     let addSchNodeAt = (_, ~x, ~y) => ModelNode.Kind.Scheme->addNodeAt(~x, ~y)
     let addDimNodeAt = (_, ~x, ~y) => ModelNode.Kind.Dimension->addNodeAt(~x, ~y)
     let addTokNodeAt = (_, ~x, ~y) => ModelNode.Kind.Token->addNodeAt(~x, ~y)
-    let linkNodes = kind =>
-      focused->Option.iter(focused => {
-        let ids = selection->ModelSelection.nodes
-        switch ids {
-        | [source, target] =>
-          dispatch(
-            Event.Model(focused, Event.Model.Graph(Event.Graph.LinkNodes(source, target, kind))),
-          )
-        | _ => ()
-        }
-      })
+    let linkNodes = kind => {
+      let ids = selection->ModelSelection.nodes
+      switch ids {
+      | [source, target] =>
+        dispatchM(Event.Model.Graph(Event.Graph.LinkNodes(source, target, kind)))
+      | _ => ()
+      }
+    }
+    //)
     let connectNodes = _ => linkNodes(ModelLink.Kind.Hierarchy)
     let anchorNodes = _ => linkNodes(ModelLink.Kind.Anchor)
     let unlinkNodes = _ =>
       focused->Option.iter(focused => {
         let nodeIds = selection->ModelSelection.nodes
-        nodeIds->Array.forEach(source =>
-          nodeIds->Array.forEach(target =>
-            dispatch(
-              Event.Model(focused, Event.Model.Graph(Event.Graph.UnlinkNodes(source, target))),
-            )
-          )
+        dispatch(
+          Event.Seq(
+            nodeIds->Array.flatMap(source =>
+              nodeIds->Array.map(target => Event.Model(
+                focused,
+                Event.Model.Graph(Event.Graph.UnlinkNodes(source, target)),
+              ))
+            ),
+          ),
         )
       })
     let deleteNodes = _ =>
       focused->Option.iter(focused => {
-        let oldSelection = selection
-        oldSelection
-        ->ModelSelection.nodes
-        ->Array.forEach(id => {
-          dispatch(Event.Model(focused, Event.Model.DeleteNode(id)))
-        })
-        selectionChange(~oldSelection, ~newSelection=ModelSelection.empty)
+        let es =
+          selection
+          ->ModelSelection.nodes
+          ->Array.map(id => {
+            Event.Model(focused, Event.Model.DeleteNode(id))
+          })
+        let eFinal = Event.Model(
+          focused,
+          Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.empty)),
+        )
+        dispatch(Event.Seq(Array.concat(es, [eFinal])))
       })
     let movedNodes = (nodeId, ~x, ~y) =>
       focused->Option.iter(focused => {
@@ -116,9 +117,13 @@ module App = {
         let nodeIds = selection->ModelSelection.nodes
         if nodeIds != [] {
           let nodeMap = nodeIds->Array.map(id => (id, Uuid.create()))->Uuid.Map.fromArray
-          dispatch(Event.Model(focused, Event.Model.DuplicateNodes(nodeMap)))
           let newSelection = nodeMap->Uuid.Map.values->ModelSelection.ofNodes
-          dispatch(Event.Model(focused, Event.Model.Graph(Event.Graph.SetSelection(newSelection))))
+          dispatch(
+            Event.Seq([
+              Event.Model(focused, Event.Model.DuplicateNodes(nodeMap)),
+              Event.Model(focused, Event.Model.Graph(Event.Graph.SetSelection(newSelection))),
+            ]),
+          )
         }
       })
     let slotsChange = e =>
