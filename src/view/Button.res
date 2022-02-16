@@ -8,7 +8,7 @@ module Separator = {
 }
 
 @react.component
-let make = (~onClick, ~style as givenStyle=?, ~value) => {
+let make = (~onClick, ~style as givenStyle=?, ~value, ~enabled=true) => {
   let newStyle = ReactDOM.Style.make(
     ~padding="0.2rem 0.3rem",
     ~margin="0.125rem 0.25rem",
@@ -19,5 +19,5 @@ let make = (~onClick, ~style as givenStyle=?, ~value) => {
   | Some(givenStyle) => ReactDOM.Style.combine(newStyle, givenStyle)
   | None => newStyle
   }
-  <input type_={"button"} value onClick style />
+  <input type_={"button"} value onClick style disabled={!enabled} />
 }
