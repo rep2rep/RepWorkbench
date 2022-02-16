@@ -23,9 +23,7 @@ let inspectorState: t => InspectorState.t
 let createModel: (t, Uuid.t) => t
 let deleteModel: (t, Uuid.t) => t
 let focusModel: (t, Uuid.t) => t
+let renameModel: (t, Uuid.t, string) => t
 
-let updateModel: (t, Uuid.t, UndoRedo.Action.t<Model.t>) => t
-let updateModelState: (t, UndoRedo.Action.t<ModelState.t>) => t
-let updateSlots: (t, Uuid.t, UndoRedo.Action.t<InspectorState.Schema.t>) => t
-
-let renameModel: string => UndoRedo.Action.t<Model.t>
+let updateModel: (t, ModelState.t) => t
+let updateSlots: (t, Uuid.t, option<InspectorState.Schema.t>) => t
