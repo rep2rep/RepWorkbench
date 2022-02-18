@@ -9,8 +9,6 @@ module App = {
     newState
   }
 
-  @val external alert: string => unit = "alert"
-
   let config = ReactD3Graph.Config.create(
     ~global=ReactD3Graph.Config.Global.create(~width="100%", ~height="calc(100vh - 40px)", ()),
     ~d3=ReactD3Graph.Config.D3.create(~disableLinkForce=true, ()),
@@ -132,7 +130,7 @@ module App = {
           let model = Or_error.okExn(model)
           dispatch(Event.File.ImportModel(model)->Event.File)
         } else {
-          alert("Failed to import '" ++ File.name(f) ++ "'.")
+          Dialog.alert("Failed to import '" ++ File.name(f) ++ "'.")
         }
         Js.Promise.resolve()
       })

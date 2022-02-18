@@ -146,8 +146,6 @@ module Template = {
   }
 }
 
-@val external confirm: string => bool = "confirm"
-
 @react.component
 let make = (
   ~id,
@@ -225,7 +223,7 @@ let make = (
                 ->(((_, model)) => model)
                 ->State.Model.info
                 ->InspectorState.Model.name
-              if confirm("Definitely delete model '" ++ name ++ "'?") {
+              if Dialog.confirm("Definitely delete model '" ++ name ++ "'?") {
                 onDelete(active)
               }
             })}
