@@ -44,8 +44,8 @@ module Representation = {
   }
 
   let empty = {
-    domain: "Representation",
-    display: "Reference",
+    domain: "#Rep#",
+    display: "#Ref#",
     notes: "",
   }
 }
@@ -132,8 +132,8 @@ module Scheme = {
   }
 
   let empty = {
-    concept_structure: "Scheme",
-    graphic_structure: "Reference",
+    concept_structure: "#Sch#",
+    graphic_structure: "#Ref#",
     function: Function.Semantic,
     explicit: true,
     scope: Scope.Global,
@@ -256,10 +256,10 @@ module Dimension = {
   }
 
   let empty = {
-    concept: "Dimension",
+    concept: "#Dim#",
     concept_scale: Quantity_scale.Nominal,
     concept_attributes: list{},
-    graphic: "Reference",
+    graphic: "#Ref#",
     graphic_scale: Quantity_scale.Nominal,
     graphic_attributes: list{},
     function: Function.Semantic,
@@ -338,8 +338,8 @@ module Token = {
   }
 
   let empty = {
-    concept: "Token",
-    graphic: "Reference",
+    concept: "#Tok#",
+    graphic: "#Ref#",
     is_class: false,
     function: Function.Semantic,
     explicit: true,
