@@ -164,7 +164,8 @@ module App = {
       ("t", addTokNodeAt),
       ("c", (e, ~x as _, ~y as _) => connectNodes(e)),
       ("a", (e, ~x as _, ~y as _) => anchorNodes(e)),
-      ("x", (e, ~x as _, ~y as _) => deleteNodes(e)),
+      ("Backspace", (e, ~x as _, ~y as _) => deleteNodes(e)),
+      ("Delete", (e, ~x as _, ~y as _) => deleteNodes(e)),
       ("v", (e, ~x as _, ~y as _) => unlinkNodes(e)),
       ("Ctrl+d", (e, ~x as _, ~y as _) => duplicateNodes(e)),
     ])
