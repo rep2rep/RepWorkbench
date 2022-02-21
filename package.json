@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "test": "./scripts/run-tests",
-    "build": "rm -rf dist && ./node_modules/rescript/rescript build -with-deps && mkdir -p dist && node ./bundle.js && cp ./src/index.html ./dist/index.html && cp ./src/manual.html ./dist/manual.html",
+    "build": "./scripts/build",
     "clean": "./node_modules/rescript/rescript clean; rm -rf ./dist",
     "format": "./scripts/format-rescript; ./scripts/format-json",
     "watch": "./scripts/watch"

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+ROOT="$(npm root)"
+BASE=`dirname '$ROOT'`
+
+STATICS="index.html manual.html"
+# VERSION="$(git rev-parse --short HEAD)"
+VERSION="$(date '+%Y.%m.%d')"
+
+rm -rf "$BASE/dist"
+"$ROOT/rescript/rescript" build -with-deps
+mkdir -p "$BASE/dist"
+node "$BASE/bundle.js"
+ls "$BASE/dist" | xargs -t -I % sed -i 'bak' "s/##VERSION##/$VERSION/g" "$BASE/dist/%"
+echo "$STATICS" | xargs -t -n 1 -I % sh -c "cp '$BASE/src/%' '$BASE/dist/%'"
