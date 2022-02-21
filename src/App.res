@@ -19,6 +19,7 @@ module App = {
   let make = () => {
     let (state, dispatch) = React.useReducer(reducer, init)
     let focused = state->State.focused
+    let toolbarActive = focused->Option.isSome
     let selection =
       focused
       ->Option.flatMap(focused =>
@@ -214,18 +215,28 @@ module App = {
           <Button onClick={undo} value="Undo" enabled={canUndo} />
           <Button onClick={redo} value="Redo" enabled={canRedo} />
           <Button.Separator />
-          <Button onClick={addRepNodeAt(_, ~x=0., ~y=0.)} value="Add Representation Node" />
-          <Button onClick={addSchNodeAt(_, ~x=0., ~y=0.)} value="Add Scheme Node" />
-          <Button onClick={addDimNodeAt(_, ~x=0., ~y=0.)} value="Add Dimension Node" />
-          <Button onClick={addTokNodeAt(_, ~x=0., ~y=0.)} value="Add Token Node" />
-          <Button onClick={duplicateNodes} value="Duplicate" />
+          <Button
+            onClick={addRepNodeAt(_, ~x=0., ~y=0.)}
+            value="Representation Node"
+            enabled={toolbarActive}
+          />
+          <Button
+            onClick={addSchNodeAt(_, ~x=0., ~y=0.)} value="Scheme Node" enabled={toolbarActive}
+          />
+          <Button
+            onClick={addDimNodeAt(_, ~x=0., ~y=0.)} value="Dimension Node" enabled={toolbarActive}
+          />
+          <Button
+            onClick={addTokNodeAt(_, ~x=0., ~y=0.)} value="Token Node" enabled={toolbarActive}
+          />
+          <Button onClick={duplicateNodes} value="Duplicate" enabled={toolbarActive} />
           <Button.Separator />
-          <Button onClick={connectNodes} value="Connect" />
-          <Button onClick={anchorNodes} value="Anchor" />
+          <Button onClick={connectNodes} value="Connect" enabled={toolbarActive} />
+          <Button onClick={anchorNodes} value="Anchor" enabled={toolbarActive} />
           <Button.Separator />
-          <Button onClick={unlinkNodes} value="Unlink" />
+          <Button onClick={unlinkNodes} value="Unlink" enabled={toolbarActive} />
           <Button.Separator />
-          <Button onClick={deleteNodes} value="Delete" />
+          <Button onClick={deleteNodes} value="Delete" enabled={toolbarActive} />
           <Button.Separator />
           <a href="manual.html" target="_blank"> {React.string("Manual")} </a>
         </div>
