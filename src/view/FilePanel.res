@@ -58,7 +58,8 @@ module FileLabel = {
       } else {
         "file-inactive"
       }}
-      onClick={_ => {
+      onClick={e => {
+        ReactEvent.Mouse.stopPropagation(e)
         if !state.editing {
           clickTimer.contents->Option.iter(Js.Global.clearTimeout)
           // Any value greater than 0 seems to work???
@@ -138,7 +139,7 @@ module Template = {
       "active": {
         active->Option.map(active => id == active)->Option.getWithDefault(false)
       },
-      "onSelect": {() => onSelect(id)},
+      "onSelect": {() => onSelect(Some(id))},
       "onChanged": {name => onChangedName(id, name)},
       "dragHandleProps": dragHandleProps,
     }
@@ -173,7 +174,9 @@ let make = (
       (),
     )}>
     <h1 style={ReactDOM.Style.make(~padding="1rem", ())}> {React.string("RepNotation")} </h1>
-    <div style={ReactDOM.Style.make(~flexGrow="1", ~display="flex", ~flexDirection="column", ())}>
+    <div
+      style={ReactDOM.Style.make(~flexGrow="1", ~display="flex", ~flexDirection="column", ())}
+      onClick={_ => onSelect(None)}>
       <ReactDraggableList.DraggableList
         items={models}
         itemKey={((id, _)) => id->Uuid.toString}

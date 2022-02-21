@@ -243,7 +243,7 @@ let deleteModel = (t, id) => {
 
 let focusModel = (t, id) => {
   ...t,
-  currentModel: Some(id),
+  currentModel: id,
 }
 
 let duplicateModel = (t, ~existing, ~new_) => {

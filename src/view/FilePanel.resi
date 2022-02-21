@@ -5,7 +5,7 @@ let make: (
   ~active: option<Uuid.t>,
   ~onCreate: unit => unit,
   ~onDelete: Uuid.t => unit,
-  ~onSelect: Uuid.t => unit,
+  ~onSelect: option<Uuid.t> => unit,
   ~onDuplicate: Uuid.t => unit,
   ~onChangedName: (Uuid.t, string) => unit,
   ~onReorder: array<Uuid.t> => unit,

@@ -38,7 +38,7 @@ let model: (t, Uuid.t) => option<Model.t>
 
 let createModel: (t, Uuid.t) => t
 let deleteModel: (t, Uuid.t) => t
-let focusModel: (t, Uuid.t) => t
+let focusModel: (t, option<Uuid.t>) => t
 let duplicateModel: (t, ~existing: Uuid.t, ~new_: Uuid.t) => t
 let importModel: (t, Model.t) => t
 let reorderModels: (t, array<Uuid.t>) => t

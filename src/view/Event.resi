@@ -2,7 +2,7 @@ module File: {
   type t =
     | NewModel(Uuid.t)
     | DeleteModel(Uuid.t)
-    | FocusModel(Uuid.t)
+    | FocusModel(option<Uuid.t>)
     | DuplicateModel(Uuid.t, Uuid.t)
     | ImportModel(State.Model.t)
     | ReorderModels(array<Uuid.t>)
