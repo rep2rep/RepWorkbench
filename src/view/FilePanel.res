@@ -175,6 +175,16 @@ let make = (
     )}>
     <h1 style={ReactDOM.Style.make(~padding="1rem", ())}> {React.string("RepNotation")} </h1>
     <div
+      style={ReactDOM.Style.make(
+        ~fontSize="0.7rem",
+        ~fontWeight="bold",
+        ~textAlign="right",
+        ~margin="-1.2rem 1.5rem 1rem 0",
+        (),
+      )}>
+      {React.string("V ##VERSION##")}
+    </div>
+    <div
       style={ReactDOM.Style.make(~flexGrow="1", ~display="flex", ~flexDirection="column", ())}
       onClick={_ => onSelect(None)}>
       <ReactDraggableList.DraggableList
