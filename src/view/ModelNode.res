@@ -158,14 +158,14 @@ module SchemaShape = {
   let style = (~dashed=false, selected) =>
     if selected && dashed {
       ReactDOM.Style.make(
-        ~fill="rgb(240, 240, 240)",
+        ~fill="rgb(220, 220, 220)",
         ~stroke="black",
         ~strokeWidth="2",
         ~strokeDasharray="5 3",
         (),
       )
     } else if selected && !dashed {
-      ReactDOM.Style.make(~fill="rgb(240, 240, 240)", ~stroke="black", ~strokeWidth="2", ())
+      ReactDOM.Style.make(~fill="rgb(220, 220, 220)", ~stroke="black", ~strokeWidth="2", ())
     } else if !selected && dashed {
       ReactDOM.Style.make(
         ~fill="white",
