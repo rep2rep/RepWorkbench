@@ -31,7 +31,7 @@ let step = (t, newState) => {
     {
       state: newState,
       stepped_at: now,
-      past: t.past->BoundedArray.replaceTop((last_step, state)),
+      past: t.past,
       future: BoundedArray.create(history_limit),
     }
   } else {
