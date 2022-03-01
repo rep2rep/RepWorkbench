@@ -64,7 +64,10 @@ module Config = {
     ~offsetSource={"dx": 0., "dy": 25.},
     ~offsetTarget={"dx": 0., "dy": -25.},
     ~color=ReactD3Graph.Color.ofHexString("#000000"),
-    ~strokeWidth=2.,
+    ~strokeWidth=1.,
+    ~markerStart="arrowheadCircle",
+    (),
+  )
     ~strokeDasharray=5.,
     (),
   )

@@ -10,7 +10,17 @@ module App = {
   }
 
   let config = ReactD3Graph.Config.create(
-    ~global=ReactD3Graph.Config.Global.create(~width="100%", ~height="calc(100vh - 40px)", ()),
+    ~global=ReactD3Graph.Config.Global.create(
+      ~width="100%",
+      ~height="calc(100vh - 40px)",
+      ~defs=[
+        <marker
+          id="arrowheadCircle" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
+          <circle cx="6" cy="6" r="6" fill="black" />
+        </marker>,
+      ],
+      (),
+    ),
     ~d3=ReactD3Graph.Config.D3.create(~disableLinkForce=true, ()),
     (),
   )
