@@ -68,10 +68,14 @@ module Config = {
     ~markerStart="arrowheadCircle",
     (),
   )
+  let relation = ReactD3Graph.Link.Config.create(
+    ~offsetSource={"dx": 0., "dy": 25.},
+    ~offsetTarget={"dx": 0., "dy": -25.},
+    ~color=ReactD3Graph.Color.ofHexString("#808080"),
+    ~strokeWidth=4.,
     ~strokeDasharray=5.,
     (),
   )
-  let relation = ReactD3Graph.Link.Config.create()
 }
 
 let create = (~source, ~target, kind) => {

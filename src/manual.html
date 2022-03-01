@@ -74,6 +74,7 @@
       <tr><td><span class="key">Ctrl</span> <span class="key">D</span></td><td>Duplicate the selected nodes.</td></tr>
       <tr><td><span class="key">C</span></td><td>Connect two nodes.</td></tr>
       <tr><td><span class="key">A</span></td><td>Connect two nodes by anchoring.</td></tr>
+      <tr><td><span class="key">E</span></td><td>Connect two nodes by relation.</td></tr>
       <tr><td><span class="key">V</span></td><td>Remove all links between selected nodes.</td></tr>
       <tr><td><span class="key">X</span>/<span class="key">Backspace</span></td><td>Delete all selected nodes, and links connected to them.</td></tr>
     </table>
@@ -167,15 +168,15 @@
             but may be connected to each other. The newly created nodes are positions slightly offset from
             the nodes they were duplicated from, and they become the current selection.
       </p></td></tr>
-      <tr><td><p><input type="button" value="Connect" /><br><input type="button" value="Anchor" /></p></td><td>
+      <tr><td><p><input type="button" value="Connect" /><br><input type="button" value="Anchor" /><br><input type="button" value="Relate" /></p></td><td>
           <p>
-            These two buttons are used to connect nodes together. The first button creates a
-            Hierarchy connection (the 'typical' connection in RepNotation), while the second button
-            creates an 'anchored' connection. (Currently, the appearance is incorrect. This will be fixed
-            in a future update.) When clicking these buttons, you must have exactly two nodes selected:
-            more than two, or fewer than two, and these buttons have no effect. The 'direction' of the
-            connection is determined by the order in which the nodes were selected: the first selected
-            node is the 'parent', while the second is the 'child'. The parent is connected from the
+            These three buttons are used to connect nodes together. The first button creates a
+            Hierarchy connection (the 'typical' connection in RepNotation), the second button
+            creates an 'anchored' connection, and the third creates a 'relation' connection. When
+            clicking these buttons, you must have exactly two nodes selected: more than two, or
+            fewer than two, and these buttons have no effect. The 'direction' of the connection
+            is determined by the order in which the nodes were selected: the first selected node
+            is the 'parent', while the second is the 'child'. The parent is connected from the
             bottom of the node, while the child is connected from the top. If you have connected the
             nodes back to front, the connection will appear to 'cut through' the nodes; unlink them,
             select them in the opposite order, and click the button again to correct the direction.

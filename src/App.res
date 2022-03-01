@@ -91,6 +91,7 @@ module App = {
     }
     let connectNodes = _ => linkNodes(ModelLink.Kind.Hierarchy)
     let anchorNodes = _ => linkNodes(ModelLink.Kind.Anchor)
+    let relateNodes = _ => linkNodes(ModelLink.Kind.Relation)
     let unlinkNodes = _ => {
       let nodeIds = selection->ModelSelection.nodes
       dispatchM(
@@ -173,6 +174,7 @@ module App = {
       ("t", addTokNodeAt),
       ("c", (e, ~x as _, ~y as _) => connectNodes(e)),
       ("a", (e, ~x as _, ~y as _) => anchorNodes(e)),
+      ("e", (e, ~x as _, ~y as _) => relateNodes(e)),
       ("x", (e, ~x as _, ~y as _) => deleteNodes(e)),
       ("Backspace", (e, ~x as _, ~y as _) => deleteNodes(e)),
       ("Delete", (e, ~x as _, ~y as _) => deleteNodes(e)),
@@ -243,6 +245,7 @@ module App = {
           <Button.Separator />
           <Button onClick={connectNodes} value="Connect" enabled={toolbarActive} />
           <Button onClick={anchorNodes} value="Anchor" enabled={toolbarActive} />
+          <Button onClick={relateNodes} value="Relate" enabled={toolbarActive} />
           <Button.Separator />
           <Button onClick={unlinkNodes} value="Unlink" enabled={toolbarActive} />
           <Button.Separator />
