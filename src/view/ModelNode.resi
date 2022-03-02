@@ -4,10 +4,16 @@ module Kind: {
     | Scheme
     | Dimension
     | Token
+    | Placeholder
 
   module Stable: {
     module V1: {
+      type t
+    }
+
+    module V2: {
       type t = t
+      let v1_to_v2: V1.t => t
     }
   }
 }
@@ -24,7 +30,7 @@ module Payload: {
 
   module Stable: {
     module V1: {
-      type t = t = {
+      type t = {
         kind: Kind.Stable.V1.t,
         name: string,
         name_suffix: option<string>,
@@ -32,6 +38,19 @@ module Payload: {
         reference_suffix: option<string>,
         dashed: bool,
       }
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+    module V2: {
+      type t = t = {
+        kind: Kind.Stable.V2.t,
+        name: string,
+        name_suffix: option<string>,
+        reference: string,
+        reference_suffix: option<string>,
+        dashed: bool,
+      }
+      let v1_to_v2: V1.t => t
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>
     }
@@ -52,7 +71,13 @@ let updatePayload: (t, Payload.t => Payload.t) => t
 
 module Stable: {
   module V1: {
+    type t
+    let toJson: t => Js.Json.t
+    let fromJson: Js.Json.t => Or_error.t<t>
+  }
+  module V2: {
     type t = t
+    let v1_to_v2: V1.t => t
     let toJson: t => Js.Json.t
     let fromJson: Js.Json.t => Or_error.t<t>
   }

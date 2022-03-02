@@ -4,10 +4,11 @@ module Kind = {
     | Scheme
     | Dimension
     | Token
+    | Placeholder
 
   module Stable = {
     module V1 = {
-      type t = t =
+      type t =
         | Representation
         | Scheme
         | Dimension
@@ -34,6 +35,45 @@ module Kind = {
           }
         )
     }
+    module V2 = {
+      type t = t =
+        | Representation
+        | Scheme
+        | Dimension
+        | Token
+        | Placeholder
+
+      let toJson = t =>
+        switch t {
+        | Representation => "Representation"
+        | Scheme => "Scheme"
+        | Dimension => "Dimension"
+        | Token => "Token"
+        | Placeholder => "Placeholder"
+        }->String.toJson
+
+      let fromJson = json =>
+        json
+        ->String.fromJson
+        ->Or_error.flatMap(s =>
+          switch s {
+          | "Representation" => Or_error.create(Representation)
+          | "Scheme" => Or_error.create(Scheme)
+          | "Dimension" => Or_error.create(Dimension)
+          | "Token" => Or_error.create(Token)
+          | "Placeholder" => Or_error.create(Placeholder)
+          | s => Or_error.error_ss(["Unknown Schema Kind '", s, "'"])
+          }
+        )
+
+      let v1_to_v2 = v1 =>
+        switch v1 {
+        | V1.Representation => Representation
+        | V1.Scheme => Scheme
+        | V1.Dimension => Dimension
+        | V1.Token => Token
+        }
+    }
   }
 }
 
@@ -49,7 +89,7 @@ module Payload = {
 
   module Stable = {
     module V1 = {
-      type t = t = {
+      type t = {
         kind: Kind.Stable.V1.t,
         name: string,
         name_suffix: option<string>,
@@ -79,6 +119,63 @@ module Payload = {
             ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
             ->Or_error.flatMap(reader)
           let kind = getValue("kind", Kind.Stable.V1.fromJson)
+          let name = getValue("name", String.fromJson)
+          let reference = getValue("reference", String.fromJson)
+          let dashed = getValue("dashed", Bool.fromJson)
+          let name_suffix = getValue("name_suffix", j => j->Option.fromJson(String.fromJson))
+          let reference_suffix = getValue("reference_suffix", j =>
+            j->Option.fromJson(String.fromJson)
+          )
+          Or_error.both6((
+            kind,
+            name,
+            reference,
+            dashed,
+            name_suffix,
+            reference_suffix,
+          ))->Or_error.map(((kind, name, reference, dashed, name_suffix, reference_suffix)) => {
+            kind: kind,
+            name: name,
+            reference: reference,
+            dashed: dashed,
+            name_suffix: name_suffix,
+            reference_suffix: reference_suffix,
+          })
+        })
+    }
+    module V2 = {
+      type t = t = {
+        kind: Kind.Stable.V2.t,
+        name: string,
+        name_suffix: option<string>,
+        reference: string,
+        reference_suffix: option<string>,
+        dashed: bool,
+      }
+
+      external v1_to_v2: V1.t => t = "%identity"
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("kind", t.kind->Kind.Stable.V2.toJson),
+          ("name", t.name->String.toJson),
+          ("reference", t.reference->String.toJson),
+          ("dashed", t.dashed->Bool.toJson),
+          ("name_suffix", t.name_suffix->Option.toJson(String.toJson)),
+          ("reference_suffix", t.reference_suffix->Option.toJson(String.toJson)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode node payload object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let kind = getValue("kind", Kind.Stable.V2.fromJson)
           let name = getValue("name", String.fromJson)
           let reference = getValue("reference", String.fromJson)
           let dashed = getValue("dashed", Bool.fromJson)
@@ -257,9 +354,59 @@ module SchemaShape = {
       </svg>
     }
   }
+
+  module Placeholder = {
+    module Hexagon = {
+      @react.component
+      let make = (~width: float, ~height: float, ~style) => {
+        let inset = 12.
+        let points =
+          [
+            (1., height /. 2.),
+            (1. +. inset, 1.),
+            (width -. 1. -. inset, 1.),
+            (width -. 1., height /. 2.),
+            (width -. 1. -. inset, height -. 1.),
+            (1. +. inset, height -. 1.),
+          ]
+          ->Array.map(((x, y)) => Float.toString(x) ++ "," ++ Float.toString(y))
+          ->Array.joinWith(" ")
+        <polygon style points />
+      }
+    }
+
+    @react.component
+    let make = (
+      ~width: float,
+      ~height: float,
+      ~isIntensional: bool,
+      ~selected: bool,
+      ~children: React.element,
+    ) => {
+      <svg width={Float.toString(width +. 2.)} height={Float.toString(height +. 2.)}>
+        {if isIntensional {
+          <Hexagon width height style={style(selected)} />
+        } else {
+          <Hexagon width height style={style(selected)} />
+        }}
+        children
+      </svg>
+    }
+  }
 }
 
 module SchemaText = {
+  module OneLine = {
+    @react.component
+    let make = (~text: string, ~hoverText: string) => {
+      <g>
+        <text x={"50%"} y={"50%"} textAnchor={"middle"}>
+          <title> {React.string(hoverText)} </title> {React.string(text)}
+        </text>
+      </g>
+    }
+  }
+
   @react.component
   let make = (
     ~topText: string,
@@ -370,7 +517,7 @@ module Configs = {
           width={width}
           height={height}
           selected={ReactD3Graph.Node.selected(node)}
-          dashed={ReactD3Graph.Node.payload(node)->Option.getExn->Payload.dashed}>
+          dashed={payload->Payload.dashed}>
           <SchemaText
             topText={payload->Payload.visible_name_and_suffix(width->pxToEm)}
             bottomText={payload->Payload.visible_reference_and_suffix(width->pxToEm)}
@@ -380,6 +527,28 @@ module Configs = {
             height={height}
           />
         </SchemaShape.Token>
+      },
+      (),
+    )
+  }
+
+  let placeholder = (width, height) => {
+    ReactD3Graph.Node.Config.create(
+      ~renderLabel=false,
+      ~size=size(width, height),
+      ~viewGenerator=node => {
+        let payload = ReactD3Graph.Node.payload(node)->Option.getExn
+        // We're blatantly abusing the "dashed" attribute to determine the shape!
+        <SchemaShape.Placeholder
+          width={width}
+          height={height}
+          isIntensional={payload->Payload.dashed}
+          selected={ReactD3Graph.Node.selected(node)}>
+          <SchemaText.OneLine
+            text={payload->Payload.visible_name_and_suffix(width->pxToEm)}
+            hoverText={payload->Payload.full_name_and_suffix}
+          />
+        </SchemaShape.Placeholder>
       },
       (),
     )
@@ -409,6 +578,7 @@ module Configs = {
     | Kind.Scheme => scheme(width, height)
     | Kind.Dimension => dimension(width, height)
     | Kind.Token => token(width, height)
+    | Kind.Placeholder => placeholder(width, height)
     }
   }
 }
@@ -442,6 +612,16 @@ let create = (~name, ~reference, ~x, ~y, kind, id) => {
 let dupWithNewId = (t, id) =>
   ReactD3Graph.Node.setId(t, id->Uuid.toString->ReactD3Graph.Node.Id.ofString)
 
+let id = t => t->ReactD3Graph.Node.id->ReactD3Graph.Node.Id.toString->Uuid.fromString
+let kind = t => t->ReactD3Graph.Node.payload->Option.getExn->Payload.kind
+let position = t => (t->ReactD3Graph.Node.x, t->ReactD3Graph.Node.y)
+let setPosition = (t, ~x, ~y) => t->ReactD3Graph.Node.setX(x)->ReactD3Graph.Node.setY(y)
+let updateConfig = (t, f) => t->ReactD3Graph.Node.updateConfig(f)
+let updatePayload = (t, f) => {
+  let t' = t->ReactD3Graph.Node.updatePayload(n => n->Option.map(f))
+  t'->updateConfig(_ => Configs.create(t'->ReactD3Graph.Node.payload->Option.getExn))
+}
+
 module Stable = {
   module V1 = {
     type t = ReactD3Graph.Node.t<Payload.Stable.V1.t>
@@ -472,19 +652,62 @@ module Stable = {
         )
 
         Or_error.both4((payload, x, y, id))->Or_error.map(((payload, x, y, id)) => {
-          let config = Configs.create(payload)
+          let config = Configs.create(payload->Obj.magic)->Obj.magic // DANGEROUS!!!
           ReactD3Graph.Node.create(~id, ~payload, ~config, ~x, ~y, ())
         })
       })
   }
-}
+  module V2 = {
+    type t = ReactD3Graph.Node.t<Payload.Stable.V2.t>
 
-let id = t => t->ReactD3Graph.Node.id->ReactD3Graph.Node.Id.toString->Uuid.fromString
-let kind = t => t->ReactD3Graph.Node.payload->Option.getExn->Payload.kind
-let position = t => (t->ReactD3Graph.Node.x, t->ReactD3Graph.Node.y)
-let setPosition = (t, ~x, ~y) => t->ReactD3Graph.Node.setX(x)->ReactD3Graph.Node.setY(y)
-let updateConfig = (t, f) => t->ReactD3Graph.Node.updateConfig(f)
-let updatePayload = (t, f) => {
-  let t' = t->ReactD3Graph.Node.updatePayload(n => n->Option.map(f))
-  t'->updateConfig(_ => Configs.create(t'->ReactD3Graph.Node.payload->Option.getExn))
+    let v1_to_v2 = v1 => {
+      let id = ReactD3Graph.Node.id(v1)
+      let x = ReactD3Graph.Node.x(v1)
+      let y = ReactD3Graph.Node.y(v1)
+      let payload = ReactD3Graph.Node.payload(v1)->Option.getExn->Payload.Stable.V2.v1_to_v2
+      ReactD3Graph.Node.create(~id, ~x, ~y, ~payload, ())
+    }
+
+    let toJson = t =>
+      Js.Dict.fromList(list{
+        ("version", Int.toJson(2)),
+        ("payload", t->ReactD3Graph.Node.payload->Option.getExn->Payload.Stable.V2.toJson),
+        ("x", t->ReactD3Graph.Node.x->Float.toJson),
+        ("y", t->ReactD3Graph.Node.y->Float.toJson),
+        ("id", t->ReactD3Graph.Node.id->ReactD3Graph.Node.Id.toString->String.toJson),
+      })->Js.Json.object_
+
+    let fromJson = json =>
+      json
+      ->Js.Json.decodeObject
+      ->Or_error.fromOption_s("Failed to decode ModelNode object JSON")
+      ->Or_error.flatMap(dict => {
+        let getValue = (key, reader) =>
+          dict
+          ->Js.Dict.get(key)
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+          ->Or_error.flatMap(reader)
+        let version = getValue("version", Int.fromJson)
+        if Or_error.isOk(version) {
+          let v = Or_error.okExn(version)
+          if v === 2 {
+            let payload = getValue("payload", Payload.Stable.V2.fromJson)
+            let x = getValue("x", Float.fromJson)
+            let y = getValue("y", Float.fromJson)
+            let id = getValue("id", json =>
+              json->String.fromJson->Or_error.map(ReactD3Graph.Node.Id.ofString)
+            )
+
+            Or_error.both4((payload, x, y, id))->Or_error.map(((payload, x, y, id)) => {
+              let config = Configs.create(payload)
+              ReactD3Graph.Node.create(~id, ~payload, ~config, ~x, ~y, ())
+            })
+          } else {
+            Or_error.error_ss(["Unknown ModelNode version ", Int.toString(v)])
+          }
+        } else {
+          V1.fromJson(json)->Or_error.map(v1_to_v2)
+        }
+      })
+  }
 }

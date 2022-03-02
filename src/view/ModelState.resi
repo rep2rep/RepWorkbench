@@ -28,9 +28,16 @@ module Stable: {
   }
 
   module V2: {
-    type t = t
+    type t
     let toJson: t => Js.Json.t
     let fromJson: Js.Json.t => Or_error.t<t>
     let v1_to_v2: V1.t => t
+  }
+
+  module V3: {
+    type t = t
+    let toJson: t => Js.Json.t
+    let fromJson: Js.Json.t => Or_error.t<t>
+    let v2_to_v3: V2.t => t
   }
 }

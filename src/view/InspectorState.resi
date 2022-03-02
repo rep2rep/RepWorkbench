@@ -108,12 +108,31 @@ module Token: {
   let empty: t
 }
 
+module Placeholder: {
+  type t = {
+    description: string,
+    isIntensional: bool,
+    notes: string,
+  }
+
+  module Stable: {
+    module V1: {
+      type t = t = {
+        description: string,
+        isIntensional: bool,
+        notes: string,
+      }
+    }
+  }
+}
+
 module Schema: {
   type t =
     | Representation(Representation.t)
     | Scheme(Scheme.t)
     | Dimension(Dimension.t)
     | Token(Token.t)
+    | Placeholder(Placeholder.t)
 
   let empty: ModelNode.Kind.t => t
   let name: t => string
@@ -121,13 +140,25 @@ module Schema: {
 
   module Stable: {
     module V1: {
-      type t = t =
+      type t =
         | Representation(Representation.Stable.V1.t)
         | Scheme(Scheme.Stable.V1.t)
         | Dimension(Dimension.Stable.V1.t)
         | Token(Token.Stable.V1.t)
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>
+    }
+
+    module V2: {
+      type t = t =
+        | Representation(Representation.Stable.V1.t)
+        | Scheme(Scheme.Stable.V1.t)
+        | Dimension(Dimension.Stable.V1.t)
+        | Token(Token.Stable.V1.t)
+        | Placeholder(Placeholder.Stable.V1.t)
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+      let v1_to_v2: V1.t => t
     }
   }
 }

@@ -39,7 +39,7 @@ module Stable = {
   }
 
   module V2 = {
-    type t = t = {
+    type t = {
       graph: ModelGraph.Stable.V1.t,
       selection: ModelSelection.Stable.V1.t,
     }
@@ -84,6 +84,59 @@ module Stable = {
               selection: ModelSelection.empty,
             }
           })
+        }
+      })
+  }
+
+  module V3 = {
+    type t = t = {
+      graph: ModelGraph.Stable.V2.t,
+      selection: ModelSelection.Stable.V1.t,
+    }
+
+    let v2_to_v3 = t => {
+      graph: t.V2.graph->ModelGraph.Stable.V2.v1_to_v2,
+      selection: t.V2.selection,
+    }
+
+    let toJson = t =>
+      Js.Dict.fromList(list{
+        ("version", Int.toJson(3)),
+        ("graph", ModelGraph.Stable.V2.toJson(t.graph)),
+      })->Js.Json.object_
+
+    let fromJson = json =>
+      json
+      ->Js.Json.decodeObject
+      ->Or_error.fromOption_s("Failed to decode state object JSON")
+      ->Or_error.flatMap(dict => {
+        let getValue = (key, reader) =>
+          dict
+          ->Js.Dict.get(key)
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+          ->Or_error.flatMap(reader)
+        let version = getValue("version", Int.fromJson)
+        if !Or_error.isOk(version) {
+          Js.Console.log("Upgrading ModelState from V1 to V3...")
+          V1.fromJson(json)->Or_error.map(V2.v1_to_v2)->Or_error.map(v2_to_v3)
+        } else if Or_error.okExn(version) == 2 {
+          Js.Console.log("Upgrading ModelState from V2 to V3...")
+          V2.fromJson(json)->Or_error.map(v2_to_v3)
+        } else if Or_error.okExn(version) == 3 {
+          let graph = getValue("graph", ModelGraph.Stable.V2.fromJson)
+
+          graph->Or_error.map(graph => {
+            {
+              graph: graph,
+              selection: ModelSelection.empty,
+            }
+          })
+        } else {
+          Or_error.error_ss([
+            "Attempting to read unsupported ModelState version ",
+            Int.toString(Or_error.okExn(version)),
+            "!",
+          ])
         }
       })
   }

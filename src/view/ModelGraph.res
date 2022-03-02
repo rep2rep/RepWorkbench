@@ -5,7 +5,7 @@ type t = {
 
 module Stable = {
   module V1 = {
-    type t = t = {
+    type t = {
       nodes: array<ModelNode.Stable.V1.t>,
       links: array<ModelLink.Stable.V1.t>,
     }
@@ -33,6 +33,54 @@ module Stable = {
           nodes: nodes,
           links: links,
         })
+      })
+  }
+
+  module V2 = {
+    type t = t = {
+      nodes: array<ModelNode.Stable.V2.t>,
+      links: array<ModelLink.Stable.V1.t>,
+    }
+
+    let v1_to_v2 = v1 => {
+      nodes: v1.V1.nodes->Array.map(ModelNode.Stable.V2.v1_to_v2),
+      links: v1.V1.links,
+    }
+
+    let toJson = t =>
+      Js.Dict.fromList(list{
+        ("version", Int.toJson(2)),
+        ("nodes", t.nodes->Array.toJson(ModelNode.Stable.V2.toJson)),
+        ("links", t.links->Array.toJson(ModelLink.Stable.V1.toJson)),
+      })->Js.Json.object_
+
+    let fromJson = json =>
+      json
+      ->Js.Json.decodeObject
+      ->Or_error.fromOption_s("Failed to decode Graph object JSON")
+      ->Or_error.flatMap(dict => {
+        let getValue = (key, reader) =>
+          dict
+          ->Js.Dict.get(key)
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+          ->Or_error.flatMap(reader)
+        let version = getValue("version", Int.fromJson)
+        if Or_error.isOk(version) {
+          let v = Or_error.okExn(version)
+          if v === 2 {
+            let nodes = getValue("nodes", j => j->Array.fromJson(ModelNode.Stable.V2.fromJson))
+            let links = getValue("links", j => j->Array.fromJson(ModelLink.Stable.V1.fromJson))
+
+            Or_error.both((nodes, links))->Or_error.map(((nodes, links)) => {
+              nodes: nodes,
+              links: links,
+            })
+          } else {
+            Or_error.error_ss(["Unknown ModelGraph version ", Int.toString(v)])
+          }
+        } else {
+          V1.fromJson(json)->Or_error.map(v1_to_v2)
+        }
       })
   }
 }

@@ -347,16 +347,84 @@ module Token = {
   }
 }
 
+module Placeholder = {
+  type t = {
+    description: string,
+    isIntensional: bool,
+    notes: string,
+  }
+
+  module Stable = {
+    module V1 = {
+      type t = t = {
+        description: string,
+        isIntensional: bool,
+        notes: string,
+      }
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(1)),
+          ("description", String.toJson(t.description)),
+          ("isIntensional", Bool.toJson(t.isIntensional)),
+          ("notes", String.toJson(t.notes)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Schema slots object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          if Or_error.isOk(version) {
+            let v = Or_error.okExn(version)
+            if v === 1 {
+              let description = getValue("concept", String.fromJson)
+              let isIntensional = getValue("is_class", Bool.fromJson)
+              let notes = getValue("notes", String.fromJson)
+
+              Or_error.both3((description, isIntensional, notes))->Or_error.map(((
+                description,
+                isIntensional,
+                notes,
+              )) => {
+                description: description,
+                isIntensional: isIntensional,
+                notes: notes,
+              })
+            } else {
+              Or_error.error_ss(["Unknown InspectorState.Placeholder version ", Int.toString(v)])
+            }
+          } else {
+            Or_error.error_s("Unable to determine InspectorState.Placeholder version")
+          }
+        })
+    }
+  }
+
+  let empty = {
+    description: "#Placeholder#",
+    isIntensional: false,
+    notes: "",
+  }
+}
+
 module Schema = {
   type t =
     | Representation(Representation.t)
     | Scheme(Scheme.t)
     | Dimension(Dimension.t)
     | Token(Token.t)
+    | Placeholder(Placeholder.t)
 
   module Stable = {
     module V1 = {
-      type t = t =
+      type t =
         | Representation(Representation.Stable.V1.t)
         | Scheme(Scheme.Stable.V1.t)
         | Dimension(Dimension.Stable.V1.t)
@@ -397,6 +465,77 @@ module Schema = {
           })
         })
     }
+
+    module V2 = {
+      type t = t =
+        | Representation(Representation.Stable.V1.t)
+        | Scheme(Scheme.Stable.V1.t)
+        | Dimension(Dimension.Stable.V1.t)
+        | Token(Token.Stable.V1.t)
+        | Placeholder(Placeholder.Stable.V1.t)
+
+      let v1_to_v2 = v1 =>
+        switch v1 {
+        | V1.Representation(r) => Representation(r)
+        | V1.Scheme(s) => Scheme(s)
+        | V1.Dimension(d) => Dimension(d)
+        | V1.Token(t) => Token(t)
+        }
+
+      let toJson = t => {
+        let (kind, json) = switch t {
+        | Representation(r) => ("representation", Representation.Stable.V1.toJson(r))
+        | Scheme(s) => ("scheme", Scheme.Stable.V1.toJson(s))
+        | Dimension(d) => ("dimension", Dimension.Stable.V1.toJson(d))
+        | Token(t) => ("token", Token.Stable.V1.toJson(t))
+        | Placeholder(p) => ("placeholder", Placeholder.Stable.V1.toJson(p))
+        }
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(2)),
+          ("kind", String.toJson(kind)),
+          ("value", json),
+        })->Js.Json.object_
+      }
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Schema slots object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+
+          if Or_error.isOk(version) {
+            let v = Or_error.okExn(version)
+            if v === 2 {
+              let kind = getValue("kind", String.fromJson)
+              let value = getValue("value", j => Or_error.create(j))
+
+              Or_error.both((kind, value))->Or_error.flatMap(((kind, value)) => {
+                switch kind {
+                | "representation" =>
+                  Representation.Stable.V1.fromJson(value)->Or_error.map(r => Representation(r))
+                | "scheme" => Scheme.Stable.V1.fromJson(value)->Or_error.map(s => Scheme(s))
+                | "dimension" =>
+                  Dimension.Stable.V1.fromJson(value)->Or_error.map(d => Dimension(d))
+                | "token" => Token.Stable.V1.fromJson(value)->Or_error.map(t => Token(t))
+                | "placeholder" =>
+                  Placeholder.Stable.V1.fromJson(value)->Or_error.map(t => Placeholder(t))
+                | _ => Or_error.error_ss(["Unknown Schema slot kind '", kind, "'"])
+                }
+              })
+            } else {
+              Or_error.error_ss(["Unknown InspectorState version ", Int.toString(v)])
+            }
+          } else {
+            V1.fromJson(json)->Or_error.map(v1_to_v2)
+          }
+        })
+    }
   }
 
   let empty = kind =>
@@ -405,6 +544,7 @@ module Schema = {
     | ModelNode.Kind.Scheme => Scheme.empty->Scheme
     | ModelNode.Kind.Dimension => Dimension.empty->Dimension
     | ModelNode.Kind.Token => Token.empty->Token
+    | ModelNode.Kind.Placeholder => Placeholder.empty->Placeholder
     }
 
   let name = t =>
@@ -413,6 +553,7 @@ module Schema = {
     | Scheme(s) => s.concept_structure
     | Dimension(d) => d.concept
     | Token(t) => t.concept
+    | Placeholder(p) => p.description
     }
 
   let reference = t =>
@@ -421,6 +562,7 @@ module Schema = {
     | Scheme(s) => s.graphic_structure
     | Dimension(d) => d.graphic
     | Token(t) => t.graphic
+    | Placeholder(_) => ""
     }
 }
 
