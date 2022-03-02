@@ -418,9 +418,10 @@ module Model = {
 @react.component
 let make = (~id, ~data, ~onChange=?) => {
   let onChange = onChange->Option.getWithDefault(_ => ())
-  <div
+  <HideablePanel
     id
     className="inspector-panel"
+    side={#right}
     style={ReactDOM.Style.make(
       ~order="2",
       ~padding="0.5rem 0",
@@ -474,5 +475,5 @@ let make = (~id, ~data, ~onChange=?) => {
         <Token slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Token(c)))} />
       }
     }}
-  </div>
+  </HideablePanel>
 }
