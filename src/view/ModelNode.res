@@ -359,7 +359,7 @@ module SchemaShape = {
     module Hexagon = {
       @react.component
       let make = (~width: float, ~height: float, ~style) => {
-        let inset = 12.
+        let inset = 14.
         let points =
           [
             (1., height /. 2.),
@@ -368,6 +368,27 @@ module SchemaShape = {
             (width -. 1., height /. 2.),
             (width -. 1. -. inset, height -. 1.),
             (1. +. inset, height -. 1.),
+          ]
+          ->Array.map(((x, y)) => Float.toString(x) ++ "," ++ Float.toString(y))
+          ->Array.joinWith(" ")
+        <polygon style points />
+      }
+    }
+
+    module Octagon = {
+      @react.component
+      let make = (~width: float, ~height: float, ~style) => {
+        let inset = 14.06
+        let points =
+          [
+            (1., 1. +. inset),
+            (1. +. inset, 1.),
+            (width -. 1. -. inset, 1.),
+            (width -. 1., 1. +. inset),
+            (width -. 1., height -. inset -. 1.),
+            (width -. 1. -. inset, height -. 1.),
+            (1. +. inset, height -. 1.),
+            (1., height -. inset -. 1.),
           ]
           ->Array.map(((x, y)) => Float.toString(x) ++ "," ++ Float.toString(y))
           ->Array.joinWith(" ")
@@ -387,7 +408,7 @@ module SchemaShape = {
         {if isIntensional {
           <Hexagon width height style={style(selected)} />
         } else {
-          <Hexagon width height style={style(selected)} />
+          <Octagon width height style={style(selected)} />
         }}
         children
       </svg>
@@ -400,7 +421,7 @@ module SchemaText = {
     @react.component
     let make = (~text: string, ~hoverText: string) => {
       <g>
-        <text x={"50%"} y={"50%"} textAnchor={"middle"}>
+        <text x={"50%"} y={"57%"} textAnchor={"middle"}>
           <title> {React.string(hoverText)} </title> {React.string(text)}
         </text>
       </g>
