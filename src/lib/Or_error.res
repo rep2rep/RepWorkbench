@@ -76,6 +76,12 @@ let getWithDefault = (t, default) =>
   | Err(_) => default
   }
 
+let throwIfError = t =>
+  switch t {
+  | Ok(_, _) => t
+  | Err(e) => Error.raise_(e)
+  }
+
 let both = ts =>
   switch ts {
   | (Ok(a, tags), Ok(b, tags')) => Ok((a, b), Js.Array2.concat(tags, tags'))

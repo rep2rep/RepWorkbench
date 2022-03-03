@@ -32,6 +32,7 @@ let okExn: t<'a> => 'a
 let okExnWithTags: t<'a> => 'a
 let valOf: t<'a> => option<'a>
 let getWithDefault: (t<'a>, 'a) => 'a
+let throwIfError: t<'a> => t<'a>
 
 let map: (t<'a>, 'a => 'b) => t<'b>
 let flatMap: (t<'a>, 'a => t<'b>) => t<'b>
