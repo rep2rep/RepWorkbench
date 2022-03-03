@@ -68,14 +68,17 @@ module Token: {
   type t = {
     concept: string,
     graphic: string,
-    is_class: bool,
-    function: Function.t,
-    explicit: bool,
+    is_class: option<bool>,
+    function: option<Function.t>,
+    explicit: option<bool>,
     notes: string,
   }
 
   module Stable: {
     module V1: {
+      type t
+    }
+    module V2: {
       type t = t
     }
   }
@@ -86,7 +89,7 @@ module Token: {
 module Placeholder: {
   type t = {
     description: string,
-    isIntensional: bool,
+    isIntensional: option<bool>,
     notes: string,
   }
 

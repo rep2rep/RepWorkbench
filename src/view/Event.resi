@@ -48,16 +48,16 @@ module Slots: {
     type t =
       | Concept(string)
       | Graphic(string)
-      | Is_class(bool)
-      | Function(Function.t)
-      | Explicit(bool)
+      | Is_class(option<bool>)
+      | Function(option<Function.t>)
+      | Explicit(option<bool>)
       | Notes(string)
   }
 
   module Placeholder: {
     type t =
       | Description(string)
-      | IsIntensional(bool)
+      | IsIntensional(option<bool>)
       | Notes(string)
   }
 

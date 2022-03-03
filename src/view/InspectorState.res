@@ -488,15 +488,15 @@ module Token = {
   type t = {
     concept: string,
     graphic: string,
-    is_class: bool,
-    function: Function.t,
-    explicit: bool,
+    is_class: option<bool>,
+    function: option<Function.t>,
+    explicit: option<bool>,
     notes: string,
   }
 
   module Stable = {
     module V1 = {
-      type t = t = {
+      type t = {
         concept: string,
         graphic: string,
         is_class: bool,
@@ -549,38 +549,34 @@ module Token = {
           })
         })
     }
-  }
 
-  let empty = {
-    concept: "#Tok#",
-    graphic: "#Ref#",
-    is_class: false,
-    function: Function.Semantic,
-    explicit: true,
-    notes: "",
-  }
-}
-
-module Placeholder = {
-  type t = {
-    description: string,
-    isIntensional: bool,
-    notes: string,
-  }
-
-  module Stable = {
-    module V1 = {
+    module V2 = {
       type t = t = {
-        description: string,
-        isIntensional: bool,
+        concept: string,
+        graphic: string,
+        is_class: option<bool>,
+        function: option<Function.t>,
+        explicit: option<bool>,
         notes: string,
+      }
+
+      let v1_to_v2 = v1 => {
+        concept: v1.V1.concept,
+        graphic: v1.V1.graphic,
+        is_class: Some(v1.V1.is_class),
+        function: Some(v1.V1.function),
+        explicit: Some(v1.V1.explicit),
+        notes: v1.V1.notes,
       }
 
       let toJson = t =>
         Js.Dict.fromList(list{
-          ("version", Int.toJson(1)),
-          ("description", String.toJson(t.description)),
-          ("isIntensional", Bool.toJson(t.isIntensional)),
+          ("version", Int.toJson(2)),
+          ("concept", String.toJson(t.concept)),
+          ("graphic", String.toJson(t.graphic)),
+          ("is_class", t.is_class->Option.toJson(Bool.toJson)),
+          ("function", t.function->Option.toJson(Function.toJson)),
+          ("explicit", t.explicit->Option.toJson(Bool.toJson)),
           ("notes", String.toJson(t.notes)),
         })->Js.Json.object_
 
@@ -595,11 +591,87 @@ module Placeholder = {
             ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
             ->Or_error.flatMap(reader)
           let version = getValue("version", Int.fromJson)
-          if Or_error.isOk(version) {
-            let v = Or_error.okExn(version)
-            if v === 1 {
+          switch version->Or_error.match {
+          | Err(_) => V1.fromJson(json)->Or_error.map(v1_to_v2)
+          | Ok(2) => {
+              let concept = getValue("concept", String.fromJson)
+              let graphic = getValue("graphic", String.fromJson)
+              let is_class = getValue("is_class", Option.fromJson(_, Bool.fromJson))
+              let function = getValue("function", Option.fromJson(_, Function.fromJson))
+              let explicit = getValue("explicit", Option.fromJson(_, Bool.fromJson))
+              let notes = getValue("notes", String.fromJson)
+
+              Or_error.both6((
+                concept,
+                graphic,
+                is_class,
+                function,
+                explicit,
+                notes,
+              ))->Or_error.map(((concept, graphic, is_class, function, explicit, notes)) => {
+                concept: concept,
+                graphic: graphic,
+                is_class: is_class,
+                function: function,
+                explicit: explicit,
+                notes: notes,
+              })
+            }
+          | Ok(v) =>
+            Or_error.error_ss(["Unknown version for InspectorState.Token: ", Int.toString(v)])
+          }
+        })
+    }
+  }
+
+  let empty = {
+    concept: "#Tok#",
+    graphic: "#Ref#",
+    is_class: None,
+    function: None,
+    explicit: None,
+    notes: "",
+  }
+}
+
+module Placeholder = {
+  type t = {
+    description: string,
+    isIntensional: option<bool>,
+    notes: string,
+  }
+
+  module Stable = {
+    module V1 = {
+      type t = t = {
+        description: string,
+        isIntensional: option<bool>,
+        notes: string,
+      }
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(1)),
+          ("description", String.toJson(t.description)),
+          ("isIntensional", t.isIntensional->Option.toJson(Bool.toJson)),
+          ("notes", String.toJson(t.notes)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Schema slots object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          switch version->Or_error.match {
+          | Ok(1) => {
               let description = getValue("description", String.fromJson)
-              let isIntensional = getValue("isIntensional", Bool.fromJson)
+              let isIntensional = getValue("isIntensional", Option.fromJson(_, Bool.fromJson))
               let notes = getValue("notes", String.fromJson)
 
               Or_error.both3((description, isIntensional, notes))->Or_error.map(((
@@ -611,11 +683,10 @@ module Placeholder = {
                 isIntensional: isIntensional,
                 notes: notes,
               })
-            } else {
-              Or_error.error_ss(["Unknown InspectorState.Placeholder version ", Int.toString(v)])
             }
-          } else {
-            Or_error.error_s("Unable to determine InspectorState.Placeholder version")
+          | Ok(v) =>
+            Or_error.error_ss(["Unknown InspectorState.Placeholder version ", Int.toString(v)])
+          | Err(_) => Or_error.error_s("Unable to determine InspectorState.Placeholder version")
           }
         })
     }
@@ -623,7 +694,7 @@ module Placeholder = {
 
   let empty = {
     description: "#Placeholder#",
-    isIntensional: false,
+    isIntensional: None,
     notes: "",
   }
 }
@@ -685,7 +756,7 @@ module Schema = {
         | Representation(Representation.Stable.V1.t)
         | Scheme(Scheme.Stable.V2.t)
         | Dimension(Dimension.Stable.V2.t)
-        | Token(Token.Stable.V1.t)
+        | Token(Token.Stable.V2.t)
         | Placeholder(Placeholder.Stable.V1.t)
 
       let v1_to_v2 = v1 =>
@@ -693,7 +764,7 @@ module Schema = {
         | V1.Representation(r) => Representation(r)
         | V1.Scheme(s) => Scheme(s->Scheme.Stable.V2.v1_to_v2)
         | V1.Dimension(d) => Dimension(d->Dimension.Stable.V2.v1_to_v2)
-        | V1.Token(t) => Token(t)
+        | V1.Token(t) => Token(t->Token.Stable.V2.v1_to_v2)
         }
 
       let toJson = t => {
@@ -701,7 +772,7 @@ module Schema = {
         | Representation(r) => ("representation", Representation.Stable.V1.toJson(r))
         | Scheme(s) => ("scheme", Scheme.Stable.V2.toJson(s))
         | Dimension(d) => ("dimension", Dimension.Stable.V2.toJson(d))
-        | Token(t) => ("token", Token.Stable.V1.toJson(t))
+        | Token(t) => ("token", Token.Stable.V2.toJson(t))
         | Placeholder(p) => ("placeholder", Placeholder.Stable.V1.toJson(p))
         }
         Js.Dict.fromList(list{
@@ -735,7 +806,7 @@ module Schema = {
                 | "scheme" => Scheme.Stable.V2.fromJson(value)->Or_error.map(s => Scheme(s))
                 | "dimension" =>
                   Dimension.Stable.V2.fromJson(value)->Or_error.map(d => Dimension(d))
-                | "token" => Token.Stable.V1.fromJson(value)->Or_error.map(t => Token(t))
+                | "token" => Token.Stable.V2.fromJson(value)->Or_error.map(t => Token(t))
                 | "placeholder" =>
                   Placeholder.Stable.V1.fromJson(value)->Or_error.map(t => Placeholder(t))
                 | _ => Or_error.error_ss(["Unknown Schema slot kind '", kind, "'"])

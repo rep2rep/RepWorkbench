@@ -93,9 +93,9 @@ module Slots = {
     type t =
       | Concept(string)
       | Graphic(string)
-      | Is_class(bool)
-      | Function(Function.t)
-      | Explicit(bool)
+      | Is_class(option<bool>)
+      | Function(option<Function.t>)
+      | Explicit(option<bool>)
       | Notes(string)
 
     let dispatch = (state, t) =>
@@ -112,7 +112,7 @@ module Slots = {
   module Placeholder = {
     type t =
       | Description(string)
-      | IsIntensional(bool)
+      | IsIntensional(option<bool>)
       | Notes(string)
 
     let dispatch = (state, t) =>
@@ -322,7 +322,7 @@ module Model = {
           )
         | Slots.Token(Slots.Token.Is_class(b))
         | Slots.Placeholder(Slots.Placeholder.IsIntensional(b)) =>
-          Some(Graph.Node.UpdateDashed(b))
+          Some(Graph.Node.UpdateDashed(b->Option.getWithDefault(false)))
         | _ => None
         }
         e'->Option.map(e' => Graph.UpdateNode(id, e'))

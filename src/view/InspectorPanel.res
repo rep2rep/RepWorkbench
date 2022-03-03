@@ -323,40 +323,35 @@ module Token = {
       </Row>
       <Row>
         <Label htmlFor="inspector-tok-class"> {React.string("Is class")} </Label>
-        <input
+        <Selector
           name="inspector-tok-class"
-          type_="checkbox"
-          checked={slots.is_class}
-          onChange={e => onChange(Event.Slots.Token.Is_class(ReactEvent.Form.target(e)["checked"]))}
+          options={[true, false]}
+          current={slots.is_class}
+          toString={Bool.toString}
+          fromString={Bool.fromString}
+          onChange={e => onChange(Event.Slots.Token.Is_class(e))}
         />
       </Row>
       <Row>
         <Label htmlFor="inspector-tok-function"> {React.string("Function")} </Label>
-        <select
+        <Selector
           name="inspector-tok-function"
-          value={Function.toString(slots.function)}
-          onChange={e =>
-            onChange(
-              Event.Slots.Token.Function(
-                Function.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
-              ),
-            )}>
-          {Function.all
-          ->Array.map(f =>
-            <option value={Function.toString(f)} key={Function.toString(f)}>
-              {React.string(Function.toString(f))}
-            </option>
-          )
-          ->React.array}
-        </select>
+          options={Function.all}
+          current={slots.function}
+          toString={Function.toString}
+          fromString={Function.fromString}
+          onChange={e => onChange(Event.Slots.Token.Function(e))}
+        />
       </Row>
       <Row>
         <Label htmlFor="inspector-tok-explicit"> {React.string("Explicit")} </Label>
-        <input
+        <Selector
           name="inspector-tok-explicit"
-          type_="checkbox"
-          checked={slots.explicit}
-          onChange={e => onChange(Event.Slots.Token.Explicit(ReactEvent.Form.target(e)["checked"]))}
+          options={[true, false]}
+          current={slots.explicit}
+          toString={Bool.toString}
+          fromString={Bool.fromString}
+          onChange={e => onChange(Event.Slots.Token.Explicit(e))}
         />
       </Row>
       <Notes
@@ -385,12 +380,13 @@ module Placeholder = {
         <Label htmlFor="inspector-placeholder-intensional">
           {React.string("Omitted but understood?")}
         </Label>
-        <input
+        <Selector
           name="inspector-placeholder-intensional"
-          type_="checkbox"
-          checked={slots.isIntensional}
-          onChange={e =>
-            onChange(Event.Slots.Placeholder.IsIntensional(ReactEvent.Form.target(e)["checked"]))}
+          options={[true, false]}
+          current={slots.isIntensional}
+          toString={Bool.toString}
+          fromString={Bool.fromString}
+          onChange={e => onChange(Event.Slots.Placeholder.IsIntensional(e))}
         />
       </Row>
       <Notes
