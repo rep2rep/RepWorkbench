@@ -81,6 +81,7 @@ module App = {
     let addSchNodeAt = (_, ~x, ~y) => ModelNode.Kind.Scheme->addNodeAt(~x, ~y)
     let addDimNodeAt = (_, ~x, ~y) => ModelNode.Kind.Dimension->addNodeAt(~x, ~y)
     let addTokNodeAt = (_, ~x, ~y) => ModelNode.Kind.Token->addNodeAt(~x, ~y)
+    let addPlcNodeAt = (_, ~x, ~y) => ModelNode.Kind.Placeholder->addNodeAt(~x, ~y)
     let linkNodes = kind => {
       let ids = selection->ModelSelection.nodes
       switch ids {
@@ -172,6 +173,7 @@ module App = {
       ("s", addSchNodeAt),
       ("d", addDimNodeAt),
       ("t", addTokNodeAt),
+      ("q", addPlcNodeAt),
       ("c", (e, ~x as _, ~y as _) => connectNodes(e)),
       ("a", (e, ~x as _, ~y as _) => anchorNodes(e)),
       ("e", (e, ~x as _, ~y as _) => relateNodes(e)),
@@ -241,6 +243,10 @@ module App = {
           <Button
             onClick={addTokNodeAt(_, ~x=0., ~y=0.)} value="Token Node" enabled={toolbarActive}
           />
+          <Button
+            onClick={addPlcNodeAt(_, ~x=0., ~y=0.)} value="Placeholder Node" enabled={toolbarActive}
+          />
+          <Button.Separator />
           <Button onClick={duplicateNodes} value="Duplicate" enabled={toolbarActive} />
           <Button.Separator />
           <Button onClick={connectNodes} value="Connect" enabled={toolbarActive} />
