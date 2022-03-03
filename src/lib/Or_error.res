@@ -249,3 +249,17 @@ let both13 = ((a, b, c, d, e, f, g, h, i, j, k, l, m)) =>
     (e, f, g, h),
     (i, j, k, l, m),
   )) => (a, b, c, d, e, f, g, h, i, j, k, l, m))
+
+module Match = {
+  type match<'a> =
+    | Ok('a)
+    | Err(Error.t)
+}
+
+let match = t =>
+  switch t {
+  | Ok(a, _) => Match.Ok(a)
+  | Err(e) => Match.Err(e)
+  }
+
+include Match

@@ -1,5 +1,11 @@
 type t<'a>
 
+type match<'a> =
+  | Ok('a)
+  | Err(Error.t)
+
+let match: t<'a> => match<'a>
+
 let toJson: (t<'a>, 'a => Js.Json.t) => Js.Json.t
 let fromJson: (Js.Json.t, Js.Json.t => t<'a>) => t<t<'a>>
 
