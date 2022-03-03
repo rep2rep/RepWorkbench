@@ -18,6 +18,12 @@ module Model: {
     }
 
     module V2: {
+      type t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+
+    module V3: {
       type t = t
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>

@@ -109,11 +109,26 @@ module Slots = {
       }
   }
 
+  module Placeholder = {
+    type t =
+      | Description(string)
+      | IsIntensional(bool)
+      | Notes(string)
+
+    let dispatch = (state, t) =>
+      switch t {
+      | Description(s) => {...state, InspectorState.Placeholder.description: s}
+      | IsIntensional(s) => {...state, InspectorState.Placeholder.isIntensional: s}
+      | Notes(s) => {...state, InspectorState.Placeholder.notes: s}
+      }
+  }
+
   type t =
     | Representation(Representation.t)
     | Scheme(Scheme.t)
     | Dimension(Dimension.t)
     | Token(Token.t)
+    | Placeholder(Placeholder.t)
 
   let dispatch = (state, t) =>
     switch (state, t) {
@@ -125,6 +140,8 @@ module Slots = {
       Dimension.dispatch(state, e)->InspectorState.Schema.Dimension
     | (InspectorState.Schema.Token(state), Token(e)) =>
       Token.dispatch(state, e)->InspectorState.Schema.Token
+    | (InspectorState.Schema.Placeholder(state), Placeholder(e)) =>
+      Placeholder.dispatch(state, e)->InspectorState.Schema.Placeholder
     | _ => state
     }
 }
@@ -273,7 +290,8 @@ module Model = {
         | Slots.Representation(Slots.Representation.Domain(s))
         | Slots.Scheme(Slots.Scheme.Concept_structure(s))
         | Slots.Dimension(Slots.Dimension.Concept(s))
-        | Slots.Token(Slots.Token.Concept(s)) =>
+        | Slots.Token(Slots.Token.Concept(s))
+        | Slots.Placeholder(Slots.Placeholder.Description(s)) =>
           Some(Graph.Node.UpdateName(s))
         | Slots.Representation(Slots.Representation.Display(s))
         | Slots.Scheme(Slots.Scheme.Graphic_structure(s))
@@ -292,7 +310,9 @@ module Model = {
               Some(s->Quantity_scale.toString->String.slice(~from=0, ~to_=1)),
             ),
           )
-        | Slots.Token(Slots.Token.Is_class(b)) => Some(Graph.Node.UpdateDashed(b))
+        | Slots.Token(Slots.Token.Is_class(b))
+        | Slots.Placeholder(Slots.Placeholder.IsIntensional(b)) =>
+          Some(Graph.Node.UpdateDashed(b))
         | _ => None
         }
         e'->Option.map(e' => Graph.UpdateNode(id, e'))

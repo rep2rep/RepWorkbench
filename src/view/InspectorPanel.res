@@ -394,6 +394,40 @@ module Token = {
   }
 }
 
+module Placeholder = {
+  @react.component
+  let make = (~slots: InspectorState.Placeholder.t, ~onChange) => {
+    <>
+      <Row>
+        <Label htmlFor="inspector-placeholder-description"> {React.string("Description")} </Label>
+        <Input
+          value={slots.description}
+          name="inspector-placeholder-description"
+          onChange={e =>
+            onChange(Event.Slots.Placeholder.Description(ReactEvent.Form.target(e)["value"]))}
+        />
+      </Row>
+      <Row>
+        <Label htmlFor="inspector-placeholder-intensional">
+          {React.string("Omitted but understood?")}
+        </Label>
+        <input
+          name="inspector-placeholder-intensional"
+          type_="checkbox"
+          checked={slots.isIntensional}
+          onChange={e =>
+            onChange(Event.Slots.Placeholder.IsIntensional(ReactEvent.Form.target(e)["checked"]))}
+        />
+      </Row>
+      <Notes
+        name="inspector-placeholder-description"
+        onChange={e => onChange(Event.Slots.Placeholder.Notes(ReactEvent.Form.target(e)["value"]))}
+        value={slots.notes}
+      />
+    </>
+  }
+}
+
 module Model = {
   @react.component
   let make = (~slots: InspectorState.Model.t, ~onChange) => {
@@ -495,6 +529,10 @@ let make = (~id, ~data, ~onChange=?) => {
         />
       | InspectorState.Schema.Token(slots) =>
         <Token slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Token(c)))} />
+      | InspectorState.Schema.Placeholder(slots) =>
+        <Placeholder
+          slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Placeholder(c)))}
+        />
       }
     }}
   </HideablePanel>

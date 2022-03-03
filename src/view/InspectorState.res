@@ -384,8 +384,8 @@ module Placeholder = {
           if Or_error.isOk(version) {
             let v = Or_error.okExn(version)
             if v === 1 {
-              let description = getValue("concept", String.fromJson)
-              let isIntensional = getValue("is_class", Bool.fromJson)
+              let description = getValue("description", String.fromJson)
+              let isIntensional = getValue("isIntensional", Bool.fromJson)
               let notes = getValue("notes", String.fromJson)
 
               Or_error.both3((description, isIntensional, notes))->Or_error.map(((

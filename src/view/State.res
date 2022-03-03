@@ -49,7 +49,7 @@ module Model = {
     }
 
     module V2 = {
-      type t = t = {
+      type t = {
         info: InspectorState.Model.Stable.V1.t,
         graph: ModelState.Stable.V2.t,
         slots: Uuid.Map.t<InspectorState.Schema.Stable.V1.t>,
@@ -104,9 +104,69 @@ module Model = {
           }
         })
     }
+
+    module V3 = {
+      type t = t = {
+        info: InspectorState.Model.Stable.V1.t,
+        graph: ModelState.Stable.V3.t,
+        slots: Uuid.Map.t<InspectorState.Schema.Stable.V2.t>,
+      }
+
+      let v2_to_v3 = t => {
+        info: t.V2.info,
+        graph: t.V2.graph->ModelState.Stable.V3.v2_to_v3,
+        slots: t.V2.slots->Uuid.Map.map(InspectorState.Schema.Stable.V2.v1_to_v2),
+      }
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(3)),
+          ("info", t.info->InspectorState.Model.Stable.V1.toJson),
+          ("graph", t.graph->ModelState.Stable.V3.toJson),
+          ("slots", t.slots->Uuid.Map.toJson(InspectorState.Schema.Stable.V2.toJson)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Model state object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          if !Or_error.isOk(version) {
+            Js.Console.log("Attempting to upgrade model from V1 to V3")
+            V1.fromJson(json)->Or_error.map(V2.v1_to_v2)->Or_error.map(v2_to_v3)
+          } else if Or_error.okExn(version) == 2 {
+            Js.Console.log("Attempting to upgrade model from V2 to V3")
+            V2.fromJson(json)->Or_error.map(v2_to_v3)
+          } else if Or_error.okExn(version) == 3 {
+            let info = getValue("info", InspectorState.Model.Stable.V1.fromJson)
+            let graph = getValue("graph", ModelState.Stable.V3.fromJson)
+            let slots = getValue("slots", j =>
+              j->Uuid.Map.fromJson(InspectorState.Schema.Stable.V2.fromJson)
+            )
+
+            Or_error.both3((info, graph, slots))->Or_error.map(((info, graph, slots)) => {
+              info: info,
+              graph: graph,
+              slots: slots,
+            })
+          } else {
+            Or_error.error_ss([
+              "Attempting to load unsupported Model version ",
+              Int.toString(Or_error.okExn(version)),
+              "!",
+            ])
+          }
+        })
+    }
   }
 
-  module Storage = LocalStorage.MakeJsonable(Stable.V2)
+  module Storage = LocalStorage.MakeJsonable(Stable.V3)
 
   let store = (t, id) => Storage.set("RepNotation:Model:" ++ Uuid.toString(id), t)
   let load = id => Storage.get("RepNotation:Model:" ++ Uuid.toString(id))

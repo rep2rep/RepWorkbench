@@ -54,11 +54,19 @@ module Slots: {
       | Notes(string)
   }
 
+  module Placeholder: {
+    type t =
+      | Description(string)
+      | IsIntensional(bool)
+      | Notes(string)
+  }
+
   type t =
     | Representation(Representation.t)
     | Scheme(Scheme.t)
     | Dimension(Dimension.t)
     | Token(Token.t)
+    | Placeholder(Placeholder.t)
 }
 
 module Graph: {

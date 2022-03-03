@@ -652,7 +652,7 @@ module Stable = {
         )
 
         Or_error.both4((payload, x, y, id))->Or_error.map(((payload, x, y, id)) => {
-          let config = Configs.create(payload->Obj.magic)->Obj.magic // DANGEROUS!!!
+          let config = Configs.create(payload->Payload.Stable.V2.v1_to_v2)->Obj.magic // DANGEROUS!!!
           ReactD3Graph.Node.create(~id, ~payload, ~config, ~x, ~y, ())
         })
       })
@@ -661,11 +661,7 @@ module Stable = {
     type t = ReactD3Graph.Node.t<Payload.Stable.V2.t>
 
     let v1_to_v2 = v1 => {
-      let id = ReactD3Graph.Node.id(v1)
-      let x = ReactD3Graph.Node.x(v1)
-      let y = ReactD3Graph.Node.y(v1)
-      let payload = ReactD3Graph.Node.payload(v1)->Option.getExn->Payload.Stable.V2.v1_to_v2
-      ReactD3Graph.Node.create(~id, ~x, ~y, ~payload, ())
+      v1->ReactD3Graph.Node.updatePayload(Option.map(_, Payload.Stable.V2.v1_to_v2))
     }
 
     let toJson = t =>
