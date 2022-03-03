@@ -162,9 +162,32 @@ let make = (
   ~onExport,
 ) => {
   let container = React.useRef(Js.Nullable.null)
-  <div
+  <HideablePanel
     id
-    ref={ReactDOM.Ref.domRef(container)}
+    toggle={(~hidden) =>
+      <div
+        style={ReactDOM.Style.make(
+          ~cursor="default",
+          ~userSelect="none",
+          ~position="absolute",
+          ~bottom="5px",
+          ~left={
+            if hidden {
+              "10px"
+            } else {
+              "230px"
+            }
+          },
+          ~fontSize="16px",
+          (),
+        )}>
+        {if hidden {
+          React.string(Js.String2.fromCharCode(9002))
+        } else {
+          React.string(Js.String2.fromCharCode(9001))
+        }}
+      </div>}
+    ref_={ReactDOM.Ref.domRef(container)}
     style={ReactDOM.Style.make(
       ~order="1",
       ~width="230px",
@@ -292,5 +315,5 @@ let make = (
         </label>
       </div>
     </div>
-  </div>
+  </HideablePanel>
 }

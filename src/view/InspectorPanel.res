@@ -421,7 +421,29 @@ let make = (~id, ~data, ~onChange=?) => {
   <HideablePanel
     id
     className="inspector-panel"
-    side={#right}
+    toggle={(~hidden) =>
+      <div
+        style={ReactDOM.Style.make(
+          ~cursor="default",
+          ~userSelect="none",
+          ~position="absolute",
+          ~bottom="5px",
+          ~right={
+            if hidden {
+              "10px"
+            } else {
+              "350px"
+            }
+          },
+          ~fontSize="16px",
+          (),
+        )}>
+        {if hidden {
+          React.string(Js.String2.fromCharCode(9001))
+        } else {
+          React.string(Js.String2.fromCharCode(9002))
+        }}
+      </div>}
     style={ReactDOM.Style.make(
       ~order="2",
       ~padding="0.5rem 0",

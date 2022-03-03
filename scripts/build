@@ -11,6 +11,6 @@ rm -rf "$BASE/dist"
 "$ROOT/rescript/rescript" build -with-deps
 mkdir -p "$BASE/dist"
 node "$BASE/bundle.js"
+echo "$STATICS" | xargs -t -n 1 -I % sh -c "cp '$BASE/src/%' '$BASE/dist/%'"
 ls "$BASE/dist" | xargs -t -I % sed -i '.bak' "s/##VERSION##/$VERSION/g" "$BASE/dist/%"
 rm $BASE/dist/*.bak
-echo "$STATICS" | xargs -t -n 1 -I % sh -c "cp '$BASE/src/%' '$BASE/dist/%'"
