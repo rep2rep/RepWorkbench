@@ -43,6 +43,32 @@ module Input = {
   }
 }
 
+module Selector = {
+  @react.component
+  let make = (
+    ~name: string,
+    ~options: array<'a>,
+    ~current: option<'a>,
+    ~toString: 'a => string,
+    ~fromString: string => option<'a>,
+    ~onChange: option<'a> => unit,
+  ) => {
+    <select
+      name
+      value={current->Option.map(toString)->Option.getWithDefault("-")}
+      onChange={e => onChange(fromString(ReactEvent.Form.target(e)["value"]))}>
+      <option value="-" key={name ++ "-option-none"}> {React.string("-")} </option>
+      {options
+      ->Array.map(a =>
+        <option value={toString(a)} key={name ++ "-option-" ++ toString(a)}>
+          {React.string(toString(a))}
+        </option>
+      )
+      ->React.array}
+    </select>
+  }
+}
+
 module Notes = {
   @react.component
   let make = (~name, ~value=?, ~onChange=?) => {
@@ -129,53 +155,36 @@ module Scheme = {
       </Row>
       <Row>
         <Label htmlFor="inspector-sch-function"> {React.string("Function")} </Label>
-        <select
+        <Selector
           name="inspector-sch-function"
-          value={Function.toString(slots.function)}
-          onChange={e =>
-            onChange(
-              Event.Slots.Scheme.Function(
-                Function.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
-              ),
-            )}>
-          {Function.all
-          ->Array.map(f =>
-            <option value={Function.toString(f)} key={Function.toString(f)}>
-              {React.string(Function.toString(f))}
-            </option>
-          )
-          ->React.array}
-        </select>
+          options={Function.all}
+          current={slots.function}
+          toString={Function.toString}
+          fromString={Function.fromString}
+          onChange={f => onChange(Event.Slots.Scheme.Function(f))}
+        />
       </Row>
       <Row>
         <Label htmlFor="inspector-sch-explicit"> {React.string("Explicit")} </Label>
-        <input
+        <Selector
           name="inspector-sch-explicit"
-          type_="checkbox"
-          checked={slots.explicit}
-          onChange={e =>
-            onChange(Event.Slots.Scheme.Explicit(ReactEvent.Form.target(e)["checked"]))}
+          options={[true, false]}
+          current={slots.explicit}
+          toString={Bool.toString}
+          fromString={Bool.fromString}
+          onChange={e => onChange(Event.Slots.Scheme.Explicit(e))}
         />
       </Row>
       <Row>
         <Label htmlFor="inspector-sch-scope"> {React.string("Scope")} </Label>
-        <select
+        <Selector
           name="inspector-sch-scope"
-          value={Scope.toString(slots.scope)}
-          onChange={e =>
-            onChange(
-              Event.Slots.Scheme.Scope(
-                Scope.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
-              ),
-            )}>
-          {Scope.all
-          ->Array.map(s =>
-            <option value={Scope.toString(s)} key={Scope.toString(s)}>
-              {React.string(Scope.toString(s))}
-            </option>
-          )
-          ->React.array}
-        </select>
+          options={Scope.all}
+          current={slots.scope}
+          toString={Scope.toString}
+          fromString={Scope.fromString}
+          onChange={e => onChange(Event.Slots.Scheme.Scope(e))}
+        />
       </Row>
       <Row>
         <Label htmlFor="inspector-sch-organisation"> {React.string("Organisation")} </Label>

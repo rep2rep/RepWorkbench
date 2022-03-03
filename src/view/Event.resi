@@ -22,9 +22,9 @@ module Slots: {
     type t =
       | Concept_structure(string)
       | Graphic_structure(string)
-      | Function(Function.t)
-      | Explicit(bool)
-      | Scope(Scope.t)
+      | Function(option<Function.t>)
+      | Explicit(option<bool>)
+      | Scope(option<Scope.t>)
       | Organisation(string)
       | Notes(string)
   }

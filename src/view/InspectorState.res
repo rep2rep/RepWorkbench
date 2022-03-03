@@ -54,16 +54,16 @@ module Scheme = {
   type t = {
     concept_structure: string,
     graphic_structure: string,
-    function: Function.t,
-    explicit: bool,
-    scope: Scope.t,
+    function: option<Function.t>,
+    explicit: option<bool>,
+    scope: option<Scope.t>,
     organisation: string,
     notes: string,
   }
 
   module Stable = {
     module V1 = {
-      type t = t = {
+      type t = {
         concept_structure: string,
         graphic_structure: string,
         function: Function.t,
@@ -129,14 +129,101 @@ module Scheme = {
           })
         })
     }
+
+    module V2 = {
+      type t = t = {
+        concept_structure: string,
+        graphic_structure: string,
+        function: option<Function.t>,
+        explicit: option<bool>,
+        scope: option<Scope.t>,
+        organisation: string,
+        notes: string,
+      }
+
+      let v1_to_v2 = v1 => {
+        concept_structure: v1.V1.concept_structure,
+        graphic_structure: v1.V1.graphic_structure,
+        function: Some(v1.V1.function),
+        explicit: Some(v1.V1.explicit),
+        scope: Some(v1.V1.scope),
+        organisation: v1.V1.organisation,
+        notes: v1.V1.notes,
+      }
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(2)),
+          ("concept_structure", String.toJson(t.concept_structure)),
+          ("graphic_structure", String.toJson(t.graphic_structure)),
+          ("function", t.function->Option.toJson(Function.toJson)),
+          ("explicit", t.explicit->Option.toJson(Bool.toJson)),
+          ("scope", t.scope->Option.toJson(Scope.toJson)),
+          ("organisation", String.toJson(t.organisation)),
+          ("notes", String.toJson(t.notes)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Schema slots object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          switch version->Or_error.match {
+          | Or_error.Err(_) => V1.fromJson(json)->Or_error.map(v1_to_v2)
+          | Or_error.Ok(2) => {
+              let concept_structure = getValue("concept_structure", String.fromJson)
+              let graphic_structure = getValue("graphic_structure", String.fromJson)
+              let function = getValue("function", Option.fromJson(_, Function.fromJson))
+              let explicit = getValue("explicit", Option.fromJson(_, Bool.fromJson))
+              let scope = getValue("scope", Option.fromJson(_, Scope.fromJson))
+              let organisation = getValue("organisation", String.fromJson)
+              let notes = getValue("notes", String.fromJson)
+
+              Or_error.both7((
+                concept_structure,
+                graphic_structure,
+                function,
+                explicit,
+                scope,
+                organisation,
+                notes,
+              ))->Or_error.map(((
+                concept_structure,
+                graphic_structure,
+                function,
+                explicit,
+                scope,
+                organisation,
+                notes,
+              )) => {
+                concept_structure: concept_structure,
+                graphic_structure: graphic_structure,
+                function: function,
+                explicit: explicit,
+                scope: scope,
+                organisation: organisation,
+                notes: notes,
+              })
+            }
+          | Or_error.Ok(v) =>
+            Or_error.error_ss(["Unrecognised version of InspectorState.Scheme: ", Int.toString(v)])
+          }
+        })
+    }
   }
 
   let empty = {
     concept_structure: "#Sch#",
     graphic_structure: "#Ref#",
-    function: Function.Semantic,
-    explicit: true,
-    scope: Scope.Global,
+    function: None,
+    explicit: None,
+    scope: None,
     organisation: "",
     notes: "",
   }
@@ -469,24 +556,24 @@ module Schema = {
     module V2 = {
       type t = t =
         | Representation(Representation.Stable.V1.t)
-        | Scheme(Scheme.Stable.V1.t)
         | Dimension(Dimension.Stable.V1.t)
+        | Scheme(Scheme.Stable.V2.t)
         | Token(Token.Stable.V1.t)
         | Placeholder(Placeholder.Stable.V1.t)
 
       let v1_to_v2 = v1 =>
         switch v1 {
         | V1.Representation(r) => Representation(r)
-        | V1.Scheme(s) => Scheme(s)
         | V1.Dimension(d) => Dimension(d)
+        | V1.Scheme(s) => Scheme(s->Scheme.Stable.V2.v1_to_v2)
         | V1.Token(t) => Token(t)
         }
 
       let toJson = t => {
         let (kind, json) = switch t {
         | Representation(r) => ("representation", Representation.Stable.V1.toJson(r))
-        | Scheme(s) => ("scheme", Scheme.Stable.V1.toJson(s))
         | Dimension(d) => ("dimension", Dimension.Stable.V1.toJson(d))
+        | Scheme(s) => ("scheme", Scheme.Stable.V2.toJson(s))
         | Token(t) => ("token", Token.Stable.V1.toJson(t))
         | Placeholder(p) => ("placeholder", Placeholder.Stable.V1.toJson(p))
         }
@@ -508,10 +595,9 @@ module Schema = {
             ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
             ->Or_error.flatMap(reader)
           let version = getValue("version", Int.fromJson)
-
-          if Or_error.isOk(version) {
-            let v = Or_error.okExn(version)
-            if v === 2 {
+          switch version->Or_error.match {
+          | Err(_) => V1.fromJson(json)->Or_error.map(v1_to_v2)
+          | Ok(2) => {
               let kind = getValue("kind", String.fromJson)
               let value = getValue("value", j => Or_error.create(j))
 
@@ -519,7 +605,7 @@ module Schema = {
                 switch kind {
                 | "representation" =>
                   Representation.Stable.V1.fromJson(value)->Or_error.map(r => Representation(r))
-                | "scheme" => Scheme.Stable.V1.fromJson(value)->Or_error.map(s => Scheme(s))
+                | "scheme" => Scheme.Stable.V2.fromJson(value)->Or_error.map(s => Scheme(s))
                 | "dimension" =>
                   Dimension.Stable.V1.fromJson(value)->Or_error.map(d => Dimension(d))
                 | "token" => Token.Stable.V1.fromJson(value)->Or_error.map(t => Token(t))
@@ -528,11 +614,8 @@ module Schema = {
                 | _ => Or_error.error_ss(["Unknown Schema slot kind '", kind, "'"])
                 }
               })
-            } else {
-              Or_error.error_ss(["Unknown InspectorState version ", Int.toString(v)])
             }
-          } else {
-            V1.fromJson(json)->Or_error.map(v1_to_v2)
+          | Ok(v) => Or_error.error_ss(["Unknown InspectorState version ", Int.toString(v)])
           }
         })
     }
