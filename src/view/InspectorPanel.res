@@ -219,23 +219,14 @@ module Dimension = {
       </Row>
       <Row>
         <Label htmlFor="inspector-dim-concept-scale"> {React.string("Concept Scale")} </Label>
-        <select
+        <Selector
           name="inspector-dim-concept-scale"
-          value={Quantity_scale.toString(slots.concept_scale)}
-          onChange={e =>
-            onChange(
-              Event.Slots.Dimension.Concept_scale(
-                Quantity_scale.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
-              ),
-            )}>
-          {Quantity_scale.all
-          ->Array.map(f =>
-            <option value={Quantity_scale.toString(f)} key={Quantity_scale.toString(f)}>
-              {React.string(Quantity_scale.toString(f))}
-            </option>
-          )
-          ->React.array}
-        </select>
+          options={Quantity_scale.all}
+          current={slots.concept_scale}
+          toString={Quantity_scale.toString}
+          fromString={Quantity_scale.fromString}
+          onChange={e => onChange(Event.Slots.Dimension.Concept_scale(e))}
+        />
       </Row>
       // Need to add concept attributes
       <Row>
@@ -249,74 +240,48 @@ module Dimension = {
       </Row>
       <Row>
         <Label htmlFor="inspector-dim-graphic-scale"> {React.string("Graphic Scale")} </Label>
-        <select
+        <Selector
           name="inspector-dim-graphic-scale"
-          value={Quantity_scale.toString(slots.graphic_scale)}
-          onChange={e =>
-            onChange(
-              Event.Slots.Dimension.Graphic_scale(
-                Quantity_scale.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
-              ),
-            )}>
-          {Quantity_scale.all
-          ->Array.map(f =>
-            <option value={Quantity_scale.toString(f)} key={Quantity_scale.toString(f)}>
-              {React.string(Quantity_scale.toString(f))}
-            </option>
-          )
-          ->React.array}
-        </select>
+          options={Quantity_scale.all}
+          current={slots.graphic_scale}
+          toString={Quantity_scale.toString}
+          fromString={Quantity_scale.fromString}
+          onChange={e => onChange(Event.Slots.Dimension.Graphic_scale(e))}
+        />
       </Row>
       // Need to add graphic attributes
       <Row>
         <Label htmlFor="inspector-dim-function"> {React.string("Function")} </Label>
-        <select
+        <Selector
           name="inspector-dim-function"
-          value={Function.toString(slots.function)}
-          onChange={e =>
-            onChange(
-              Event.Slots.Dimension.Function(
-                Function.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
-              ),
-            )}>
-          {Function.all
-          ->Array.map(f =>
-            <option value={Function.toString(f)} key={Function.toString(f)}>
-              {React.string(Function.toString(f))}
-            </option>
-          )
-          ->React.array}
-        </select>
+          options={Function.all}
+          current={slots.function}
+          toString={Function.toString}
+          fromString={Function.fromString}
+          onChange={e => onChange(Event.Slots.Dimension.Function(e))}
+        />
       </Row>
       <Row>
         <Label htmlFor="inspector-dim-explicit"> {React.string("Explicit")} </Label>
-        <input
+        <Selector
           name="inspector-dim-explicit"
-          type_="checkbox"
-          checked={slots.explicit}
-          onChange={e =>
-            onChange(Event.Slots.Dimension.Explicit(ReactEvent.Form.target(e)["checked"]))}
+          options={[true, false]}
+          current={slots.explicit}
+          toString={Bool.toString}
+          fromString={Bool.fromString}
+          onChange={e => onChange(Event.Slots.Dimension.Explicit(e))}
         />
       </Row>
       <Row>
         <Label htmlFor="inspector-dim-scope"> {React.string("Scope")} </Label>
-        <select
+        <Selector
           name="inspector-dim-scope"
-          value={Scope.toString(slots.scope)}
-          onChange={e =>
-            onChange(
-              Event.Slots.Dimension.Scope(
-                Scope.fromString(ReactEvent.Form.target(e)["value"])->Option.getExn,
-              ),
-            )}>
-          {Scope.all
-          ->Array.map(s =>
-            <option value={Scope.toString(s)} key={Scope.toString(s)}>
-              {React.string(Scope.toString(s))}
-            </option>
-          )
-          ->React.array}
-        </select>
+          options={Scope.all}
+          current={slots.scope}
+          toString={Scope.toString}
+          fromString={Scope.fromString}
+          onChange={e => onChange(Event.Slots.Dimension.Scope(e))}
+        />
       </Row>
       <Row>
         <Label htmlFor="inspector-dim-organisation"> {React.string("Organisation")} </Label>

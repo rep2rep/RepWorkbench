@@ -32,14 +32,14 @@ module Slots: {
   module Dimension: {
     type t =
       | Concept(string)
-      | Concept_scale(Quantity_scale.t)
-      | Concept_attributes(list<Concept_attribute.t>)
+      | Concept_scale(option<Quantity_scale.t>)
+      | Concept_attributes(list<string>)
       | Graphic(string)
-      | Graphic_scale(Quantity_scale.t)
-      | Graphic_attributes(list<Graphic_attribute.t>)
-      | Function(Function.t)
-      | Scope(Scope.t)
-      | Explicit(bool)
+      | Graphic_scale(option<Quantity_scale.t>)
+      | Graphic_attributes(list<string>)
+      | Function(option<Function.t>)
+      | Scope(option<Scope.t>)
+      | Explicit(option<bool>)
       | Organisation(string)
       | Notes(string)
   }

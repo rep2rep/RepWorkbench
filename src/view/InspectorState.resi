@@ -40,14 +40,14 @@ module Scheme: {
 module Dimension: {
   type t = {
     concept: string,
-    concept_scale: Quantity_scale.t,
-    concept_attributes: list<Concept_attribute.t>,
+    concept_scale: option<Quantity_scale.t>,
+    concept_attributes: list<string>,
     graphic: string,
-    graphic_scale: Quantity_scale.t,
-    graphic_attributes: list<Graphic_attribute.t>,
-    function: Function.t,
-    scope: Scope.t,
-    explicit: bool,
+    graphic_scale: option<Quantity_scale.t>,
+    graphic_attributes: list<string>,
+    function: option<Function.t>,
+    scope: option<Scope.t>,
+    explicit: option<bool>,
     organisation: string,
     notes: string,
   }
@@ -56,6 +56,8 @@ module Dimension: {
     module V1: {
       type t
     }
+    module V2: {
+      type t = t
     }
   }
 

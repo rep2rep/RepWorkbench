@@ -616,12 +616,12 @@ let create = (~name, ~reference, ~x, ~y, kind, id) => {
     reference: reference,
     dashed: false,
     name_suffix: if kind == Kind.Dimension {
-      Some("N")
+      Some("-")
     } else {
       None
     },
     reference_suffix: if kind == Kind.Dimension {
-      Some("N")
+      Some("-")
     } else {
       None
     },

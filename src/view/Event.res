@@ -62,14 +62,14 @@ module Slots = {
   module Dimension = {
     type t =
       | Concept(string)
-      | Concept_scale(Quantity_scale.t)
-      | Concept_attributes(list<Concept_attribute.t>)
+      | Concept_scale(option<Quantity_scale.t>)
+      | Concept_attributes(list<string>)
       | Graphic(string)
-      | Graphic_scale(Quantity_scale.t)
-      | Graphic_attributes(list<Graphic_attribute.t>)
-      | Function(Function.t)
-      | Scope(Scope.t)
-      | Explicit(bool)
+      | Graphic_scale(option<Quantity_scale.t>)
+      | Graphic_attributes(list<string>)
+      | Function(option<Function.t>)
+      | Scope(option<Scope.t>)
+      | Explicit(option<bool>)
       | Organisation(string)
       | Notes(string)
 
@@ -301,13 +301,23 @@ module Model = {
         | Slots.Dimension(Slots.Dimension.Concept_scale(s)) =>
           Some(
             Graph.Node.UpdateNameSuffix(
-              Some(s->Quantity_scale.toString->String.slice(~from=0, ~to_=1)),
+              Some(
+                s
+                ->Option.map(Quantity_scale.toString)
+                ->Option.getWithDefault("-")
+                ->String.slice(~from=0, ~to_=1),
+              ),
             ),
           )
         | Slots.Dimension(Slots.Dimension.Graphic_scale(s)) =>
           Some(
             Graph.Node.UpdateReferenceSuffix(
-              Some(s->Quantity_scale.toString->String.slice(~from=0, ~to_=1)),
+              Some(
+                s
+                ->Option.map(Quantity_scale.toString)
+                ->Option.getWithDefault("-")
+                ->String.slice(~from=0, ~to_=1),
+              ),
             ),
           )
         | Slots.Token(Slots.Token.Is_class(b))
