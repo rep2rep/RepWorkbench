@@ -384,8 +384,17 @@ module Placeholder = {
           name="inspector-placeholder-intensional"
           options={[true, false]}
           current={slots.isIntensional}
-          toString={Bool.toString}
-          fromString={Bool.fromString}
+          toString={b =>
+            switch b {
+            | true => "Yes"
+            | false => "No"
+            }}
+          fromString={s =>
+            switch s {
+            | "Yes" => Some(true)
+            | "No" => Some(false)
+            | _ => None
+            }}
           onChange={e => onChange(Event.Slots.Placeholder.IsIntensional(e))}
         />
       </Row>
