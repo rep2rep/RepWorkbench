@@ -114,6 +114,24 @@ module App = {
         let nodeId = nodeId->ReactD3Graph.Node.Id.toString->Uuid.fromString
         dispatch(Event.Model(focused, Event.Model.Graph(Event.Graph.MoveNode(nodeId, x, y))))
       })
+    let nudge = (_, ~dx, ~dy) => {
+      let es =
+        selection
+        ->ModelSelection.nodes
+        ->Array.keepMap(id => {
+          let node =
+            focused->Option.flatMap(focused =>
+              state
+              ->State.model(focused)
+              ->Option.flatMap(model => model->State.Model.graph->ModelState.nodeWithId(id))
+            )
+          node->Option.map(node => {
+            let (x, y) = node->ModelNode.position
+            Event.Model.Graph(Event.Graph.MoveNode(id, x +. dx, y +. dy))
+          })
+        })
+      dispatchM(Event.Model.Seq(es))
+    }
     let duplicateNodes = _ => {
       let nodeIds = selection->ModelSelection.nodes
       if nodeIds != [] {
@@ -178,6 +196,14 @@ module App = {
       ("a", (e, ~x as _, ~y as _) => anchorNodes(e)),
       ("e", (e, ~x as _, ~y as _) => relateNodes(e)),
       ("x", (e, ~x as _, ~y as _) => deleteNodes(e)),
+      ("ArrowLeft", (e, ~x as _, ~y as _) => nudge(e, ~dx=-10.0, ~dy=0.0)),
+      ("ArrowRight", (e, ~x as _, ~y as _) => nudge(e, ~dx=10.0, ~dy=0.0)),
+      ("ArrowUp", (e, ~x as _, ~y as _) => nudge(e, ~dx=0.0, ~dy=-10.0)),
+      ("ArrowDown", (e, ~x as _, ~y as _) => nudge(e, ~dx=0.0, ~dy=10.0)),
+      ("Shift+ArrowLeft", (e, ~x as _, ~y as _) => nudge(e, ~dx=-1.0, ~dy=0.0)),
+      ("Shift+ArrowRight", (e, ~x as _, ~y as _) => nudge(e, ~dx=1.0, ~dy=0.0)),
+      ("Shift+ArrowUp", (e, ~x as _, ~y as _) => nudge(e, ~dx=0.0, ~dy=-1.0)),
+      ("Shift+ArrowDown", (e, ~x as _, ~y as _) => nudge(e, ~dx=0.0, ~dy=1.0)),
       ("Backspace", (e, ~x as _, ~y as _) => deleteNodes(e)),
       ("Delete", (e, ~x as _, ~y as _) => deleteNodes(e)),
       ("v", (e, ~x as _, ~y as _) => unlinkNodes(e)),
