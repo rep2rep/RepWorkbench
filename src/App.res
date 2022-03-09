@@ -299,13 +299,14 @@ module App = {
           <Button.Separator />
           <Button onClick={deleteNodes} value="Delete" enabled={toolbarActive} />
           <Button.Separator />
-          <label htmlFor="gridToggle"> {React.string("Show grid? ")} </label>
+          <label htmlFor="gridToggle"> {React.string("Grid")} </label>
           <input
             type_="checkbox"
             label="gridToggle"
             onChange={toggleGrid}
             disabled={!toolbarActive}
             checked={showGrid}
+            style={ReactDOM.Style.make(~marginLeft="0.5em", ())}
           />
           <Button.Separator />
           <a href="manual.html" target="_blank"> {React.string("Manual")} </a>
