@@ -2,7 +2,14 @@ module Separator = {
   @react.component
   let make = () => {
     <span
-      style={ReactDOM.Style.make(~display="inline-block", ~maxWidth="2rem", ~flexGrow="1", ())}
+      style={ReactDOM.Style.make(
+        ~display="inline-block",
+        ~width="1pt",
+        ~height="2.5ex",
+        ~margin="0 0.5em",
+        ~background="#ddd",
+        (),
+      )}
     />
   }
 }
@@ -11,7 +18,7 @@ module Separator = {
 let make = (~onClick, ~style as givenStyle=?, ~value, ~enabled=true) => {
   let newStyle = ReactDOM.Style.make(
     ~padding="0.2rem 0.3rem",
-    ~margin="0.125rem 0.25rem",
+    ~margin="0.125rem 0.2rem",
     ~fontSize="small",
     (),
   )
