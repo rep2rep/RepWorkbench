@@ -112,3 +112,4 @@ type t =
   | File(File.t)
 
 let dispatch: (State.t, t) => State.t
+let shouldTriggerIntelligence: t => bool

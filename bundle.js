@@ -9,12 +9,23 @@ import * as path from "path";
 let src = path.join(path.resolve("."), "src");
 let dist = path.join(path.resolve("."), "dist");
 
-let targets = [path.join(src, "App.bs.js")];
+const mode = "debug";
+
+const cfg = {
+  bundle: true,
+  minify: mode === "release",
+  sourcemap: mode !== "release",
+  treeShaking: true,
+};
 
 esbuild.build({
-  entryPoints: targets,
-  bundle: true,
-  minify: false,
-  sourcemap: true,
+  ...cfg,
+  entryPoints: [path.join(src, "App.bs.js")],
   outfile: path.join(dist, "main.js"),
 });
+
+esbuild.build({
+  ...cfg,
+  entryPoints: [path.join(src, "Intelligence.bs.js")],
+  outfile: path.join(dist, "worker.js"),
+})

@@ -2,10 +2,21 @@ module App = {
   type state = State.t
   type action = Event.t
 
+  let intelligence = Intelligence_Intf.create("worker.js")
+
   let init = State.load()->Option.getWithDefault(State.empty)
   let reducer = (state, action) => {
     let newState = Event.dispatch(state, action)
     State.store(newState)
+    if Event.shouldTriggerIntelligence(action) {
+      newState
+      ->State.focused
+      ->Option.iter(focused =>
+        newState
+        ->State.model(focused)
+        ->Option.iter(model => intelligence->Intelligence_Intf.post(model))
+      )
+    }
     newState
   }
 
@@ -28,6 +39,12 @@ module App = {
   @react.component
   let make = () => {
     let (state, dispatch) = React.useReducer(reducer, init)
+
+    React.useEffect0(() => {
+      intelligence->Intelligence_Intf.listen(response => Js.Console.log(("Got response", response)))
+      None
+    })
+
     let focused = state->State.focused
     let toolbarActive = focused->Option.isSome
     let selection =

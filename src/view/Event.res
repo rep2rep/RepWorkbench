@@ -343,3 +343,5 @@ let dispatch = (state, t) =>
     ->Option.getWithDefault(state)
   | File(ev) => File.dispatch(state, ev)
   }
+
+let shouldTriggerIntelligence = _ => true // TODO
