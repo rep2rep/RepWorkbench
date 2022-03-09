@@ -1,4 +1,6 @@
 module App = {
+  module BoolStore = LocalStorage.MakeJsonable(Bool)
+
   type state = State.t
   type action = Event.t
 
@@ -227,6 +229,20 @@ module App = {
       ("Ctrl+d", (e, ~x as _, ~y as _) => duplicateNodes(e)),
     ])
 
+    let (showGrid, setShowGrid) = React.useState(_ => {
+      BoolStore.get("REP-SHOW-GRID")->Or_error.getWithDefault(false)
+    })
+
+    let toggleGrid = _ => {
+      if showGrid {
+        BoolStore.set("REP-SHOW-GRID", false)
+        setShowGrid(_ => false)
+      } else {
+        BoolStore.set("REP-SHOW-GRID", true)
+        setShowGrid(_ => true)
+      }
+    }
+
     <main
       style={ReactDOM.Style.make(
         ~display="flex",
@@ -300,6 +316,16 @@ module App = {
           <Button.Separator />
           <Button onClick={deleteNodes} value="Delete" enabled={toolbarActive} />
           <Button.Separator />
+          <label htmlFor="gridToggle"> {React.string("Grid")} </label>
+          <input
+            type_="checkbox"
+            label="gridToggle"
+            onChange={toggleGrid}
+            disabled={!toolbarActive}
+            checked={showGrid}
+            style={ReactDOM.Style.make(~marginLeft="0.5em", ())}
+          />
+          <Button.Separator />
           <a href="manual.html" target="_blank"> {React.string("Manual")} </a>
         </div>
         <div
@@ -325,6 +351,7 @@ module App = {
             onSelectionChange={selectionChange}
             onNodePositionChange={movedNodes}
             keybindings={keybindings}
+            showGrid
             style={ReactDOM.Style.make(~flexGrow="1", ())}
           />
           <InspectorPanel
