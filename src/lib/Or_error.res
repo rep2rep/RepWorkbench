@@ -44,6 +44,12 @@ let map = (t, f) =>
   | Err(e) => Err(e)
   }
 
+let iter = (t, f) =>
+  switch t {
+  | Ok(a, _) => f(a)
+  | Err(_) => ()
+  }
+
 let flatMap = (t, f) =>
   switch t {
   | Ok(a, tags) => f(a)->pretag(tags)

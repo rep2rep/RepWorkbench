@@ -43,6 +43,7 @@ let throwIfError: t<'a> => t<'a>
 let map: (t<'a>, 'a => 'b) => t<'b>
 let flatMap: (t<'a>, 'a => t<'b>) => t<'b>
 let flatten: t<t<'a>> => t<'a>
+let iter: (t<'a>, 'a => unit) => unit
 
 let all: list<t<'a>> => t<list<'a>>
 let allUnit: list<t<unit>> => t<unit>
