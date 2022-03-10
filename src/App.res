@@ -255,7 +255,6 @@ module App = {
           ~display="flex",
           ~flexDirection="column",
           ~height="100%",
-          ~maxWidth="calc(100% - 230px)",
           (),
         )}>
         <div
@@ -273,21 +272,15 @@ module App = {
           <Button onClick={redo} value="Redo" enabled={canRedo} />
           <Button.Separator />
           <Button
-            onClick={addRepNodeAt(_, ~x=0., ~y=0.)}
-            value="Representation Node"
-            enabled={toolbarActive}
+            onClick={addRepNodeAt(_, ~x=0., ~y=0.)} value="Representation" enabled={toolbarActive}
           />
+          <Button onClick={addSchNodeAt(_, ~x=0., ~y=0.)} value="Scheme" enabled={toolbarActive} />
           <Button
-            onClick={addSchNodeAt(_, ~x=0., ~y=0.)} value="Scheme Node" enabled={toolbarActive}
+            onClick={addDimNodeAt(_, ~x=0., ~y=0.)} value="Dimension" enabled={toolbarActive}
           />
+          <Button onClick={addTokNodeAt(_, ~x=0., ~y=0.)} value="Token" enabled={toolbarActive} />
           <Button
-            onClick={addDimNodeAt(_, ~x=0., ~y=0.)} value="Dimension Node" enabled={toolbarActive}
-          />
-          <Button
-            onClick={addTokNodeAt(_, ~x=0., ~y=0.)} value="Token Node" enabled={toolbarActive}
-          />
-          <Button
-            onClick={addPlcNodeAt(_, ~x=0., ~y=0.)} value="Placeholder Node" enabled={toolbarActive}
+            onClick={addPlcNodeAt(_, ~x=0., ~y=0.)} value="Placeholder" enabled={toolbarActive}
           />
           <Button.Separator />
           <Button onClick={duplicateNodes} value="Duplicate" enabled={toolbarActive} />
