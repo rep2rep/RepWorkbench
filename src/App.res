@@ -255,6 +255,7 @@ module App = {
           ~display="flex",
           ~flexDirection="column",
           ~height="100%",
+          ~maxWidth="calc(100% - 230px)",
           (),
         )}>
         <div
