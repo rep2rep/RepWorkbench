@@ -1,7 +1,7 @@
 @@warning("-30")
 
 type rec representation = {
-  uuid: Uuid.t,
+  uuid: Gid.t,
   domain: string,
   display: Graphic.t,
   tokens: list<token>,
@@ -10,7 +10,7 @@ type rec representation = {
   subrepresentations: list<representation>,
 }
 and scheme = {
-  uuid: Uuid.t,
+  uuid: Gid.t,
   concept_structure: string,
   graphic_structure: option<Graphic.t>,
   function: Function.t,
@@ -22,7 +22,7 @@ and scheme = {
   organisation: string,
 }
 and dimension = {
-  uuid: Uuid.t,
+  uuid: Gid.t,
   concept: string,
   concept_scale: Quantity_scale.t,
   concept_attributes: list<Concept_attribute.t>,
@@ -37,7 +37,7 @@ and dimension = {
   organisation: string,
 }
 and token = {
-  uuid: Uuid.t,
+  uuid: Gid.t,
   concept: string,
   graphic: option<Graphic.t>,
   is_class: bool,
@@ -57,62 +57,62 @@ type schema =
 
 type fromJsonHelper = (
   Js.Dict.t<Js.Json.t>,
-  Uuid.t,
-  Uuid.Map.t<representation>,
-  Uuid.Map.t<scheme>,
-  Uuid.Map.t<dimension>,
-  Uuid.Map.t<token>,
+  Gid.t,
+  Gid.Map.t<representation>,
+  Gid.Map.t<scheme>,
+  Gid.Map.t<dimension>,
+  Gid.Map.t<token>,
 ) => Or_error.t<(
-  Uuid.Map.t<representation>,
-  Uuid.Map.t<scheme>,
-  Uuid.Map.t<dimension>,
-  Uuid.Map.t<token>,
+  Gid.Map.t<representation>,
+  Gid.Map.t<scheme>,
+  Gid.Map.t<dimension>,
+  Gid.Map.t<token>,
 )>
 
 module type S = {
   type t
-  let uuid: t => Uuid.t
+  let uuid: t => Gid.t
   let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
 
-  let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
+  let _toJsonHelper: (t, Gid.Set.t) => (list<(Gid.t, Js.Json.t)>, Gid.Set.t)
   let _fromJsonHelper: fromJsonHelper
 }
 
 let collapse: (
   list<'a>,
-  list<(Uuid.t, Js.Json.t)>,
-  Uuid.Set.t,
-  'a => Uuid.t,
-  ('a, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t),
-) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t) = (lst, jsons, idxs, getUuid, toJsonHelper) =>
+  list<(Gid.t, Js.Json.t)>,
+  Gid.Set.t,
+  'a => Gid.t,
+  ('a, Gid.Set.t) => (list<(Gid.t, Js.Json.t)>, Gid.Set.t),
+) => (list<(Gid.t, Js.Json.t)>, Gid.Set.t) = (lst, jsons, idxs, getGid, toJsonHelper) =>
   List.reduce(lst, (jsons, idxs), ((json, ids), t') => {
-    if Uuid.Set.has(ids, getUuid(t')) {
+    if Gid.Set.has(ids, getGid(t')) {
       (json, ids)
     } else {
       let (json', ids') = toJsonHelper(t', ids)
-      (List.concat(json, json'), Uuid.Set.union(ids, ids'))
+      (List.concat(json, json'), Gid.Set.union(ids, ids'))
     }
   })
 
 let recurse: (
-  Or_error.t<list<Uuid.t>>,
+  Or_error.t<list<Gid.t>>,
   (
     Js.Dict.t<Js.Json.t>,
-    Uuid.t,
-    Uuid.Map.t<'rep>,
-    Uuid.Map.t<'sch>,
-    Uuid.Map.t<'dim>,
-    Uuid.Map.t<'tok>,
-  ) => Or_error.t<(Uuid.Map.t<'rep>, Uuid.Map.t<'sch>, Uuid.Map.t<'dim>, Uuid.Map.t<'tok>)>,
+    Gid.t,
+    Gid.Map.t<'rep>,
+    Gid.Map.t<'sch>,
+    Gid.Map.t<'dim>,
+    Gid.Map.t<'tok>,
+  ) => Or_error.t<(Gid.Map.t<'rep>, Gid.Map.t<'sch>, Gid.Map.t<'dim>, Gid.Map.t<'tok>)>,
   Js.Dict.t<Js.Json.t>,
   schema,
-  Uuid.Map.t<'rep>,
-  Uuid.Map.t<'sch>,
-  Uuid.Map.t<'dim>,
-  Uuid.Map.t<'tok>,
-) => Or_error.t<(Uuid.Map.t<'rep>, Uuid.Map.t<'sch>, Uuid.Map.t<'dim>, Uuid.Map.t<'tok>)> = (
+  Gid.Map.t<'rep>,
+  Gid.Map.t<'sch>,
+  Gid.Map.t<'dim>,
+  Gid.Map.t<'tok>,
+) => Or_error.t<(Gid.Map.t<'rep>, Gid.Map.t<'sch>, Gid.Map.t<'dim>, Gid.Map.t<'tok>)> = (
   lst,
   fromJsonHelper,
   global_dict,
@@ -136,10 +136,10 @@ let recurse: (
       }
       maps->Or_error.flatMap(((representations, schemes, dimensions, tokens)) => {
         let alreadyExists = switch schema {
-        | Representation => representations->Uuid.Map.has(uuid)
-        | Scheme => schemes->Uuid.Map.has(uuid)
-        | Dimension => dimensions->Uuid.Map.has(uuid)
-        | Token => tokens->Uuid.Map.has(uuid)
+        | Representation => representations->Gid.Map.has(uuid)
+        | Scheme => schemes->Gid.Map.has(uuid)
+        | Dimension => dimensions->Gid.Map.has(uuid)
+        | Token => tokens->Gid.Map.has(uuid)
         }
         if alreadyExists {
           Or_error.create((representations, schemes, dimensions, tokens))
@@ -147,10 +147,10 @@ let recurse: (
           global_dict
           ->fromJsonHelper(uuid, representations, schemes, dimensions, tokens)
           ->Or_error.map(((representations', schemes', dimensions', tokens')) => (
-            Uuid.Map.merge(representations, representations', keep_fst),
-            Uuid.Map.merge(schemes, schemes', keep_fst),
-            Uuid.Map.merge(dimensions, dimensions', keep_fst),
-            Uuid.Map.merge(tokens, tokens', keep_fst),
+            Gid.Map.merge(representations, representations', keep_fst),
+            Gid.Map.merge(schemes, schemes', keep_fst),
+            Gid.Map.merge(dimensions, dimensions', keep_fst),
+            Gid.Map.merge(tokens, tokens', keep_fst),
           ))
         }
       })

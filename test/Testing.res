@@ -1,5 +1,3 @@
-open Belt
-
 @val external print: 'a => unit = "process.stdout.write"
 
 module Test = {

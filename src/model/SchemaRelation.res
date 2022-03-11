@@ -37,8 +37,8 @@ let kind = t => t.kind
 
 let toJson = t =>
   Js.Dict.fromList(list{
-    ("first", t.first->Schema.uuid->Uuid.toJson),
-    ("second", t.second->Schema.uuid->Uuid.toJson),
+    ("first", t.first->Schema.uuid->Gid.toJson),
+    ("second", t.second->Schema.uuid->Gid.toJson),
     ("kind", t.kind->Kind.toJson),
   })->Js.Json.object_
 
@@ -50,20 +50,20 @@ let fromJson = (json, root) =>
       dict
       ->Js.Dict.get("first")
       ->Or_error.fromOption_s("Unable to find first part of schema relation")
-      ->Or_error.flatMap(Uuid.fromJson)
+      ->Or_error.flatMap(Gid.fromJson)
       ->Or_error.flatMap(uuid =>
         root
-        ->Schema.findByUuid(uuid)
+        ->Schema.findByGid(uuid)
         ->Or_error.fromOption_s("First part of schema relation is not in supplied model")
       )
     let second =
       dict
       ->Js.Dict.get("second")
       ->Or_error.fromOption_s("Unable to find second part of schema relation")
-      ->Or_error.flatMap(Uuid.fromJson)
+      ->Or_error.flatMap(Gid.fromJson)
       ->Or_error.flatMap(uuid =>
         root
-        ->Schema.findByUuid(uuid)
+        ->Schema.findByGid(uuid)
         ->Or_error.fromOption_s("First part of schema relation is not in supplied model")
       )
 

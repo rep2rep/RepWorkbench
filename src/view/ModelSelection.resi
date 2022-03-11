@@ -1,11 +1,11 @@
 type t = ReactD3Graph.Graph.Selection.t
 
-let duplicate: (t, Uuid.Map.t<Uuid.t>) => t
+let duplicate: (t, Gid.Map.t<Gid.t>) => t
 
 let empty: t
-let ofNodes: array<Uuid.t> => t
+let ofNodes: array<Gid.t> => t
 
-let nodes: t => array<Uuid.t>
+let nodes: t => array<Gid.t>
 let links: t => array<ReactD3Graph.Link.Id.t>
 
 module Stable: {

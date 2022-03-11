@@ -85,16 +85,16 @@ let create = (~source, ~target, kind) => {
   | Kind.Relation => Config.relation
   }
   ReactD3Graph.Link.create(
-    ~source=source->ModelNode.id->Uuid.toString->ReactD3Graph.Node.Id.ofString,
-    ~target=target->ModelNode.id->Uuid.toString->ReactD3Graph.Node.Id.ofString,
+    ~source=source->ModelNode.id->Gid.toString->ReactD3Graph.Node.Id.ofString,
+    ~target=target->ModelNode.id->Gid.toString->ReactD3Graph.Node.Id.ofString,
     ~payload=Payload.create(kind),
     ~config,
     (),
   )
 }
 
-let source = t => t->ReactD3Graph.Link.source->ReactD3Graph.Node.Id.toString->Uuid.fromString
-let target = t => t->ReactD3Graph.Link.target->ReactD3Graph.Node.Id.toString->Uuid.fromString
+let source = t => t->ReactD3Graph.Link.source->ReactD3Graph.Node.Id.toString->Gid.fromString
+let target = t => t->ReactD3Graph.Link.target->ReactD3Graph.Node.Id.toString->Gid.fromString
 let id = t => t->ReactD3Graph.Link.id
 let payload = t => t->ReactD3Graph.Link.payload
 let kind = t => t->payload->Option.getWithDefault(Kind.Hierarchy)
@@ -105,8 +105,8 @@ module Stable = {
 
     let toJson = t =>
       Js.Dict.fromList(list{
-        ("source", source(t)->Uuid.toJson),
-        ("target", target(t)->Uuid.toJson),
+        ("source", source(t)->Gid.toJson),
+        ("target", target(t)->Gid.toJson),
         ("id", id(t)->Option.map(ReactD3Graph.Link.Id.toString)->Option.toJson(String.toJson)),
         ("payload", payload(t)->Option.toJson(Payload.Stable.V1.toJson)),
       })->Js.Json.object_
@@ -121,8 +121,8 @@ module Stable = {
           ->Js.Dict.get(key)
           ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
           ->Or_error.flatMap(reader)
-        let source = getValue("source", Uuid.fromJson)
-        let target = getValue("target", Uuid.fromJson)
+        let source = getValue("source", Gid.fromJson)
+        let target = getValue("target", Gid.fromJson)
         let id = getValue("id", json =>
           json
           ->Option.fromJson(String.fromJson)
@@ -136,8 +136,8 @@ module Stable = {
           id,
           payload,
         )) => {
-          let source = source->Uuid.toString->ReactD3Graph.Node.Id.ofString
-          let target = target->Uuid.toString->ReactD3Graph.Node.Id.ofString
+          let source = source->Gid.toString->ReactD3Graph.Node.Id.ofString
+          let target = target->Gid.toString->ReactD3Graph.Node.Id.ofString
           let payload = payload->Option.getWithDefault(Kind.Hierarchy)
           let config = switch payload {
           | Kind.Hierarchy => Config.hierarchy

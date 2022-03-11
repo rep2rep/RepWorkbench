@@ -148,5 +148,5 @@ module Model: {
 type t =
   | Empty
   | Global(Model.t)
-  | Multiple(array<(Uuid.t, Schema.t)>)
-  | Single(Uuid.t, Schema.t)
+  | Multiple(array<(Gid.t, Schema.t)>)
+  | Single(Gid.t, Schema.t)

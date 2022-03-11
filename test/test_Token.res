@@ -13,7 +13,7 @@ let json = %raw(`{
 }}`)
 
 let t = {
-  Schema.Token.uuid: Uuid.fromString("1"),
+  Schema.Token.uuid: Gid.fromString("1"),
   concept: "Some concept",
   graphic: Some("Graphic reference"),
   is_class: false,

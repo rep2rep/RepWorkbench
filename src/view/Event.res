@@ -1,13 +1,13 @@
 module File = {
   type t =
-    | NewModel(Uuid.t)
-    | DeleteModel(Uuid.t)
-    | FocusModel(option<Uuid.t>)
-    | DuplicateModel(Uuid.t, Uuid.t)
+    | NewModel(Gid.t)
+    | DeleteModel(Gid.t)
+    | FocusModel(option<Gid.t>)
+    | DuplicateModel(Gid.t, Gid.t)
     | ImportModel(State.Model.t)
-    | ReorderModels(array<Uuid.t>)
-    | Undo(Uuid.t)
-    | Redo(Uuid.t)
+    | ReorderModels(array<Gid.t>)
+    | Undo(Gid.t)
+    | Redo(Gid.t)
 
   let dispatch = (state, t) =>
     switch t {
@@ -171,12 +171,12 @@ module Graph = {
 
   type rec t =
     | AddNode(ModelNode.t)
-    | UpdateNode(Uuid.t, Node.t)
-    | DeleteNode(Uuid.t)
-    | DuplicateNodes(Uuid.Map.t<Uuid.t>)
-    | MoveNode(Uuid.t, float, float)
-    | LinkNodes(Uuid.t, Uuid.t, ModelLink.Kind.t)
-    | UnlinkNodes(Uuid.t, Uuid.t)
+    | UpdateNode(Gid.t, Node.t)
+    | DeleteNode(Gid.t)
+    | DuplicateNodes(Gid.Map.t<Gid.t>)
+    | MoveNode(Gid.t, float, float)
+    | LinkNodes(Gid.t, Gid.t, ModelLink.Kind.t)
+    | UnlinkNodes(Gid.t, Gid.t)
     | SetSelection(ModelSelection.t)
     | Seq(array<t>)
 
@@ -222,11 +222,11 @@ module Model = {
   type rec t =
     | Rename(string)
     | SetNotes(string)
-    | CreateNode(Uuid.t, float, float, ModelNode.Kind.t)
-    | DeleteNode(Uuid.t)
-    | DuplicateNodes(Uuid.Map.t<Uuid.t>)
+    | CreateNode(Gid.t, float, float, ModelNode.Kind.t)
+    | DeleteNode(Gid.t)
+    | DuplicateNodes(Gid.Map.t<Gid.t>)
     | Graph(Graph.t)
-    | Slots(Uuid.t, Slots.t)
+    | Slots(Gid.t, Slots.t)
     | Seq(array<t>)
 
   let rec dispatch = (state, t) =>
@@ -246,23 +246,23 @@ module Model = {
         let reference = InspectorState.Schema.reference(slots)
         let node = ModelNode.create(~name, ~reference, ~x, ~y, kind, id)
         let graph = state->State.Model.graph->Graph.dispatch(Graph.AddNode(node))
-        let allSlots = state->State.Model.slots->Uuid.Map.set(id, slots)
+        let allSlots = state->State.Model.slots->Gid.Map.set(id, slots)
         state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
       }
     | DeleteNode(id) => {
         let graph = state->State.Model.graph->Graph.dispatch(Graph.DeleteNode(id))
-        let allSlots = state->State.Model.slots->Uuid.Map.remove(id)
+        let allSlots = state->State.Model.slots->Gid.Map.remove(id)
         state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
       }
     | DuplicateNodes(idMap) => {
         let graph = state->State.Model.graph->Graph.dispatch(Graph.DuplicateNodes(idMap))
         let allSlots =
           idMap
-          ->Uuid.Map.toArray
+          ->Gid.Map.toArray
           ->Array.reduce(state->State.Model.slots, (slots, (oldId, newId)) => {
             slots
-            ->Uuid.Map.get(oldId)
-            ->Option.map(s => slots->Uuid.Map.set(newId, s))
+            ->Gid.Map.get(oldId)
+            ->Option.map(s => slots->Gid.Map.set(newId, s))
             ->Option.getWithDefault(slots)
           })
         state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
@@ -273,9 +273,9 @@ module Model = {
       }
     | Slots(id, ev) => {
         let slots = state->State.Model.slots
-        let s = slots->Uuid.Map.get(id)
+        let s = slots->Gid.Map.get(id)
         let s' = s->Option.map(Slots.dispatch(_, ev))
-        let slots' = s'->Option.map(s' => slots->Uuid.Map.set(id, s'))->Option.getWithDefault(slots)
+        let slots' = s'->Option.map(s' => slots->Gid.Map.set(id, s'))->Option.getWithDefault(slots)
         state->State.Model.updateSlots(slots')
       }
     }
@@ -331,7 +331,7 @@ module Model = {
 }
 
 type t =
-  | Model(Uuid.t, Model.t)
+  | Model(Gid.t, Model.t)
   | File(File.t)
 
 let dispatch = (state, t) =>

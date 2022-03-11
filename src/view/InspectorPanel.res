@@ -431,7 +431,7 @@ module Model = {
 @react.component
 let make = (~id, ~data, ~onChange=?) => {
   let onChange = onChange->Option.getWithDefault(_ => ())
-  <HideablePanel
+  <HideablePanel2
     id
     className="inspector-panel"
     toggle={(~hidden) =>
@@ -514,5 +514,5 @@ let make = (~id, ~data, ~onChange=?) => {
         />
       }
     }}
-  </HideablePanel>
+  </HideablePanel2>
 }

@@ -88,14 +88,14 @@ module Stable = {
 let duplicate = (t, newIdMap) => {
   let nodes =
     t.nodes->Array.map(node =>
-      node->ModelNode.dupWithNewId(newIdMap->Uuid.Map.get(ModelNode.id(node))->Option.getExn)
+      node->ModelNode.dupWithNewId(newIdMap->Gid.Map.get(ModelNode.id(node))->Option.getExn)
     )
   {
     nodes: nodes,
     links: t.links->Array.map(link => {
-      let sourceId = newIdMap->Uuid.Map.get(ModelLink.source(link))->Option.getExn
+      let sourceId = newIdMap->Gid.Map.get(ModelLink.source(link))->Option.getExn
       let source = nodes->Array.find(node => ModelNode.id(node) == sourceId)->Option.getExn
-      let targetId = newIdMap->Uuid.Map.get(ModelLink.target(link))->Option.getExn
+      let targetId = newIdMap->Gid.Map.get(ModelLink.target(link))->Option.getExn
       let target = nodes->Array.find(node => ModelNode.id(node) == targetId)->Option.getExn
       let kind = ModelLink.kind(link)
       ModelLink.create(~source, ~target, kind)
