@@ -29,8 +29,9 @@ module Row = {
 
 module Label = {
   @react.component
-  let make = (~htmlFor=?, ~children) => {
-    <label style={ReactDOM.Style.make(~fontSize="small", ~marginRight="0.5rem", ())} ?htmlFor>
+  let make = (~htmlFor=?, ~help as title=?, ~children) => {
+    <label
+      style={ReactDOM.Style.make(~fontSize="small", ~marginRight="0.5rem", ())} ?htmlFor ?title>
       {children}
     </label>
   }
