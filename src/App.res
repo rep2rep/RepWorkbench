@@ -268,30 +268,51 @@ module App = {
             ~padding="0 0.5rem",
             (),
           )}>
-          <Button onClick={undo} value="Undo" enabled={canUndo} />
-          <Button onClick={redo} value="Redo" enabled={canRedo} />
+          <Button onClick={undo} value="Undo" enabled={canUndo} tooltip="Cmd+Z" />
+          <Button onClick={redo} value="Redo" enabled={canRedo} tooltip="Cmd+Shift+Z" />
           <Button.Separator />
           <Button
-            onClick={addRepNodeAt(_, ~x=0., ~y=0.)} value="Representation" enabled={toolbarActive}
+            onClick={addRepNodeAt(_, ~x=0., ~y=0.)}
+            value="Representation"
+            enabled={toolbarActive}
+            tooltip="R"
           />
-          <Button onClick={addSchNodeAt(_, ~x=0., ~y=0.)} value="Scheme" enabled={toolbarActive} />
           <Button
-            onClick={addDimNodeAt(_, ~x=0., ~y=0.)} value="Dimension" enabled={toolbarActive}
+            onClick={addSchNodeAt(_, ~x=0., ~y=0.)}
+            value="Scheme"
+            enabled={toolbarActive}
+            tooltip="S"
           />
-          <Button onClick={addTokNodeAt(_, ~x=0., ~y=0.)} value="Token" enabled={toolbarActive} />
           <Button
-            onClick={addPlcNodeAt(_, ~x=0., ~y=0.)} value="Placeholder" enabled={toolbarActive}
+            onClick={addDimNodeAt(_, ~x=0., ~y=0.)}
+            value="Dimension"
+            enabled={toolbarActive}
+            tooltip="D"
+          />
+          <Button
+            onClick={addTokNodeAt(_, ~x=0., ~y=0.)}
+            value="Token"
+            enabled={toolbarActive}
+            tooltip="T"
+          />
+          <Button
+            onClick={addPlcNodeAt(_, ~x=0., ~y=0.)}
+            value="Placeholder"
+            enabled={toolbarActive}
+            tooltip="Q"
           />
           <Button.Separator />
-          <Button onClick={duplicateNodes} value="Duplicate" enabled={toolbarActive} />
+          <Button
+            onClick={duplicateNodes} value="Duplicate" enabled={toolbarActive} tooltip="Ctrl+D"
+          />
           <Button.Separator />
-          <Button onClick={connectNodes} value="Connect" enabled={toolbarActive} />
-          <Button onClick={anchorNodes} value="Anchor" enabled={toolbarActive} />
-          <Button onClick={relateNodes} value="Relate" enabled={toolbarActive} />
+          <Button onClick={connectNodes} value="Connect" enabled={toolbarActive} tooltip="C" />
+          <Button onClick={anchorNodes} value="Anchor" enabled={toolbarActive} tooltip="A" />
+          <Button onClick={relateNodes} value="Relate" enabled={toolbarActive} tooltip="E" />
           <Button.Separator />
-          <Button onClick={unlinkNodes} value="Unlink" enabled={toolbarActive} />
+          <Button onClick={unlinkNodes} value="Unlink" enabled={toolbarActive} tooltip="V" />
           <Button.Separator />
-          <Button onClick={deleteNodes} value="Delete" enabled={toolbarActive} />
+          <Button onClick={deleteNodes} value="Delete" enabled={toolbarActive} tooltip="Delete" />
           <Button.Separator />
           <label htmlFor="gridToggle"> {React.string("Grid")} </label>
           <input
