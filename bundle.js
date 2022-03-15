@@ -15,6 +15,8 @@ const cfg = {
   bundle: true,
   minify: mode === "release",
   sourcemap: mode !== "release",
+  target: 'es2020',
+  format: 'iife',
   treeShaking: true,
 };
 
