@@ -5,19 +5,33 @@ module App = {
   type action = Event.t
 
   let intelligence = Intelligence_Intf.create("worker.js")
+  let sendToIntelligence = state =>
+    state
+    ->State.focused
+    ->Option.iter(focused =>
+      state
+      ->State.model(focused)
+      ->Option.iter(model => {
+        let slots = State.Model.slots(model)
+        let links =
+          State.Model.graph(model)
+          ->ModelState.graph
+          ->ModelGraph.links
+          ->Array.map(link => (
+            ModelLink.source(link),
+            ModelLink.target(link),
+            ModelLink.kind(link),
+          ))
+        intelligence->Intelligence_Intf.post({slots: slots, links: links})
+      })
+    )
 
   let init = State.load()->Option.getWithDefault(State.empty)
   let reducer = (state, action) => {
     let newState = Event.dispatch(state, action)
     State.store(newState)
     if Event.shouldTriggerIntelligence(action) {
-      newState
-      ->State.focused
-      ->Option.iter(focused =>
-        newState
-        ->State.model(focused)
-        ->Option.iter(model => intelligence->Intelligence_Intf.post(model))
-      )
+      sendToIntelligence(newState)
     }
     newState
   }
@@ -44,6 +58,7 @@ module App = {
 
     React.useEffect0(() => {
       intelligence->Intelligence_Intf.listen(response => Js.Console.log(("Got response", response)))
+      sendToIntelligence(state)
       None
     })
 

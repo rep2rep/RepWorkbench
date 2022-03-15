@@ -1,5 +1,8 @@
 module Request: {
-  type t = State.Model.t
+  type t = {
+    slots: Gid.Map.t<InspectorState.Schema.t>,
+    links: array<(Gid.t, Gid.t, ModelLink.Kind.t)>,
+  }
 }
 
 module Response: {
