@@ -48,9 +48,9 @@ module Stable = {
 let duplicate = (t, newIdMap) => {
   nodes: t.nodes->Array.map(id =>
     newIdMap
-    ->Uuid.Map.get(ReactD3Graph.Node.Id.toString(id)->Uuid.fromString)
+    ->Gid.Map.get(ReactD3Graph.Node.Id.toString(id)->Gid.fromString)
     ->Option.getExn
-    ->Uuid.toString
+    ->Gid.toString
     ->ReactD3Graph.Node.Id.ofString
   ),
   links: [], // Links are hard! So we ignore them :)
@@ -60,10 +60,10 @@ let empty = ReactD3Graph.Graph.Selection.empty
 
 let ofNodes = nodeIds => {
   ReactD3Graph.Graph.Selection.nodes: nodeIds->Array.map(id =>
-    id->Uuid.toString->ReactD3Graph.Node.Id.ofString
+    id->Gid.toString->ReactD3Graph.Node.Id.ofString
   ),
   links: [],
 }
 
-let nodes = t => t.nodes->Array.map(id => id->ReactD3Graph.Node.Id.toString->Uuid.fromString)
+let nodes = t => t.nodes->Array.map(id => id->ReactD3Graph.Node.Id.toString->Gid.fromString)
 let links = t => t.links

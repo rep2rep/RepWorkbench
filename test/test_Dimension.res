@@ -18,7 +18,7 @@ let json = %raw(`{
 }`)
 
 let d = {
-  Schema.Dimension.uuid: Uuid.fromString("2"),
+  Schema.Dimension.uuid: Gid.fromString("2"),
   concept: "Concept",
   concept_scale: Quantity_scale.Interval,
   concept_attributes: list{"attribute"},

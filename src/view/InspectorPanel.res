@@ -1,3 +1,15 @@
+let boolToStringYN = b =>
+  switch b {
+  | true => "Yes"
+  | false => "No"
+  }
+let boolFromStringYN = s =>
+  switch s {
+  | "Yes" => Some(true)
+  | "No" => Some(false)
+  | _ => None
+  }
+
 module Row = {
   @react.component
   let make = (~children) => {
@@ -17,8 +29,9 @@ module Row = {
 
 module Label = {
   @react.component
-  let make = (~htmlFor=?, ~children) => {
-    <label style={ReactDOM.Style.make(~fontSize="small", ~marginRight="0.5rem", ())} ?htmlFor>
+  let make = (~htmlFor=?, ~help as title=?, ~children) => {
+    <label
+      style={ReactDOM.Style.make(~fontSize="small", ~marginRight="0.5rem", ())} ?htmlFor ?title>
       {children}
     </label>
   }
@@ -165,13 +178,13 @@ module Scheme = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-sch-explicit"> {React.string("Explicit")} </Label>
+        <Label htmlFor="inspector-sch-explicit"> {React.string("Explicit?")} </Label>
         <Selector
           name="inspector-sch-explicit"
           options={[true, false]}
           current={slots.explicit}
-          toString={Bool.toString}
-          fromString={Bool.fromString}
+          toString={boolToStringYN}
+          fromString={boolFromStringYN}
           onChange={e => onChange(Event.Slots.Scheme.Explicit(e))}
         />
       </Row>
@@ -262,13 +275,13 @@ module Dimension = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-dim-explicit"> {React.string("Explicit")} </Label>
+        <Label htmlFor="inspector-dim-explicit"> {React.string("Explicit?")} </Label>
         <Selector
           name="inspector-dim-explicit"
           options={[true, false]}
           current={slots.explicit}
-          toString={Bool.toString}
-          fromString={Bool.fromString}
+          toString={boolToStringYN}
+          fromString={boolFromStringYN}
           onChange={e => onChange(Event.Slots.Dimension.Explicit(e))}
         />
       </Row>
@@ -322,13 +335,13 @@ module Token = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-tok-class"> {React.string("Is class")} </Label>
+        <Label htmlFor="inspector-tok-class"> {React.string("Is class?")} </Label>
         <Selector
           name="inspector-tok-class"
           options={[true, false]}
           current={slots.is_class}
-          toString={Bool.toString}
-          fromString={Bool.fromString}
+          toString={boolToStringYN}
+          fromString={boolFromStringYN}
           onChange={e => onChange(Event.Slots.Token.Is_class(e))}
         />
       </Row>
@@ -344,13 +357,13 @@ module Token = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-tok-explicit"> {React.string("Explicit")} </Label>
+        <Label htmlFor="inspector-tok-explicit"> {React.string("Explicit?")} </Label>
         <Selector
           name="inspector-tok-explicit"
           options={[true, false]}
           current={slots.explicit}
-          toString={Bool.toString}
-          fromString={Bool.fromString}
+          toString={boolToStringYN}
+          fromString={boolFromStringYN}
           onChange={e => onChange(Event.Slots.Token.Explicit(e))}
         />
       </Row>
@@ -384,17 +397,8 @@ module Placeholder = {
           name="inspector-placeholder-intensional"
           options={[true, false]}
           current={slots.isIntensional}
-          toString={b =>
-            switch b {
-            | true => "Yes"
-            | false => "No"
-            }}
-          fromString={s =>
-            switch s {
-            | "Yes" => Some(true)
-            | "No" => Some(false)
-            | _ => None
-            }}
+          toString={boolToStringYN}
+          fromString={boolFromStringYN}
           onChange={e => onChange(Event.Slots.Placeholder.IsIntensional(e))}
         />
       </Row>
@@ -431,7 +435,7 @@ module Model = {
 @react.component
 let make = (~id, ~data, ~onChange=?) => {
   let onChange = onChange->Option.getWithDefault(_ => ())
-  <HideablePanel
+  <HideablePanel2
     id
     className="inspector-panel"
     toggle={(~hidden) =>
@@ -514,5 +518,5 @@ let make = (~id, ~data, ~onChange=?) => {
         />
       }
     }}
-  </HideablePanel>
+  </HideablePanel2>
 }

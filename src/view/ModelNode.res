@@ -605,7 +605,7 @@ module Configs = {
 }
 
 let createSchema = (x, y, payload, config, id) => {
-  let id = id->Uuid.toString->ReactD3Graph.Node.Id.ofString
+  let id = id->Gid.toString->ReactD3Graph.Node.Id.ofString
   ReactD3Graph.Node.create(~id, ~payload, ~config, ~x, ~y, ())
 }
 
@@ -631,9 +631,9 @@ let create = (~name, ~reference, ~x, ~y, kind, id) => {
 }
 
 let dupWithNewId = (t, id) =>
-  ReactD3Graph.Node.setId(t, id->Uuid.toString->ReactD3Graph.Node.Id.ofString)
+  ReactD3Graph.Node.setId(t, id->Gid.toString->ReactD3Graph.Node.Id.ofString)
 
-let id = t => t->ReactD3Graph.Node.id->ReactD3Graph.Node.Id.toString->Uuid.fromString
+let id = t => t->ReactD3Graph.Node.id->ReactD3Graph.Node.Id.toString->Gid.fromString
 let kind = t => t->ReactD3Graph.Node.payload->Option.getExn->Payload.kind
 let position = t => (t->ReactD3Graph.Node.x, t->ReactD3Graph.Node.y)
 let setPosition = (t, ~x, ~y) => t->ReactD3Graph.Node.setX(x)->ReactD3Graph.Node.setY(y)

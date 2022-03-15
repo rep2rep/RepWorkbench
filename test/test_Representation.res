@@ -10,7 +10,7 @@ let json = %raw(`{
 }} `)
 
 let r = {
-  Schema.Representation.uuid: Uuid.fromString("4"),
+  Schema.Representation.uuid: Gid.fromString("4"),
   domain: "The domain",
   display: "Graphic reference",
   tokens: list{},

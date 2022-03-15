@@ -61,9 +61,9 @@ type t
 
 let data: t => array<ReactD3Graph.Node.t<Payload.t>>
 
-let create: (~name: string, ~reference: string, ~x: float, ~y: float, Kind.t, Uuid.t) => t
-let dupWithNewId: (t, Uuid.t) => t
-let id: t => Uuid.t
+let create: (~name: string, ~reference: string, ~x: float, ~y: float, Kind.t, Gid.t) => t
+let dupWithNewId: (t, Gid.t) => t
+let id: t => Gid.t
 let kind: t => Kind.t
 let position: t => (float, float)
 let setPosition: (t, ~x: float, ~y: float) => t

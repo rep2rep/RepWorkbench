@@ -51,8 +51,8 @@ module FileLabel = {
         },
         (),
       )}
-      id={"file-label-" ++ Uuid.toString(id)}
-      key={Uuid.toString(id)}
+      id={"file-label-" ++ Gid.toString(id)}
+      key={Gid.toString(id)}
       className={if active {
         "file-active"
       } else {
@@ -150,7 +150,7 @@ module Template = {
 @react.component
 let make = (
   ~id,
-  ~models: array<(Uuid.t, State.Model.t)>,
+  ~models: array<(Gid.t, State.Model.t)>,
   ~active,
   ~onCreate,
   ~onDelete,
@@ -162,7 +162,7 @@ let make = (
   ~onExport,
 ) => {
   let container = React.useRef(Js.Nullable.null)
-  <HideablePanel
+  <HideablePanel2
     id
     toggle={(~hidden) =>
       <div
@@ -212,7 +212,7 @@ let make = (
       onClick={_ => onSelect(None)}>
       <ReactDraggableList.DraggableList
         items={models}
-        itemKey={((id, _)) => id->Uuid.toString}
+        itemKey={((id, _)) => id->Gid.toString}
         template={Template.make}
         onMoveEnd={(~newList, ~movedItem as _, ~oldIndex as _, ~newIndex as _) =>
           onReorder(newList->Array.map(((id, _)) => id))}
@@ -315,5 +315,5 @@ let make = (
         </label>
       </div>
     </div>
-  </HideablePanel>
+  </HideablePanel2>
 }

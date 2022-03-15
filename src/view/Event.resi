@@ -1,13 +1,13 @@
 module File: {
   type t =
-    | NewModel(Uuid.t)
-    | DeleteModel(Uuid.t)
-    | FocusModel(option<Uuid.t>)
-    | DuplicateModel(Uuid.t, Uuid.t)
+    | NewModel(Gid.t)
+    | DeleteModel(Gid.t)
+    | FocusModel(option<Gid.t>)
+    | DuplicateModel(Gid.t, Gid.t)
     | ImportModel(State.Model.t)
-    | ReorderModels(array<Uuid.t>)
-    | Undo(Uuid.t)
-    | Redo(Uuid.t)
+    | ReorderModels(array<Gid.t>)
+    | Undo(Gid.t)
+    | Redo(Gid.t)
 }
 
 module Slots: {
@@ -81,12 +81,12 @@ module Graph: {
 
   type rec t =
     | AddNode(ModelNode.t)
-    | UpdateNode(Uuid.t, Node.t)
-    | DeleteNode(Uuid.t)
-    | DuplicateNodes(Uuid.Map.t<Uuid.t>)
-    | MoveNode(Uuid.t, float, float)
-    | LinkNodes(Uuid.t, Uuid.t, ModelLink.Kind.t)
-    | UnlinkNodes(Uuid.t, Uuid.t)
+    | UpdateNode(Gid.t, Node.t)
+    | DeleteNode(Gid.t)
+    | DuplicateNodes(Gid.Map.t<Gid.t>)
+    | MoveNode(Gid.t, float, float)
+    | LinkNodes(Gid.t, Gid.t, ModelLink.Kind.t)
+    | UnlinkNodes(Gid.t, Gid.t)
     | SetSelection(ModelSelection.t)
     | Seq(array<t>)
 }
@@ -95,11 +95,11 @@ module Model: {
   type rec t =
     | Rename(string)
     | SetNotes(string)
-    | CreateNode(Uuid.t, float, float, ModelNode.Kind.t)
-    | DeleteNode(Uuid.t)
-    | DuplicateNodes(Uuid.Map.t<Uuid.t>)
+    | CreateNode(Gid.t, float, float, ModelNode.Kind.t)
+    | DeleteNode(Gid.t)
+    | DuplicateNodes(Gid.Map.t<Gid.t>)
     | Graph(Graph.t)
-    | Slots(Uuid.t, Slots.t)
+    | Slots(Gid.t, Slots.t)
     | Seq(array<t>)
 
   // Take what is potentially an event for another "direction"
@@ -108,7 +108,7 @@ module Model: {
 }
 
 type t =
-  | Model(Uuid.t, Model.t)
+  | Model(Gid.t, Model.t)
   | File(File.t)
 
 let dispatch: (State.t, t) => State.t

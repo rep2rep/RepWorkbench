@@ -1,14 +1,14 @@
 @react.component
 let make: (
   ~id: string,
-  ~models: array<(Uuid.t, State.Model.t)>,
-  ~active: option<Uuid.t>,
+  ~models: array<(Gid.t, State.Model.t)>,
+  ~active: option<Gid.t>,
   ~onCreate: unit => unit,
-  ~onDelete: Uuid.t => unit,
-  ~onSelect: option<Uuid.t> => unit,
-  ~onDuplicate: Uuid.t => unit,
-  ~onChangedName: (Uuid.t, string) => unit,
-  ~onReorder: array<Uuid.t> => unit,
+  ~onDelete: Gid.t => unit,
+  ~onSelect: option<Gid.t> => unit,
+  ~onDuplicate: Gid.t => unit,
+  ~onChangedName: (Gid.t, string) => unit,
+  ~onReorder: array<Gid.t> => unit,
   ~onImport: File.t => unit,
-  ~onExport: Uuid.t => unit,
+  ~onExport: Gid.t => unit,
 ) => React.element

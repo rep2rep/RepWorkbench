@@ -4,7 +4,7 @@ module Make = (
   Scheme: Schema_intf.S with type t = Schema_intf.scheme,
 ) => {
   type rec t = Schema_intf.representation = {
-    uuid: Uuid.t,
+    uuid: Gid.t,
     domain: string,
     display: Graphic.t,
     tokens: list<Token.t>,
@@ -20,7 +20,7 @@ module Make = (
       (List.length(t.tokens) > 0 || List.length(t.dimensions) > 0 || List.length(t.schemes) > 0)
         ->Or_error.fromBool_ss([
           "Representation '",
-          Uuid.toString(t.uuid),
+          Gid.toString(t.uuid),
           "' must have at least one token, dimension, or scheme",
         ]),
       t.tokens->List.map(Token.validate)->Or_error.allUnit,
@@ -31,7 +31,7 @@ module Make = (
   }
 
   let rec _toJsonHelper = (t, idxs) => {
-    let idxs0 = Uuid.Set.add(idxs, t.uuid)
+    let idxs0 = Gid.Set.add(idxs, t.uuid)
     let (other_json1, idxs1) =
       t.tokens->Schema_intf.collapse(List.empty, idxs0, Token.uuid, Token._toJsonHelper)
     let (other_json2, idxs2) =
@@ -52,10 +52,10 @@ module Make = (
         Js.Dict.fromList(list{
           ("domain", String.toJson(t.domain)),
           ("display", Graphic.toJson(t.display)),
-          ("tokens", t.tokens->List.map(Token.uuid)->List.toJson(Uuid.toJson)),
-          ("dimensions", t.dimensions->List.map(Dimension.uuid)->List.toJson(Uuid.toJson)),
-          ("schemes", t.schemes->List.map(Scheme.uuid)->List.toJson(Uuid.toJson)),
-          ("subrepresentations", t.subrepresentations->List.map(uuid)->List.toJson(Uuid.toJson)),
+          ("tokens", t.tokens->List.map(Token.uuid)->List.toJson(Gid.toJson)),
+          ("dimensions", t.dimensions->List.map(Dimension.uuid)->List.toJson(Gid.toJson)),
+          ("schemes", t.schemes->List.map(Scheme.uuid)->List.toJson(Gid.toJson)),
+          ("subrepresentations", t.subrepresentations->List.map(uuid)->List.toJson(Gid.toJson)),
         })->Js.Json.object_,
       )),
       idxs4,
@@ -64,10 +64,10 @@ module Make = (
 
   let toJson = t =>
     t
-    ->_toJsonHelper(Uuid.Set.empty)
+    ->_toJsonHelper(Gid.Set.empty)
     ->(((json, _)) => json)
-    ->List.map(((uuid, json)) => (Uuid.toString(uuid), json))
-    ->List.add(("start", Uuid.toJson(t.uuid)))
+    ->List.map(((uuid, json)) => (Gid.toString(uuid), json))
+    ->List.add(("start", Gid.toJson(t.uuid)))
     ->Js.Dict.fromList
     ->Js.Json.object_
 
@@ -80,10 +80,10 @@ module Make = (
     tokens0,
   ) => {
     global_dict
-    ->Js.Dict.get(uuid->Uuid.toString)
-    ->Or_error.fromOption_ss(["Cannot find object matching UUID '", uuid->Uuid.toString, "'"])
+    ->Js.Dict.get(uuid->Gid.toString)
+    ->Or_error.fromOption_ss(["Cannot find object matching UUID '", uuid->Gid.toString, "'"])
     ->Or_error.tag("Reading Schema.Representation.t")
-    ->Or_error.tag(String.concat("Reading UUID ", uuid->Uuid.toString))
+    ->Or_error.tag(String.concat("Reading UUID ", uuid->Gid.toString))
     ->Or_error.flatMap(json =>
       Js.Json.decodeObject(json)
       ->Or_error.fromOption_s("JSON is not a valid object")
@@ -97,11 +97,11 @@ module Make = (
         let domain = get_value("domain", String.fromJson)
         let display = get_value("display", Graphic.fromJson)
 
-        let token_ids = get_value("tokens", j => j->List.fromJson(Uuid.fromJson))
-        let dimension_ids = get_value("dimensions", j => j->List.fromJson(Uuid.fromJson))
-        let scheme_ids = get_value("schemes", j => j->List.fromJson(Uuid.fromJson))
+        let token_ids = get_value("tokens", j => j->List.fromJson(Gid.fromJson))
+        let dimension_ids = get_value("dimensions", j => j->List.fromJson(Gid.fromJson))
+        let scheme_ids = get_value("schemes", j => j->List.fromJson(Gid.fromJson))
         let subrepresentation_ids = get_value("subrepresentations", j =>
-          j->List.fromJson(Uuid.fromJson)
+          j->List.fromJson(Gid.fromJson)
         )
 
         token_ids
@@ -153,9 +153,9 @@ module Make = (
               )
               ->Or_error.flatMap(((representations4, schemes4, dimensions4, tokens4)) => {
                 let uuid_get = (map, uuid) =>
-                  Uuid.Map.get(map, uuid)->Or_error.fromOption_ss([
+                  Gid.Map.get(map, uuid)->Or_error.fromOption_ss([
                     "Unable to find value with UUID '",
-                    Uuid.toString(uuid),
+                    Gid.toString(uuid),
                     "'",
                   ])
 
@@ -211,14 +211,14 @@ module Make = (
                     subrepresentations: subrepresentations,
                   }
                   Or_error.create((
-                    representations4->Uuid.Map.set(uuid, t),
+                    representations4->Gid.Map.set(uuid, t),
                     schemes4,
                     dimensions4,
                     tokens4,
                   ))->Or_error.tag(
                     Js.String2.concat(
                       "Successfully read Representation with UUID ",
-                      uuid->Uuid.toString,
+                      uuid->Gid.toString,
                     ),
                   )
                 })
@@ -238,18 +238,18 @@ module Make = (
         dict
         ->Js.Dict.get("start")
         ->Or_error.fromOption_s("Unable to find start of model (reading Schema.Representation.t)")
-        ->Or_error.flatMap(Uuid.fromJson)
+        ->Or_error.flatMap(Gid.fromJson)
       uuid->Or_error.flatMap(uuid =>
         _fromJsonHelper(
           dict,
           uuid,
-          Uuid.Map.empty(),
-          Uuid.Map.empty(),
-          Uuid.Map.empty(),
-          Uuid.Map.empty(),
+          Gid.Map.empty(),
+          Gid.Map.empty(),
+          Gid.Map.empty(),
+          Gid.Map.empty(),
         )->Or_error.flatMap(((representations, _, _, _)) =>
           representations
-          ->Uuid.Map.get(uuid)
+          ->Gid.Map.get(uuid)
           ->Or_error.fromOption_s("Missing start of model (reading Schema.Representation.t)")
         )
       )

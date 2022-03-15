@@ -206,7 +206,7 @@ let setSelection = (t, selection) => {...t, selection: selection}
 let duplicateNodes = (t, nodeMap) => {
   let newNodes =
     nodeMap
-    ->Uuid.Map.toArray
+    ->Gid.Map.toArray
     ->Array.mapPartial(((oldId, newId)) =>
       t
       ->nodeWithId(oldId)
@@ -217,7 +217,7 @@ let duplicateNodes = (t, nodeMap) => {
         (newId, newNode)
       })
     )
-    ->Uuid.Map.fromArray
+    ->Gid.Map.fromArray
   let newLinks =
     t
     ->graph
@@ -225,15 +225,15 @@ let duplicateNodes = (t, nodeMap) => {
     ->Array.mapPartial(link => {
       let source = ModelLink.source(link)
       let target = ModelLink.target(link)
-      switch (nodeMap->Uuid.Map.get(source), nodeMap->Uuid.Map.get(target)) {
+      switch (nodeMap->Gid.Map.get(source), nodeMap->Gid.Map.get(target)) {
       | (Some(newSource), Some(newTarget)) =>
         ModelLink.create(
-          ~source=newNodes->Uuid.Map.get(newSource)->Option.getExn,
-          ~target=newNodes->Uuid.Map.get(newTarget)->Option.getExn,
+          ~source=newNodes->Gid.Map.get(newSource)->Option.getExn,
+          ~target=newNodes->Gid.Map.get(newTarget)->Option.getExn,
           ModelLink.kind(link),
         )->Some
       | _ => None
       }
     })
-  t->addNodes(newNodes->Uuid.Map.values)->addLinks(newLinks)
+  t->addNodes(newNodes->Gid.Map.values)->addLinks(newLinks)
 }

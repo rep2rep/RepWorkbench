@@ -25,8 +25,8 @@ let data: t => array<ReactD3Graph.Link.t<Payload.t>>
 
 let create: (~source: ModelNode.t, ~target: ModelNode.t, Kind.t) => t
 
-let source: t => Uuid.t
-let target: t => Uuid.t
+let source: t => Gid.t
+let target: t => Gid.t
 let kind: t => Kind.t
 
 module Stable: {

@@ -67,13 +67,13 @@ module App = {
     let undo = _ => focused->Option.iter(focused => dispatch(Event.File.Undo(focused)->Event.File))
     let redo = _ => focused->Option.iter(focused => dispatch(Event.File.Redo(focused)->Event.File))
 
-    let newModel = () => dispatch(Event.File.NewModel(Uuid.create())->Event.File)
+    let newModel = () => dispatch(Event.File.NewModel(Gid.create())->Event.File)
     let deleteModel = id => dispatch(Event.File.DeleteModel(id)->Event.File)
     let focusModel = id => dispatch(Event.File.FocusModel(id)->Event.File)
     let reorder = newOrder => dispatch(Event.File.ReorderModels(newOrder)->Event.File)
     let renameModel = (id, name) => dispatch(Event.Model(id, Event.Model.Rename(name)))
     let duplicateModel = id => {
-      let newId = Uuid.create()
+      let newId = Gid.create()
       dispatch(Event.File.DuplicateModel(id, newId)->Event.File)
     }
 
@@ -83,7 +83,7 @@ module App = {
       dispatchM({
         let oldSelection = selection
         let ids = oldSelection->ModelSelection.nodes
-        let id = Uuid.create()
+        let id = Gid.create()
         let e0 = Event.Model.CreateNode(id, x, y, kind)
         let eLinks = switch ids {
         | [] => []
@@ -130,7 +130,7 @@ module App = {
     }
     let movedNodes = (nodeId, ~x, ~y) =>
       focused->Option.iter(focused => {
-        let nodeId = nodeId->ReactD3Graph.Node.Id.toString->Uuid.fromString
+        let nodeId = nodeId->ReactD3Graph.Node.Id.toString->Gid.fromString
         dispatch(Event.Model(focused, Event.Model.Graph(Event.Graph.MoveNode(nodeId, x, y))))
       })
     let nudge = (_, ~dx, ~dy) => {
@@ -154,8 +154,8 @@ module App = {
     let duplicateNodes = _ => {
       let nodeIds = selection->ModelSelection.nodes
       if nodeIds != [] {
-        let nodeMap = nodeIds->Array.map(id => (id, Uuid.create()))->Uuid.Map.fromArray
-        let newSelection = nodeMap->Uuid.Map.values->ModelSelection.ofNodes
+        let nodeMap = nodeIds->Array.map(id => (id, Gid.create()))->Gid.Map.fromArray
+        let newSelection = nodeMap->Gid.Map.values->ModelSelection.ofNodes
         dispatchM(
           Event.Model.Seq([
             Event.Model.DuplicateNodes(nodeMap),
@@ -285,36 +285,51 @@ module App = {
             ~padding="0 0.5rem",
             (),
           )}>
-          <Button onClick={undo} value="Undo" enabled={canUndo} />
-          <Button onClick={redo} value="Redo" enabled={canRedo} />
+          <Button onClick={undo} value="Undo" enabled={canUndo} tooltip="Cmd+Z" />
+          <Button onClick={redo} value="Redo" enabled={canRedo} tooltip="Cmd+Shift+Z" />
           <Button.Separator />
           <Button
             onClick={addRepNodeAt(_, ~x=0., ~y=0.)}
-            value="Representation Node"
+            value="Representation"
             enabled={toolbarActive}
+            tooltip="R"
           />
           <Button
-            onClick={addSchNodeAt(_, ~x=0., ~y=0.)} value="Scheme Node" enabled={toolbarActive}
+            onClick={addSchNodeAt(_, ~x=0., ~y=0.)}
+            value="Scheme"
+            enabled={toolbarActive}
+            tooltip="S"
           />
           <Button
-            onClick={addDimNodeAt(_, ~x=0., ~y=0.)} value="Dimension Node" enabled={toolbarActive}
+            onClick={addDimNodeAt(_, ~x=0., ~y=0.)}
+            value="Dimension"
+            enabled={toolbarActive}
+            tooltip="D"
           />
           <Button
-            onClick={addTokNodeAt(_, ~x=0., ~y=0.)} value="Token Node" enabled={toolbarActive}
+            onClick={addTokNodeAt(_, ~x=0., ~y=0.)}
+            value="Token"
+            enabled={toolbarActive}
+            tooltip="T"
           />
           <Button
-            onClick={addPlcNodeAt(_, ~x=0., ~y=0.)} value="Placeholder Node" enabled={toolbarActive}
+            onClick={addPlcNodeAt(_, ~x=0., ~y=0.)}
+            value="Placeholder"
+            enabled={toolbarActive}
+            tooltip="Q"
           />
           <Button.Separator />
-          <Button onClick={duplicateNodes} value="Duplicate" enabled={toolbarActive} />
+          <Button
+            onClick={duplicateNodes} value="Duplicate" enabled={toolbarActive} tooltip="Ctrl+D"
+          />
           <Button.Separator />
-          <Button onClick={connectNodes} value="Connect" enabled={toolbarActive} />
-          <Button onClick={anchorNodes} value="Anchor" enabled={toolbarActive} />
-          <Button onClick={relateNodes} value="Relate" enabled={toolbarActive} />
+          <Button onClick={connectNodes} value="Connect" enabled={toolbarActive} tooltip="C" />
+          <Button onClick={anchorNodes} value="Anchor" enabled={toolbarActive} tooltip="A" />
+          <Button onClick={relateNodes} value="Relate" enabled={toolbarActive} tooltip="E" />
           <Button.Separator />
-          <Button onClick={unlinkNodes} value="Unlink" enabled={toolbarActive} />
+          <Button onClick={unlinkNodes} value="Unlink" enabled={toolbarActive} tooltip="V" />
           <Button.Separator />
-          <Button onClick={deleteNodes} value="Delete" enabled={toolbarActive} />
+          <Button onClick={deleteNodes} value="Delete" enabled={toolbarActive} tooltip="Delete" />
           <Button.Separator />
           <label htmlFor="gridToggle"> {React.string("Grid")} </label>
           <input
@@ -362,7 +377,7 @@ module App = {
               state
               ->State.model(focused)
               ->Option.map(model => {
-                let slots = model->State.Model.slotsForSelection(selection)->Uuid.Map.toArray
+                let slots = model->State.Model.slotsForSelection(selection)->Gid.Map.toArray
                 switch slots {
                 | [] => InspectorState.Global(State.Model.info(model))
                 | [(id, slot)] => InspectorState.Single(id, slot)

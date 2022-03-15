@@ -22,7 +22,11 @@
   },
   "bs-dependencies": [
     "@rescript/react",
+    "RepWeb",
     "rescript-react-d3-graph",
     "rescript-react-draggable-list"
+  ],
+  "bsc-flags": [
+    "-open RepWeb"
   ]
 }

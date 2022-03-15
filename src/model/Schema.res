@@ -1,6 +1,6 @@
 module rec Representation: {
   type rec t = Schema_intf.representation = {
-    uuid: Uuid.t,
+    uuid: Gid.t,
     domain: string,
     display: Graphic.t,
     tokens: list<Schema_intf.token>,
@@ -9,17 +9,17 @@ module rec Representation: {
     subrepresentations: list<t>,
   }
 
-  let uuid: t => Uuid.t
+  let uuid: t => Gid.t
   let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
-  let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
+  let _toJsonHelper: (t, Gid.Set.t) => (list<(Gid.t, Js.Json.t)>, Gid.Set.t)
   let _fromJsonHelper: Schema_intf.fromJsonHelper
 } = Representation_F.Make(Token, Dimension, Scheme)
 
 and Dimension: {
   type rec t = Schema_intf.dimension = {
-    uuid: Uuid.t,
+    uuid: Gid.t,
     concept: string,
     concept_scale: Quantity_scale.t,
     concept_attributes: list<Concept_attribute.t>,
@@ -34,17 +34,17 @@ and Dimension: {
     organisation: string,
   }
 
-  let uuid: t => Uuid.t
+  let uuid: t => Gid.t
   let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
-  let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
+  let _toJsonHelper: (t, Gid.Set.t) => (list<(Gid.t, Js.Json.t)>, Gid.Set.t)
   let _fromJsonHelper: Schema_intf.fromJsonHelper
 } = Dimension_F.Make(Token)
 
 and Scheme: {
   type rec t = Schema_intf.scheme = {
-    uuid: Uuid.t,
+    uuid: Gid.t,
     concept_structure: string,
     graphic_structure: option<Graphic.t>,
     function: Function.t,
@@ -56,17 +56,17 @@ and Scheme: {
     organisation: string,
   }
 
-  let uuid: t => Uuid.t
+  let uuid: t => Gid.t
   let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
-  let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
+  let _toJsonHelper: (t, Gid.Set.t) => (list<(Gid.t, Js.Json.t)>, Gid.Set.t)
   let _fromJsonHelper: Schema_intf.fromJsonHelper
 } = Scheme_F.Make(Dimension, Token)
 
 and Token: {
   type rec t = Schema_intf.token = {
-    uuid: Uuid.t,
+    uuid: Gid.t,
     concept: string,
     graphic: option<Graphic.t>,
     is_class: bool,
@@ -78,11 +78,11 @@ and Token: {
     anchored_schemes: list<Schema_intf.scheme>,
   }
 
-  let uuid: t => Uuid.t
+  let uuid: t => Gid.t
   let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
-  let _toJsonHelper: (t, Uuid.Set.t) => (list<(Uuid.t, Js.Json.t)>, Uuid.Set.t)
+  let _toJsonHelper: (t, Gid.Set.t) => (list<(Gid.t, Js.Json.t)>, Gid.Set.t)
   let _fromJsonHelper: Schema_intf.fromJsonHelper
 } = Token_F.Make(Dimension, Scheme)
 
@@ -108,7 +108,7 @@ let validate = t =>
   | Token(t) => Token.validate(t)
   }
 
-let rec findByUuid = (t, uid) =>
+let rec findByGid = (t, uid) =>
   if uuid(t) == uid {
     Some(t)
   } else {
@@ -139,7 +139,7 @@ let rec findByUuid = (t, uid) =>
         t.anchored_schemes->List.map(s => Scheme(s)),
       ])
     }
-    ->List.mapPartial(t => findByUuid(t, uid))
+    ->List.mapPartial(t => findByGid(t, uid))
     ->List.head
   }
 
