@@ -1,3 +1,17 @@
+module Intelligence = {
+  type t =
+    | Init
+    | Response(Intelligence_Intf.Response.t)
+    | Focus(option<Gid.t>)
+
+  let dispatch = (state, t) =>
+    switch t {
+    | Init => state
+    | Response(response) => state->State.setLatestIntelligence(Some(response))
+    | Focus(id) => state->State.focusErrorOrWarning(id)
+    }
+}
+
 module File = {
   type t =
     | NewModel(Gid.t)
@@ -8,6 +22,7 @@ module File = {
     | ReorderModels(array<Gid.t>)
     | Undo(Gid.t)
     | Redo(Gid.t)
+    | Intelligence(Intelligence.t)
 
   let dispatch = (state, t) =>
     switch t {
@@ -19,6 +34,7 @@ module File = {
     | ReorderModels(order) => state->State.reorderModels(order)
     | Undo(id) => state->State.undo(id)
     | Redo(id) => state->State.redo(id)
+    | Intelligence(i) => state->Intelligence.dispatch(i)
     }
 }
 
@@ -344,4 +360,11 @@ let dispatch = (state, t) =>
   | File(ev) => File.dispatch(state, ev)
   }
 
-let shouldTriggerIntelligence = _ => true // TODO
+let shouldTriggerIntelligence = e =>
+  // TODO more thoroughly
+  switch e {
+  | File(File.Intelligence(Intelligence.Init)) => true // MUST be true
+  | Model(_, Model.Graph(Graph.SetSelection(_)))
+  | File(File.Intelligence(_)) => false
+  | _ => true
+  }

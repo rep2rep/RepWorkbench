@@ -1,3 +1,10 @@
+module Intelligence: {
+  type t =
+    | Init
+    | Response(Intelligence_Intf.Response.t)
+    | Focus(option<Gid.t>)
+}
+
 module File: {
   type t =
     | NewModel(Gid.t)
@@ -8,6 +15,7 @@ module File: {
     | ReorderModels(array<Gid.t>)
     | Undo(Gid.t)
     | Redo(Gid.t)
+    | Intelligence(Intelligence.t)
 }
 
 module Slots: {
