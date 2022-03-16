@@ -444,7 +444,8 @@ let make = (~id, ~data, ~onChange=?) => {
           ~cursor="default",
           ~userSelect="none",
           ~position="absolute",
-          ~bottom="5px",
+          ~top="40px",
+          ~zIndex="100000",
           ~right={
             if hidden {
               "10px"

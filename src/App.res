@@ -5,13 +5,17 @@ module App = {
   type action = Event.t
 
   let intelligence = Intelligence_Intf.create("worker.js")
-  let sendToIntelligence = state =>
-    state
-    ->State.focused
-    ->Option.iter(focused =>
+  let sendToIntelligence = state => {
+    let sentId = switch State.focused(state) {
+    | None => {
+        let id = Gid.create()
+        intelligence->Intelligence_Intf.post({id: id, slots: Gid.Map.empty(), links: []})
+        Some(id)
+      }
+    | Some(focused) =>
       state
       ->State.model(focused)
-      ->Option.iter(model => {
+      ->Option.map(model => {
         let slots = State.Model.slots(model)
         let links =
           State.Model.graph(model)
@@ -22,9 +26,13 @@ module App = {
             ModelLink.target(link),
             ModelLink.kind(link),
           ))
-        intelligence->Intelligence_Intf.post({slots: slots, links: links})
+        let id = Gid.create()
+        intelligence->Intelligence_Intf.post({id: id, slots: slots, links: links})
+        id
       })
-    )
+    }
+    state->State.setLastRequestedIntelligence(sentId)
+  }
 
   let init = State.load()->Option.getWithDefault(State.empty)
   let reducer = (state, action) => {
@@ -32,8 +40,9 @@ module App = {
     State.store(newState)
     if Event.shouldTriggerIntelligence(action) {
       sendToIntelligence(newState)
+    } else {
+      newState
     }
-    newState
   }
 
   let config = ReactD3Graph.Config.create(
@@ -56,9 +65,13 @@ module App = {
   let make = () => {
     let (state, dispatch) = React.useReducer(reducer, init)
 
+    let intelligenceListener = (response: Intelligence_Intf.Response.t) => {
+      dispatch(Event.Intelligence.Response(response)->Event.File.Intelligence->Event.File)
+    }
+
     React.useEffect0(() => {
-      intelligence->Intelligence_Intf.listen(response => Js.Console.log(("Got response", response)))
-      sendToIntelligence(state)
+      intelligence->Intelligence_Intf.listen(intelligenceListener)
+      dispatch(Event.File(Event.File.Intelligence(Event.Intelligence.Init)))
       None
     })
 
@@ -72,6 +85,8 @@ module App = {
         ->Option.map(model => model->State.Model.graph->ModelState.selection)
       )
       ->Option.getWithDefault(ModelSelection.empty)
+    let intel =
+      State.latestIntelligence(state)->Option.getWithDefault(Intelligence_Intf.Response.empty)
 
     let dispatchM = e => focused->Option.iter(focused => dispatch(Event.Model(focused, e)))
 
@@ -184,6 +199,21 @@ module App = {
       | None => dispatchM(e)
       | Some(e') => dispatchM(Event.Model.Seq([e, Event.Model.Graph(e')]))
       }
+    }
+    let clickError = (_, err) => {
+      Js.Console.log(err)
+      dispatch(
+        Event.Intelligence.Focus(ModelError.id(err)->Some)->Event.File.Intelligence->Event.File,
+      )
+    }
+    let clickWarning = (_, warn) => {
+      Js.Console.log(warn)
+      dispatch(
+        Event.Intelligence.Focus(ModelWarning.id(warn)->Some)->Event.File.Intelligence->Event.File,
+      )
+    }
+    let deselectErrorOrWarning = _ => {
+      dispatch(Event.Intelligence.Focus(None)->Event.File.Intelligence->Event.File)
     }
     let importModel = f => {
       File.text(f)
@@ -367,23 +397,41 @@ module App = {
             ~flexDirection="row",
             (),
           )}>
-          <ReactD3Graph.Graph
-            id={"model-graph"}
-            config
-            data={focused
-            ->Option.flatMap(focused =>
-              state
-              ->State.model(focused)
-              ->Option.map(model => model->State.Model.graph->ModelState.data)
-            )
-            ->Option.getWithDefault(ModelState.empty->ModelState.data)}
-            selection
-            onSelectionChange={selectionChange}
-            onNodePositionChange={movedNodes}
-            keybindings={keybindings}
-            showGrid
-            style={ReactDOM.Style.make(~flexGrow="1", ())}
-          />
+          <div
+            style={ReactDOM.Style.make(
+              ~flexGrow="1",
+              ~display="flex",
+              ~flexDirection="column",
+              ~position="relative",
+              (),
+            )}>
+            <ReactD3Graph.Graph
+              id={"model-graph"}
+              config
+              data={focused
+              ->Option.flatMap(focused =>
+                state
+                ->State.model(focused)
+                ->Option.map(model => model->State.Model.graph->ModelState.data)
+              )
+              ->Option.getWithDefault(ModelState.empty->ModelState.data)}
+              selection
+              onSelectionChange={selectionChange}
+              onNodePositionChange={movedNodes}
+              keybindings={keybindings}
+              showGrid
+              style={ReactDOM.Style.make(~flexGrow="1", ())}
+            />
+            <IntelligenceUI
+              errors={intel.errors}
+              warnings={intel.warnings}
+              selected={State.focusedErrorOrWarning(state)}
+              isUpToDate={State.intelligenceIsUpToDate(state)}
+              onClickError={clickError}
+              onClickWarning={clickWarning}
+              onDeselect={deselectErrorOrWarning}
+            />
+          </div>
           <InspectorPanel
             id={"node_inspector"}
             onChange=slotsChange
