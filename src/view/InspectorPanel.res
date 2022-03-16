@@ -92,7 +92,9 @@ module Notes = {
         ~margin="0.125rem 0.5rem",
         (),
       )}>
-      <Label htmlFor={name}> {React.string("Notes")} </Label>
+      <Label htmlFor={name} help="Add any other comments about this schema here.">
+        {React.string("Notes")}
+      </Label>
       <textarea
         name
         ?onChange
@@ -390,7 +392,9 @@ module Placeholder = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-placeholder-intensional">
+        <Label
+          htmlFor="inspector-placeholder-intensional"
+          help="If you are inserting this node because this interpretation is missing aspects that would go in the model, select \"No\". If instead this aspect is being omitted purely for space/time/effort reasons, but the interpretation is complete, select \"Yes\".">
           {React.string("Omitted but understood?")}
         </Label>
         <Selector
