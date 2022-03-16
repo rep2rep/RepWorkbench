@@ -33,14 +33,19 @@ let fromJson = json =>
   })
 
 let stableId = (node, message) => {
-  let idify = s =>
-    s
+  let msg =
+    message
     ->Js.String2.castToArrayLike
     ->Js.Array2.fromMap(s => s->Js.String2.codePointAt(0)->Option.getExn)
-    ->Js.Array2.reduce((a, b) => 2 * a + (b - 40) + 1, 0)
+    ->Array.reduceWithIndex(0, (b, a, i) =>
+      if mod(i, 5) === 0 && i < 60 {
+        2 * b + (a - 32)
+      } else {
+        b
+      }
+    )
     ->Int.toString
-    ->Gid.fromString
-  idify("0" ++ idify(message)->Gid.toString ++ idify(Gid.toString(node))->Gid.toString)
+  Gid.fromString(Gid.toString(node) ++ msg ++ "1")
 }
 
 let create = (node, message) => {id: stableId(node, message), node: node, message: message}
