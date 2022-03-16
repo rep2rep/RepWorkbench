@@ -239,21 +239,21 @@ let load = () => {
     let json = try Or_error.create(Js.Json.parseExn(s)) catch {
     | _ => Or_error.error_s("Badly stored allModels")
     }
-    json
-    ->Or_error.flatMap(json => json->Array.fromJson(Gid.fromJson))
-    // ->Or_error.map(arr =>
-    //   arr->Array.map(id => Model.load(id)->Or_error.toOption->Option.map(m => (id, m)))
-    // )
-    // ->Or_error.map(Option.all)
-    ->Or_error.toOption
-    // ->Option.flatten
-    // ->Option.map(Gid.Map.fromArray)
+    json->Or_error.flatMap(json => json->Array.fromJson(Gid.fromJson))->Or_error.toOption
   })
   let models = positions->Option.flatMap(positions => {
     positions
-    ->Array.map(id => Model.load(id)->Or_error.toOption->Option.map(m => (id, UndoRedo.create(m))))
-    ->Option.all
-    ->Option.map(Gid.Map.fromArray)
+    ->Array.keepMap(id =>
+      switch Model.load(id)->Or_error.match {
+      | Or_error.Ok(m) => (id, UndoRedo.create(m))->Some
+      | Or_error.Err(e) => {
+          Dialog.alert("Error loading model: " ++ Error.messages(e)->Js.Array2.joinWith(";"))
+          None
+        }
+      }
+    )
+    ->Gid.Map.fromArray
+    ->Some
   })
   Option.both3((currentModel, positions, models))->Option.map(((
     currentModel,
