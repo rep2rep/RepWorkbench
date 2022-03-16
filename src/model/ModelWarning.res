@@ -32,12 +32,18 @@ let fromJson = json =>
     })
   })
 
-let stableId = (node, message) =>
-  (Gid.toString(node) ++ message)
-  ->Js.String2.castToArrayLike
-  ->Js.Array2.fromMap(s => s->Js.String2.codePointAt(0)->Option.getExn)
-  ->Js.Array2.reduce((a, b) => mod(2 * a + (b - 40), Js.Int.max) + 1, 0)
-  ->Int.toString
-  ->Gid.fromString
+let stableId = (node, message) => {
+  let idify = s =>
+    s
+    ->Js.String2.castToArrayLike
+    ->Js.Array2.fromMap(s => s->Js.String2.codePointAt(0)->Option.getExn)
+    ->Js.Array2.reduce((a, b) => mod(2 * a + (b - 40), Js.Int.max) + 1, 0)
+    ->Int.toString
+    ->Gid.fromString
+  idify("1" ++ idify(message)->Gid.toString ++ idify(Gid.toString(node))->Gid.toString)
+}
 
 let create = (node, message) => {id: stableId(node, message), node: node, message: message}
+let id = t => t.id
+let node = t => t.node
+let message = t => t.message
