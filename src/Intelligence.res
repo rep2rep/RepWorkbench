@@ -1,8 +1,6 @@
 module T = Intelligence_Intf.WorkerThread
 
 T.create(request => {
-  Js.Console.log(("Received model!", request))
-
   let slots = request.slots
   let links = request.links
 
@@ -22,26 +20,13 @@ T.create(request => {
       kind !== ModelNode.Kind.Placeholder &&
       links
       ->Array.find(((_, target, linkKind)) =>
-        linkKind === ModelLink.Kind.Hierarchy && target === id
+        (linkKind === ModelLink.Kind.Hierarchy || linkKind === ModelLink.Kind.Anchor) &&
+          target === id
       )
       ->Option.isNone
     ) {
       errors
-      ->Js.Array2.push(ModelError.create(id, "This schema has no parent, but it needs one!"))
-      ->ignore
-    }
-    if (
-      kind === ModelNode.Kind.Representation &&
-        links
-        ->Array.find(((_, target, linkKind)) =>
-          linkKind === ModelLink.Kind.Hierarchy && target === id
-        )
-        ->Option.isSome
-    ) {
-      warnings
-      ->Js.Array2.push(
-        ModelWarning.create(id, "This Representation schema has a parent - is this intensional?"),
-      )
+      ->Js.Array2.push(ModelError.create(id, "Schema has no parent, but it needs one!"))
       ->ignore
     }
   })
