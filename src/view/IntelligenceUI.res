@@ -57,7 +57,8 @@ module WarningOrError = (
           style={ReactDOM.Style.make(
             ~fontSize="0.9rem",
             ~borderLeft="1px solid rgba(150, 150, 150, 1)",
-            ~padding="0.25rem 0 0.25rem 0.5rem",
+            ~padding="0 0 0 0.5rem",
+            ~margin="0.25rem",
             (),
           )}>
           {React.string(T.details(data))}
