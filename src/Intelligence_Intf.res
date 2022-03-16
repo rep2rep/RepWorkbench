@@ -1,5 +1,6 @@
 module Request = {
   type t = {
+    id: Gid.t,
     slots: Gid.Map.t<InspectorState.Schema.t>,
     links: array<(Gid.t, Gid.t, ModelLink.Kind.t)>,
   }
@@ -14,6 +15,7 @@ module Request = {
 
   let toJson = t =>
     Js.Dict.fromList(list{
+      ("id", t.id->Gid.toJson),
       ("slots", t.slots->Gid.Map.toJson(InspectorState.Schema.Stable.V2.toJson)),
       (
         "links",
@@ -33,6 +35,7 @@ module Request = {
         ->Js.Dict.get(key)
         ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
         ->Or_error.flatMap(reader)
+      let id = getValue("id", Gid.fromJson)
       let slots = getValue("slots", Gid.Map.fromJson(_, InspectorState.Schema.Stable.V2.fromJson))
       let links = getValue(
         "links",
@@ -41,7 +44,8 @@ module Request = {
           tuple3FromJson(Gid.fromJson, Gid.fromJson, ModelLink.Kind.Stable.V1.fromJson),
         ),
       )
-      Or_error.both((slots, links))->Or_error.map(((slots, links)) => {
+      Or_error.both3((id, slots, links))->Or_error.map(((id, slots, links)) => {
+        id: id,
         slots: slots,
         links: links,
       })
@@ -50,12 +54,14 @@ module Request = {
 
 module Response = {
   type t = {
+    id: Gid.t,
     warnings: array<ModelWarning.t>,
     errors: array<ModelError.t>,
   }
 
   let toJson = t =>
     Js.Dict.fromList(list{
+      ("id", t.id->Gid.toJson),
       ("warnings", t.warnings->Array.toJson(ModelWarning.toJson)),
       ("errors", t.errors->Array.toJson(ModelError.toJson)),
     })->Js.Json.object_
@@ -70,14 +76,22 @@ module Response = {
         ->Js.Dict.get(key)
         ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
         ->Or_error.flatMap(reader)
+      let id = getValue("id", Gid.fromJson)
       let warnings = getValue("warnings", Array.fromJson(_, ModelWarning.fromJson))
       let errors = getValue("errors", Array.fromJson(_, ModelError.fromJson))
 
-      Or_error.both((warnings, errors))->Or_error.map(((warnings, errors)) => {
+      Or_error.both3((id, warnings, errors))->Or_error.map(((id, warnings, errors)) => {
+        id: id,
         warnings: warnings,
         errors: errors,
       })
     })
+
+  let empty = {
+    id: Gid.create(),
+    warnings: [],
+    errors: [],
+  }
 }
 
 module T = Worker.Make(Request, Response)

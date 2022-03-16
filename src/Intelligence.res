@@ -46,5 +46,5 @@ T.create(request => {
     }
   })
 
-  {errors: errors, warnings: warnings}
+  {id: request.id, errors: errors, warnings: warnings}
 })

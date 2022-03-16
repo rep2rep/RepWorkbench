@@ -214,6 +214,9 @@ type t = {
   models: Gid.Map.t<UndoRedo.t<Model.t>>,
   positions: array<Gid.t>,
   currentModel: option<Gid.t>,
+  latestIntelligence: option<Intelligence_Intf.Response.t>,
+  lastRequestedIntelligence: option<Gid.t>,
+  focusedErrorOrWarning: option<Gid.t>,
 }
 
 let store = t => {
@@ -263,6 +266,9 @@ let load = () => {
     models: models,
     positions: positions,
     currentModel: currentModel,
+    latestIntelligence: None,
+    lastRequestedIntelligence: None,
+    focusedErrorOrWarning: None,
   })
 }
 
@@ -270,6 +276,9 @@ let empty = {
   models: Gid.Map.empty(),
   positions: [],
   currentModel: None,
+  latestIntelligence: None,
+  lastRequestedIntelligence: None,
+  focusedErrorOrWarning: None,
 }
 
 let focused = t => t.currentModel
@@ -279,31 +288,53 @@ let models = t =>
 
 let model = (t, id) => t.models->Gid.Map.get(id)->Option.map(UndoRedo.state)
 
+let latestIntelligence = t => t.latestIntelligence
+
+let lastRequestedIntelligence = t => t.lastRequestedIntelligence
+
+let focusedErrorOrWarning = t => t.focusedErrorOrWarning
+
+let intelligenceIsUpToDate = t =>
+  switch (t.latestIntelligence, t.lastRequestedIntelligence) {
+  | (None, None) => true
+  | (Some(response), Some(id)) => response.id === id
+  | _ => false
+  }
+
 let createModel = (t, id) => {
   models: t.models->Gid.Map.set(id, Model.create("Model")->UndoRedo.create),
   positions: t.positions->Array.concat([id]),
   currentModel: Some(id),
+  latestIntelligence: None,
+  lastRequestedIntelligence: None,
+  focusedErrorOrWarning: None,
 }
 
 let deleteModel = (t, id) => {
   LocalStorage.Raw.removeItem("RepNotation:Model:" ++ Gid.toString(id))
-  let currentModel = if (
+  let (currentModel, latestIntelligence, lastRequestedIntelligence, focusedErrorOrWarning) = if (
     t.currentModel->Option.map(current => current == id)->Option.getWithDefault(false)
   ) {
-    None
+    (None, None, None, None)
   } else {
-    t.currentModel
+    (t.currentModel, t.latestIntelligence, t.lastRequestedIntelligence, t.focusedErrorOrWarning)
   }
   {
     models: t.models->Gid.Map.remove(id),
     positions: t.positions->Array.filter(id' => id' !== id),
     currentModel: currentModel,
+    latestIntelligence: latestIntelligence,
+    lastRequestedIntelligence: lastRequestedIntelligence,
+    focusedErrorOrWarning: focusedErrorOrWarning,
   }
 }
 
 let focusModel = (t, id) => {
   ...t,
   currentModel: id,
+  latestIntelligence: None,
+  lastRequestedIntelligence: None,
+  focusedErrorOrWarning: None,
 }
 
 let duplicateModel = (t, ~existing, ~new_) => {
@@ -313,6 +344,7 @@ let duplicateModel = (t, ~existing, ~new_) => {
   let before = t.positions->Array.slice(~offset=0, ~len=dupIndex + 1)
   let after = t.positions->Array.sliceToEnd(dupIndex + 1)
   {
+    ...t,
     currentModel: Some(new_),
     positions: Array.concatMany([before, [new_], after]),
     models: t.models->Gid.Map.set(new_, newModel),
@@ -327,6 +359,9 @@ let importModel = (t, model) => {
     currentModel: Some(newId),
     positions: t.positions->Array.concat([newId]),
     models: t.models->Gid.Map.set(newId, model),
+    latestIntelligence: None,
+    lastRequestedIntelligence: None,
+    focusedErrorOrWarning: None,
   }
 }
 
@@ -341,6 +376,10 @@ let updateModel = (t, id, newModel) => {
     model->Option.map(model => model->UndoRedo.step(newModel))
   ),
 }
+
+let setLatestIntelligence = (t, response) => {...t, latestIntelligence: response}
+let setLastRequestedIntelligence = (t, id) => {...t, lastRequestedIntelligence: id}
+let focusErrorOrWarning = (t, id) => {...t, focusedErrorOrWarning: id}
 
 let undo = (t, id) => {
   ...t,
