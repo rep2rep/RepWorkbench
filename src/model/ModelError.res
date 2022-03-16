@@ -2,6 +2,7 @@ type t = {
   id: Gid.t,
   node: Gid.t,
   message: string,
+  details: string,
 }
 
 let toJson = t =>
@@ -9,6 +10,7 @@ let toJson = t =>
     ("id", t.id->Gid.toJson),
     ("node", t.node->Gid.toJson),
     ("message", t.message->String.toJson),
+    ("details", t.details->String.toJson),
   })->Js.Json.object_
 
 let fromJson = json =>
@@ -24,11 +26,13 @@ let fromJson = json =>
     let id = getValue("id", Gid.fromJson)
     let node = getValue("node", Gid.fromJson)
     let message = getValue("message", String.fromJson)
+    let details = getValue("details", String.fromJson)
 
-    Or_error.both3((id, node, message))->Or_error.map(((id, node, message)) => {
+    Or_error.both4((id, node, message, details))->Or_error.map(((id, node, message, details)) => {
       id: id,
       node: node,
       message: message,
+      details: details,
     })
   })
 
@@ -48,7 +52,13 @@ let stableId = (node, message) => {
   Gid.fromString(Gid.toString(node) ++ msg ++ "1")
 }
 
-let create = (node, message) => {id: stableId(node, message), node: node, message: message}
+let create = (~node, ~message, ~details) => {
+  id: stableId(node, message),
+  node: node,
+  message: message,
+  details: details,
+}
 let id = t => t.id
 let node = t => t.node
 let message = t => t.message
+let details = t => t.details
