@@ -344,7 +344,7 @@ module App = {
           <Button.Separator />
           <Button onClick={unlinkNodes} value="Unlink" enabled={toolbarActive} tooltip="V" />
           <Button.Separator />
-          <Button onClick={deleteNodes} value="Delete" enabled={toolbarActive} tooltip="Delete" />
+          <Button onClick={deleteNodes} value="Delete" enabled={toolbarActive} tooltip="X" />
           <Button.Separator />
           <label htmlFor="gridToggle"> {React.string("Grid")} </label>
           <input
