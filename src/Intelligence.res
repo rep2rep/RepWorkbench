@@ -26,7 +26,15 @@ T.create(request => {
       ->Option.isNone
     ) {
       errors
-      ->Js.Array2.push(ModelError.create(id, "Schema has no parent, but it needs one!"))
+      ->Js.Array2.push(
+        ModelError.create(
+          ~node=id,
+          ~message="Schema has no parent, but it needs one!",
+          ~details={
+            "All schemas, except for Representation schemas, must either be in the hierarchy, or be anchored below a Token in the hierarchy. This schema is neither in the hierarchy, nor anchored."
+          },
+        ),
+      )
       ->ignore
     }
   })

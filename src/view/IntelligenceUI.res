@@ -3,13 +3,18 @@ module BoolStore = LocalStorage.MakeJsonable(Bool)
 module WarningOrError = (
   T: {
     type t
-    let message: t => string
-    let node: t => Gid.t
     let id: t => Gid.t
+    let node: t => Gid.t
+    let message: t => string
+    let details: t => string
   },
 ) => {
   @react.component
   let make = (~data, ~onClick as givenOnClick=?, ~selected=false) => {
+    let (showDetails, setShowDetails) = React.useState(_ => false)
+
+    let toggle = _ => setShowDetails(s => !s)
+
     let onClick = givenOnClick->Option.map((givenOnClick, e) => {
       ReactEvent.Mouse.stopPropagation(e)
       givenOnClick(e, data)
@@ -19,7 +24,7 @@ module WarningOrError = (
       style={ReactDOM.Style.make(
         ~padding="0.1rem 0.5rem",
         ~cursor="pointer",
-        ~fontSize="0.9rem",
+        ~fontSize="0.95rem",
         ~background={
           if selected {
             "rgba(220,220,220,1)"
@@ -29,7 +34,37 @@ module WarningOrError = (
         },
         (),
       )}>
+      <span
+        onClick=toggle
+        style={ReactDOM.Style.make(
+          ~position="relative",
+          ~top="-0.1em",
+          ~display="inline-block",
+          ~width="1rem",
+          ~fontSize="0.6rem",
+          ~color="rgba(150, 150, 150, 1)",
+          (),
+        )}>
+        {if showDetails {
+          String.fromCodePoint(9660)
+        } else {
+          String.fromCodePoint(9654)
+        }->React.string}
+      </span>
       {React.string(T.message(data))}
+      {if showDetails {
+        <div
+          style={ReactDOM.Style.make(
+            ~fontSize="0.9rem",
+            ~borderLeft="1px solid rgba(150, 150, 150, 1)",
+            ~padding="0.25rem 0 0.25rem 0.5rem",
+            (),
+          )}>
+          {React.string(T.details(data))}
+        </div>
+      } else {
+        React.null
+      }}
     </div>
   }
 }
@@ -163,7 +198,7 @@ let make = (
       | None => ()
       | Some(f) => f()
       }}>
-    <div>
+    <div style={ReactDOM.Style.make(~position="relative", ~top="2px", ())}>
       <Indicator
         status={if !isUpToDate {
           #loading
@@ -205,7 +240,7 @@ let make = (
         style={ReactDOM.Style.make(
           ~width="calc(100% - 1rem)",
           ~flexGrow="1",
-          ~margin="0.5rem",
+          ~margin="0.25rem 0.5rem 0.5rem 0.5rem",
           ~padding="0.25rem 0",
           ~borderRadius="2px",
           ~border="1px solid #aaa",
