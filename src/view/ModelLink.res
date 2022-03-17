@@ -54,23 +54,23 @@ let data = t => [t]
 
 module Config = {
   let hierarchy = ReactD3Graph.Link.Config.create(
-    ~offsetSource={"dx": 0., "dy": 25.},
-    ~offsetTarget={"dx": 0., "dy": -25.},
+    ~offsetSource=(_, _, _) => {"dx": 0., "dy": 25.},
+    ~offsetTarget=(_, _, _) => {"dx": 0., "dy": -25.},
     ~color=ReactD3Graph.Color.ofHexString("#000000"),
     ~strokeWidth=1.,
     (),
   )
   let anchor = ReactD3Graph.Link.Config.create(
-    ~offsetSource={"dx": 0., "dy": 25.},
-    ~offsetTarget={"dx": 0., "dy": -25.},
+    ~offsetSource=(_, _, _) => {"dx": 0., "dy": 25.},
+    ~offsetTarget=(_, _, _) => {"dx": 0., "dy": -25.},
     ~color=ReactD3Graph.Color.ofHexString("#000000"),
     ~strokeWidth=1.,
     ~markerStart="arrowheadCircle",
     (),
   )
   let relation = ReactD3Graph.Link.Config.create(
-    ~offsetSource={"dx": 0., "dy": 25.},
-    ~offsetTarget={"dx": 0., "dy": -25.},
+    ~offsetSource=(_, _, _) => {"dx": 0., "dy": 25.},
+    ~offsetTarget=(_, _, _) => {"dx": 0., "dy": -25.},
     ~color=ReactD3Graph.Color.ofHexString("#808080"),
     ~strokeWidth=4.,
     ~strokeDasharray=5.,
