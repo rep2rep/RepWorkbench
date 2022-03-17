@@ -247,6 +247,40 @@
       hide or show this grid using the checkbox in the toolbar.
     </p>
 
+    <h2 id="intelligence">Intelligence</h2>
+    <p>
+      Below the Model editor is the Intelligence panel. By default, this is a bar along the bottom of the
+      Model editor with a small indicator light, followed by some text. If RepWorkbench is still working
+      in the background, the indicator light will show a spinning ring; if there are no errors or warnings,
+      the indicator light turns green; if there are warnings but no errors, the indicator light turns yellow,
+      and if there are errors, the warning light will be red. The text next to the indicator light will
+      give details about the number of errors, warnings, and hidden warnings, if there are any. Finally, there
+      is a <button>Show</button> button.
+    </p>
+    <p>
+      When there are errors or warnings, you can click the <button>Show</button> button to reveal the whole
+      inspector panel. Here you will find a scrollable list of errors then warnings. The errors, if there are
+      any, are listed first, followed by a line, then the errors. To hide this panel again, click the
+      <button>Hide</button> button, which is in the place of the <button>Show</button> button.
+    </p>
+    <p>
+      An error or warning will display as a line of text: this is a high-level summary of the problem that the
+      Intelligence engine has found. You can click on the summary to select the relevant schemas, and then attempt
+      to correct the problem. When the problem has been resolved, the error or warning will go away.
+    </p>
+    <p>
+      On the left of the message is a small triangle: clicking this will reveal more details about the problem.
+      Sometimes, this will include a suggestion on how to fix the problem. Click the triangle again to hide the
+      details.
+    </p>
+    <p>
+      Warnings can be <em>ignored</em>. When viewing the details of the warning, following the detailed
+      description of the problem, there is a checkbox labelled 'Ignore'. When this is checked, this warning will
+      not count against the total number of warnings identified by the Intelligence engine. For example, if you
+      have two warnings, but both are ignored, the indicator light will be green. Ignored warnings appear
+      fainter than regular warnings.
+    </p>
+
     <h2 id="slots-inspector">The Slots Inspector</h2>
     <p>
       On the far right is the Slots inspector. Each schema in the Model has associated 'slots':
