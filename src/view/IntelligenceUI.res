@@ -1,4 +1,5 @@
 module BoolStore = LocalStorage.MakeJsonable(Bool)
+module GidSetStore = LocalStorage.MakeJsonable(Gid.Set)
 
 module WarningOrError = (
   T: {
@@ -10,7 +11,14 @@ module WarningOrError = (
   },
 ) => {
   @react.component
-  let make = (~data, ~onClick as givenOnClick=?, ~selected=false) => {
+  let make = (
+    ~data,
+    ~onClick as givenOnClick=?,
+    ~selected=false,
+    ~kind: [#warning | #error],
+    ~ignored=false,
+    ~onIgnore=ignore,
+  ) => {
     let (showDetails, setShowDetails) = React.useState(_ => false)
 
     let toggle = _ => setShowDetails(s => !s)
@@ -25,6 +33,13 @@ module WarningOrError = (
         ~padding="0.1rem 0.5rem",
         ~cursor="pointer",
         ~fontSize="0.95rem",
+        ~opacity={
+          if ignored {
+            "0.6"
+          } else {
+            "1"
+          }
+        },
         ~background={
           if selected {
             "rgba(220,220,220,1)"
@@ -62,6 +77,25 @@ module WarningOrError = (
             (),
           )}>
           {React.string(T.details(data))}
+          {if kind === #warning {
+            <div>
+              <label
+                htmlFor={"warning-toggle-" ++ T.id(data)->Gid.toString}
+                style={ReactDOM.Style.make(~fontSize="0.75rem", ~marginRight="0.5em", ())}>
+                {React.string("Ignore")}
+              </label>
+              <input
+                type_="checkbox"
+                name={"warning-toggle-" ++ T.id(data)->Gid.toString}
+                checked=ignored
+                onChange={e => {
+                  onIgnore(!ignored)
+                }}
+              />
+            </div>
+          } else {
+            React.null
+          }}
         </div>
       } else {
         React.null
@@ -70,8 +104,17 @@ module WarningOrError = (
   }
 }
 
-module Warning = WarningOrError(ModelWarning)
-module Error = WarningOrError(ModelError)
+module Warning = {
+  module W = WarningOrError(ModelWarning)
+  @react.component
+  let make = (~data, ~onClick=?, ~selected=?, ~ignored=?, ~onIgnore=?) =>
+    <W data ?onClick ?selected kind={#warning} ?ignored ?onIgnore />
+}
+module Error = {
+  module E = WarningOrError(ModelError)
+  @react.component
+  let make = (~data, ~onClick=?, ~selected=?) => <E data ?onClick ?selected kind={#error} />
+}
 
 module Indicator = {
   @react.component
@@ -154,6 +197,9 @@ let make = (
   let (visible, setVisible) = React.useState(_ =>
     BoolStore.get("ERROR_PANEL_VISIBLE")->Or_error.getWithDefault(false)
   )
+  let (ignoredWarnings, setIgnoredWarnings) = React.useState(_ =>
+    GidSetStore.get("REPN_IGNORED_WARNINGS")->Or_error.getWithDefault(Gid.Set.empty)
+  )
 
   let toggle = _ => {
     BoolStore.set("ERROR_PANEL_VISIBLE", !visible)
@@ -164,6 +210,17 @@ let make = (
       }
     }
     setVisible(s => !s)
+  }
+
+  let ignoreWarning = id => {
+    let ignored = ignoredWarnings->Gid.Set.add(id)
+    GidSetStore.set("REPN_IGNORED_WARNINGS", ignored)
+    setIgnoredWarnings(_ => ignored)
+  }
+  let showWarning = id => {
+    let ignored = ignoredWarnings->Gid.Set.remove(id)
+    GidSetStore.set("REPN_IGNORED_WARNINGS", ignored)
+    setIgnoredWarnings(_ => ignored)
   }
 
   let commonStyle = ReactDOM.Style.make(
@@ -191,6 +248,12 @@ let make = (
     ->Option.getWithDefault(defaultStyle)
 
   let (nErrors, nWarnings) = (Array.length(errors), Array.length(warnings))
+  let nIgnoredWarnings =
+    warnings
+    ->Array.map(ModelWarning.id)
+    ->Gid.Set.fromArray
+    ->Gid.Set.intersect(ignoredWarnings)
+    ->Gid.Set.size
 
   <div
     style
@@ -204,7 +267,7 @@ let make = (
         status={if !isUpToDate {
           #loading
         } else {
-          switch (nErrors, nWarnings) {
+          switch (nErrors, nWarnings - nIgnoredWarnings) {
           | (0, 0) => #ok
           | (0, _) => #warning
           | (_, _) => #error
@@ -212,12 +275,20 @@ let make = (
         }}
       />
       {React.string(
-        switch (nErrors, nWarnings) {
+        switch (nErrors, nWarnings - nIgnoredWarnings) {
         | (0, 0) => "Ok"
-        | (1, 1) => "1 error, 1 warning."
-        | (1, _) => "1 error, " ++ Int.toString(nWarnings) ++ " warnings."
-        | (_, 1) => Int.toString(nErrors) ++ " errors, 1 warning."
-        | (_, _) => Int.toString(nErrors) ++ " errors, " ++ Int.toString(nWarnings) ++ " warnings."
+        | (1, 1) => "1 error, 1 warning"
+        | (1, _) => "1 error, " ++ Int.toString(nWarnings - nIgnoredWarnings) ++ " warnings"
+        | (_, 1) => Int.toString(nErrors) ++ " errors, 1 warning"
+        | (_, _) =>
+          Int.toString(nErrors) ++
+          " errors, " ++
+          Int.toString(nWarnings - nIgnoredWarnings) ++ " warnings"
+        } ++
+        switch nIgnoredWarnings {
+        | 0 => "."
+        | 1 => " (1 ignored warning)."
+        | _ => " (" ++ Int.toString(nIgnoredWarnings) ++ " ignored warnings)."
         },
       )}
       {if nErrors + nWarnings > 0 {
@@ -276,6 +347,13 @@ let make = (
             selected={selected
             ->Option.map(id => id === ModelWarning.id(w))
             ->Option.getWithDefault(false)}
+            ignored={ignoredWarnings->Gid.Set.has(ModelWarning.id(w))}
+            onIgnore={isIgnored =>
+              if isIgnored {
+                ignoreWarning(ModelWarning.id(w))
+              } else {
+                showWarning(ModelWarning.id(w))
+              }}
           />
         })
         ->React.array}
