@@ -234,6 +234,16 @@ let make = (
     setIgnoredWarnings(_ => ignored)
   }
 
+  let (nErrors, nWarnings) = (Array.length(errors), Array.length(warnings))
+  let nIgnoredWarnings =
+    warnings
+    ->Array.map(ModelWarning.id)
+    ->Gid.Set.fromArray
+    ->Gid.Set.intersect(ignoredWarnings)
+    ->Gid.Set.size
+
+  let visible = visible && nErrors + nWarnings > 0
+
   let commonStyle = ReactDOM.Style.make(
     ~background="white",
     ~bottom="0",
@@ -257,14 +267,6 @@ let make = (
     givenStyle
     ->Option.map(ReactDOM.Style.combine(defaultStyle))
     ->Option.getWithDefault(defaultStyle)
-
-  let (nErrors, nWarnings) = (Array.length(errors), Array.length(warnings))
-  let nIgnoredWarnings =
-    warnings
-    ->Array.map(ModelWarning.id)
-    ->Gid.Set.fromArray
-    ->Gid.Set.intersect(ignoredWarnings)
-    ->Gid.Set.size
 
   <div
     style
