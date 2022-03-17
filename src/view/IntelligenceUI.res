@@ -5,9 +5,10 @@ module WarningOrError = (
   T: {
     type t
     let id: t => Gid.t
-    let node: t => Gid.t
+    let nodes: t => array<Gid.t>
     let message: t => string
     let details: t => string
+    let suggestion: t => option<string>
   },
 ) => {
   @react.component
@@ -72,13 +73,23 @@ module WarningOrError = (
           style={ReactDOM.Style.make(
             ~fontSize="0.9rem",
             ~borderLeft="1px solid rgba(150, 150, 150, 1)",
-            ~padding="0 0 0 0.5rem",
+            ~padding="0.25rem 0 0.25rem 0.5rem",
             ~margin="0.25rem",
             (),
           )}>
           {React.string(T.details(data))}
+          {switch T.suggestion(data) {
+          | None => React.null
+          | Some(suggestion) =>
+            <div style={ReactDOM.Style.make(~margin="0.25rem 0 0 0", ())}>
+              <span style={ReactDOM.Style.make(~marginRight="0.5em", ~fontStyle="italic", ())}>
+                {React.string("Suggestion:")}
+              </span>
+              {React.string(suggestion)}
+            </div>
+          }}
           {if kind === #warning {
-            <div>
+            <div style={ReactDOM.Style.make(~marginTop="0.25rem", ())}>
               <label
                 htmlFor={"warning-toggle-" ++ T.id(data)->Gid.toString}
                 style={ReactDOM.Style.make(~fontSize="0.75rem", ~marginRight="0.5em", ())}>

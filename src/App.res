@@ -206,7 +206,7 @@ module App = {
         Event.Intelligence.Focus(ModelError.id(err)->Some)->Event.File.Intelligence->Event.File,
       )
       dispatchM(
-        Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.ofNodes([ModelError.node(err)]))),
+        Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.ofNodes(ModelError.nodes(err)))),
       )
     }
     let clickWarning = (_, warn) => {
@@ -216,7 +216,7 @@ module App = {
       )
       dispatchM(
         Event.Model.Graph(
-          Event.Graph.SetSelection(ModelSelection.ofNodes([ModelWarning.node(warn)])),
+          Event.Graph.SetSelection(ModelSelection.ofNodes(ModelWarning.nodes(warn))),
         ),
       )
     }

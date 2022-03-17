@@ -1,16 +1,18 @@
 type t = {
   id: Gid.t,
-  node: Gid.t,
+  nodes: array<Gid.t>,
   message: string,
   details: string,
+  suggestion: option<string>,
 }
 
 let toJson = t =>
   Js.Dict.fromList(list{
     ("id", t.id->Gid.toJson),
-    ("node", t.node->Gid.toJson),
+    ("nodes", t.nodes->Array.toJson(Gid.toJson)),
     ("message", t.message->String.toJson),
     ("details", t.details->String.toJson),
+    ("suggestion", t.suggestion->Option.toJson(String.toJson)),
   })->Js.Json.object_
 
 let fromJson = json =>
@@ -24,19 +26,27 @@ let fromJson = json =>
       ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
       ->Or_error.flatMap(reader)
     let id = getValue("id", Gid.fromJson)
-    let node = getValue("node", Gid.fromJson)
+    let nodes = getValue("nodes", Array.fromJson(_, Gid.fromJson))
     let message = getValue("message", String.fromJson)
     let details = getValue("details", String.fromJson)
+    let suggestion = getValue("suggestion", Option.fromJson(_, String.fromJson))
 
-    Or_error.both4((id, node, message, details))->Or_error.map(((id, node, message, details)) => {
+    Or_error.both5((id, nodes, message, details, suggestion))->Or_error.map(((
+      id,
+      nodes,
+      message,
+      details,
+      suggestion,
+    )) => {
       id: id,
-      node: node,
+      nodes: nodes,
       message: message,
       details: details,
+      suggestion: suggestion,
     })
   })
 
-let stableId = (node, message) => {
+let stableId = (nodes, message) => {
   let msg =
     message
     ->Js.String2.castToArrayLike
@@ -49,16 +59,18 @@ let stableId = (node, message) => {
       }
     )
     ->Int.toString
-  Gid.fromString(Gid.toString(node) ++ msg ++ "1")
+  Gid.fromString(Gid.combine(nodes)->Gid.toString ++ msg ++ "1")
 }
 
-let create = (~node, ~message, ~details) => {
-  id: stableId(node, message),
-  node: node,
+let create = (~nodes, ~message, ~details, ~suggestion=?, ()) => {
+  id: stableId(nodes, message),
+  nodes: nodes,
   message: message,
   details: details,
+  suggestion: suggestion,
 }
 let id = t => t.id
-let node = t => t.node
+let nodes = t => t.nodes
 let message = t => t.message
 let details = t => t.details
+let suggestion = t => t.suggestion
