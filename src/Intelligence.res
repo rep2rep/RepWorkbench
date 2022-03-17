@@ -7,6 +7,11 @@ T.create(request => {
   let errors = []
   let warnings = []
 
+  let error = (~node, ~message, ~details) =>
+    errors->Js.Array2.push(ModelError.create(~node, ~message, ~details))->ignore
+  let warning = (~node, ~message, ~details) =>
+    warnings->Js.Array2.push(ModelWarning.create(~node, ~message, ~details))->ignore
+
   slots->Gid.Map.forEach((id, slots) => {
     let kind = switch slots {
     | InspectorState.Schema.Representation(_) => ModelNode.Kind.Representation
@@ -25,17 +30,13 @@ T.create(request => {
       )
       ->Option.isNone
     ) {
-      errors
-      ->Js.Array2.push(
-        ModelError.create(
-          ~node=id,
-          ~message="Schema has no parent, but it needs one.",
-          ~details={
-            "All schemas, except for Representation schemas, must either be in the hierarchy, or be anchored below a Token in the hierarchy. This schema is neither in the hierarchy, nor anchored."
-          },
-        ),
+      error(
+        ~node=id,
+        ~message="Schema has no parent, but it needs one.",
+        ~details={
+          "All schemas, except for Representation schemas, must either be in the hierarchy, or be anchored below a Token in the hierarchy. This schema is neither in the hierarchy, nor anchored."
+        },
       )
-      ->ignore
     }
   })
 
