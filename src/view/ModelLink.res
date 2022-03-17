@@ -69,8 +69,46 @@ module Config = {
     (),
   )
   let relation = ReactD3Graph.Link.Config.create(
-    ~offsetSource=(_, _, _) => {"dx": 0., "dy": 25.},
-    ~offsetTarget=(_, _, _) => {"dx": 0., "dy": -25.},
+    ~offsetSource=(source, target, _) =>
+      (source, target)
+      ->Option.both
+      ->Option.map(((source, target)) => {
+        let (x1, y1) = (source["x"], source["y"])
+        let (x2, y2) = (target["x"], target["y"])
+        let size = source->ReactD3Graph.Core.readKeyExn("size")
+        let (dx0, dy0) = (x2 -. x1, y2 -. y1)
+        let (dx, dy) = if Js.Math.abs_float(dx0 /. dy0) > size["width"] /. size["height"] {
+          let dx = size["width"] /. 20. *. Js.Math.sign_float(dx0)
+          let dy = dy0 *. dx /. dx0
+          (dx, dy)
+        } else {
+          let dy = size["height"] /. 20. *. Js.Math.sign_float(dy0)
+          let dx = dx0 *. dy /. dy0
+          (dx, dy)
+        }
+        {"dx": 0.99 *. dx -. 2., "dy": dy}
+      })
+      ->Option.getWithDefault({"dx": 0., "dy": 25.}),
+    ~offsetTarget=(source, target, _) =>
+      (source, target)
+      ->Option.both
+      ->Option.map(((source, target)) => {
+        let (x1, y1) = (source["x"], source["y"])
+        let (x2, y2) = (target["x"], target["y"])
+        let size = target->ReactD3Graph.Core.readKeyExn("size")
+        let (dx0, dy0) = (x1 -. x2, y1 -. y2)
+        let (dx, dy) = if Js.Math.abs_float(dx0 /. dy0) > size["width"] /. size["height"] {
+          let dx = size["width"] /. 20. *. Js.Math.sign_float(dx0)
+          let dy = dy0 *. dx /. dx0
+          (dx, dy)
+        } else {
+          let dy = size["height"] /. 20. *. Js.Math.sign_float(dy0)
+          let dx = dx0 *. dy /. dy0
+          (dx, dy)
+        }
+        {"dx": 0.99 *. dx -. 2., "dy": dy}
+      })
+      ->Option.getWithDefault({"dx": 0., "dy": -25.}),
     ~color=ReactD3Graph.Color.ofHexString("#808080"),
     ~strokeWidth=4.,
     ~strokeDasharray=5.,
