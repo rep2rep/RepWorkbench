@@ -420,7 +420,9 @@ module Model = {
   let make = (~slots: InspectorState.Model.t, ~onChange) => {
     <>
       <Row>
-        <Label htmlFor="inspector-model-name"> {React.string("Name")} </Label>
+        <Label htmlFor="inspector-model-name" help="Set the name of this model.">
+          {React.string("Name")}
+        </Label>
         <Input
           value={slots.name}
           name="inspector-model-name"
