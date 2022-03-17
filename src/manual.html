@@ -73,20 +73,20 @@
     </p>
     <table>
       <tr><th>Hotkey</th><th>Action</th></tr>
-      <tr><td><span class="key">R</span></td><td>Create a new Representation node.</td></tr>
-      <tr><td><span class="key">S</span></td><td>Create a new R-Scheme node.</td></tr>
-      <tr><td><span class="key">D</span></td><td>Create a new R-Dimension node.</td></tr>
-      <tr><td><span class="key">T</span></td><td>Create a new Token node.</td></tr>
-      <tr><td><span class="key">Q</span></td><td>Create a new Placeholder node.</td></tr>
-      <tr><td><span class="key">Ctrl</span> <span class="key">D</span></td><td>Duplicate the selected nodes.</td></tr>
-      <tr><td><span class="key">C</span></td><td>Connect two nodes.</td></tr>
-      <tr><td><span class="key">A</span></td><td>Connect two nodes by anchoring.</td></tr>
-      <tr><td><span class="key">E</span></td><td>Connect two nodes by relation.</td></tr>
-      <tr><td><span class="key">V</span></td><td>Remove all links between selected nodes.</td></tr>
-      <tr><td><span class="key">X</span>/<span class="key">Backspace</span></td><td>Delete all selected nodes, and links connected to them.</td></tr>
+      <tr><td><span class="key">R</span></td><td>Create a new Representation schema.</td></tr>
+      <tr><td><span class="key">S</span></td><td>Create a new R-Scheme schema.</td></tr>
+      <tr><td><span class="key">D</span></td><td>Create a new R-Dimension schema.</td></tr>
+      <tr><td><span class="key">T</span></td><td>Create a new Token schema.</td></tr>
+      <tr><td><span class="key">Q</span></td><td>Create a new Placeholder schema.</td></tr>
+      <tr><td><span class="key">Ctrl</span> <span class="key">D</span></td><td>Duplicate the selected schemas.</td></tr>
+      <tr><td><span class="key">C</span></td><td>Connect two schemas.</td></tr>
+      <tr><td><span class="key">A</span></td><td>Connect two schemas by anchoring.</td></tr>
+      <tr><td><span class="key">E</span></td><td>Connect two schemas by relation.</td></tr>
+      <tr><td><span class="key">V</span></td><td>Remove all links between selected schemas.</td></tr>
+      <tr><td><span class="key">X</span>/<span class="key">Backspace</span></td><td>Delete all selected schemas, and links connected to them.</td></tr>
     </table>
     <p>
-      Creating new nodes puts them under your cursor.
+      Creating new schemas puts them under your cursor.
     </p>
     <p>
       These are available when you have your cursor over the Model editor.
@@ -168,45 +168,45 @@
       </p></td></tr>
       <tr><td><p><input type="button" value="Representation" /><br><input type="button" value="Scheme" /><br><input type="button" value="Dimension" /><br><input type="button" value="Token" /><br><input type="button" value="Placeholder" /></p></td><td>
           <p>
-            These five buttons create a new node in the Model. The kind of node
+            These five buttons create a new schema in the Model. The kind of schema
             created is determined by the label &ndash; Representation, (R-)Scheme, (R-)Dimension, Token, or Placeholder.
-            The new node is created at the 'origin', which is the top left of the Model editor (before
-            zooming and panning). If any existing nodes were selected when this button is clicked, the
-            created node is automatically linked as a child of the selected nodes. The created node
+            The new schema is created at the 'origin', which is the top left of the Model editor (before
+            zooming and panning). If any existing schemas were selected when this button is clicked, the
+            created schema is automatically linked as a child of the selected schemas. The created schema
             becomes the new current selection.
       </p></td></tr>
       <tr><td><p><input type="button" value="Duplicate" /></p></td><td>
           <p>
-            Creates new nodes in the model that are an exact copy of your current selection.
-            If you have selected nodes with connections between them, these connections are duplicated.
-            Any connections these nodes have to <emph>other</emph> nodes in the model are <emph>not</emph>
-            duplicated. That is, the new nodes will always be disconnected from the rest of the model,
-            but may be connected to each other. The newly created nodes are positions slightly offset from
-            the nodes they were duplicated from, and they become the current selection.
+            Creates new schemas in the model that are an exact copy of your current selection.
+            If you have selected schemas with connections between them, these connections are duplicated.
+            Any connections these schemas have to <emph>other</emph> schemas in the model are <emph>not</emph>
+            duplicated. That is, the new schemas will always be disconnected from the rest of the model,
+            but may be connected to each other. The newly created schemas are positions slightly offset from
+            the schemas they were duplicated from, and they become the current selection.
       </p></td></tr>
       <tr><td><p><input type="button" value="Connect" /><br><input type="button" value="Anchor" /><br><input type="button" value="Relate" /></p></td><td>
           <p>
-            These three buttons are used to connect nodes together. The first button creates a
+            These three buttons are used to connect schemas together. The first button creates a
             Hierarchy connection (the 'typical' connection in RepNotation), the second button
             creates an 'anchored' connection, and the third creates a 'relation' connection. When
-            clicking these buttons, you must have exactly two nodes selected: more than two, or
+            clicking these buttons, you must have exactly two schemas selected: more than two, or
             fewer than two, and these buttons have no effect. The 'direction' of the connection
-            is determined by the order in which the nodes were selected: the first selected node
+            is determined by the order in which the schemas were selected: the first selected schema
             is the 'parent', while the second is the 'child'. The parent is connected from the
-            bottom of the node, while the child is connected from the top. If you have connected the
-            nodes back to front, the connection will appear to 'cut through' the nodes; unlink them,
+            bottom of the schema, while the child is connected from the top. If you have connected the
+            schemas back to front, the connection will appear to 'cut through' the schemas; unlink them,
             select them in the opposite order, and click the button again to correct the direction.
       </p></td></tr>
       <tr><td><p><input type="button" value="Unlink" /></p></td><td>
           <p>
-            Remove all the links between the selected nodes. Unlike the <input type="button" value="Connect" />
+            Remove all the links between the selected schemas. Unlike the <input type="button" value="Connect" />
             and <input type="button" value="Anchor" /> buttons, you can have two <emph>or more</emph>
-            nodes selected, and it will remove all the links between all the nodes in the selection.
+            schemas selected, and it will remove all the links between all the schemas in the selection.
             It does this for every type of link, whether hierarchical or anchoring.
       </p></td></tr>
       <tr><td><p><input type="button" value="Delete" /></p></td><td>
           <p>
-            A dangerous button. This deletes the nodes currently selected, along with all the links
+            A dangerous button. This deletes the schemas currently selected, along with all the links
             attached to them. <strong>There is currently no undo. Delete is <emph>permanent</emph>.</strong>
       </p></td></tr>
       <tr><td><p>Grid&nbsp;<input type="checkbox" /></p></td><td>
@@ -226,38 +226,38 @@
     </p>
     <p>
       Navigating the Model is largely done with the mouse. Clicking and dragging anywhere outside of
-      a node will move the 'view' around. The scroll wheel is used to zoom in and out. Clicking a node
-      will cause it to become the only selected node. Shift-clicking an unselected node will add it to
-      the current selection, while shift-clicking a selected node will remove it from the current selection.
-      Holding shift while clicking and dragging outside of a node creates a 'selection rectangle', which
-      will add any nodes inside it to the current selection.
-      Dragging any node in a selection will move every node in that selection.
+      a schema will move the 'view' around. The scroll wheel is used to zoom in and out. Clicking a schema
+      will cause it to become the only selected schema. Shift-clicking an unselected schema will add it to
+      the current selection, while shift-clicking a selected schema will remove it from the current selection.
+      Holding shift while clicking and dragging outside of a schema creates a 'selection rectangle', which
+      will add any schemas inside it to the current selection.
+      Dragging any schema in a selection will move every schema in that selection.
     </p>
     <p>
-      Nodes can be dragged around using the mouse. They can also be 'nudged' using the arrow keys;
+      Schemas can be dragged around using the mouse. They can also be 'nudged' using the arrow keys;
       holding shift while nudging makes the movement smaller.
     </p>
     <p>
-      When using the hotkeys, any 'node creation' hotkey will cause the node to be added under the cursor.
-      This is different to the toolbar, in which clicking a 'node creation' button will add the node at
+      When using the hotkeys, any 'schema creation' hotkey will cause the schema to be added under the cursor.
+      This is different to the toolbar, in which clicking a 'schema creation' button will add the schema at
       the 'origin' of the Model.
     </p>
     <p>
-      Sometimes it can be useful to have a background grid, on which you can position the nodes. You can
+      Sometimes it can be useful to have a background grid, on which you can position the schemas. You can
       hide or show this grid using the checkbox in the toolbar.
     </p>
 
     <h2 id="slots-inspector">The Slots Inspector</h2>
     <p>
-      On the far right is the Slots inspector. Each node in the Model has associated 'slots':
-      each slot holds one particular piece of information about that node. When one node
-      in the Model editor is selected, the Slots inspector displays the information for that one node.
-      If multiple nodes are selected, the panel is empty. If no nodes are selected, information about
+      On the far right is the Slots inspector. Each schema in the Model has associated 'slots':
+      each slot holds one particular piece of information about that schema. When one schema
+      in the Model editor is selected, the Slots inspector displays the information for that one schema.
+      If multiple schemas are selected, the panel is empty. If no schemas are selected, information about
       the entire model is shown.
     </p>
     <p>
-      The information associated with a node varies based on whether it is a Representation,
-      R-Scheme, Dimension, or Token, so only some subset of these listed is available for each node.
+      The information associated with a schema varies based on whether it is a Representation,
+      R-Scheme, Dimension, or Token, so only some subset of these listed is available for each schema.
     </p>
     <p>TODO: DOCUMENT SLOTS</p>
     <p>
