@@ -201,7 +201,6 @@ module App = {
       }
     }
     let clickError = (_, err) => {
-      Js.Console.log(err)
       dispatch(
         Event.Intelligence.Focus(ModelError.id(err)->Some)->Event.File.Intelligence->Event.File,
       )
@@ -210,7 +209,6 @@ module App = {
       )
     }
     let clickWarning = (_, warn) => {
-      Js.Console.log(warn)
       dispatch(
         Event.Intelligence.Focus(ModelWarning.id(warn)->Some)->Event.File.Intelligence->Event.File,
       )
