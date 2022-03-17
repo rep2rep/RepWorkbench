@@ -42,5 +42,26 @@ T.create(request => {
     }
   })
 
+  links->Array.forEach(((sa, ta, ka) as a) =>
+    links->Array.forEach(((sb, tb, kb) as b) => {
+      if (
+        a !== b && ta === sb && ka === ModelLink.Kind.Hierarchy && kb === ModelLink.Kind.Hierarchy
+      ) {
+        let c = links->Array.find(((sc, tc, kc) as c) => {
+          sa === sc && tb === tc && kc === ModelLink.Kind.Hierarchy && a !== c && b !== c
+        })
+        if Option.isSome(c) {
+          warning(
+            ~nodes=[sa, ta, tb],
+            ~message="Transitive hierarchical connections",
+            ~details="Connections in the hierarchy are transitive, so normally you do not connect a grandparent schema to its grandchildren schemas.",
+            ~suggestion="Remove the transitive connection.",
+            (),
+          )
+        }
+      }
+    })
+  )
+
   {id: request.id, errors: errors, warnings: warnings}
 })
