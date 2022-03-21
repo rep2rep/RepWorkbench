@@ -1,6 +1,6 @@
 module rec Representation: {
   type rec t = Schema_intf.representation = {
-    uuid: Gid.t,
+    id: Gid.t,
     domain: string,
     display: Graphic.t,
     tokens: list<Schema_intf.token>,
@@ -9,7 +9,7 @@ module rec Representation: {
     subrepresentations: list<t>,
   }
 
-  let uuid: t => Gid.t
+  let id: t => Gid.t
   let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
@@ -17,7 +17,7 @@ module rec Representation: {
 
 and Dimension: {
   type rec t = Schema_intf.dimension = {
-    uuid: Gid.t,
+    id: Gid.t,
     concept: string,
     concept_scale: Quantity_scale.t,
     concept_attributes: list<Concept_attribute.t>,
@@ -32,7 +32,7 @@ and Dimension: {
     organisation: string,
   }
 
-  let uuid: t => Gid.t
+  let id: t => Gid.t
   let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
@@ -40,7 +40,7 @@ and Dimension: {
 
 and Scheme: {
   type rec t = Schema_intf.scheme = {
-    uuid: Gid.t,
+    id: Gid.t,
     concept_structure: string,
     graphic_structure: option<Graphic.t>,
     function: Function.t,
@@ -52,7 +52,7 @@ and Scheme: {
     organisation: string,
   }
 
-  let uuid: t => Gid.t
+  let id: t => Gid.t
   let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
@@ -60,7 +60,7 @@ and Scheme: {
 
 and Token: {
   type rec t = Schema_intf.token = {
-    uuid: Gid.t,
+    id: Gid.t,
     concept: string,
     graphic: option<Graphic.t>,
     is_class: bool,
@@ -72,7 +72,7 @@ and Token: {
     anchored_schemes: list<Schema_intf.scheme>,
   }
 
-  let uuid: t => Gid.t
+  let id: t => Gid.t
   let validate: t => Or_error.t<unit>
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
@@ -84,8 +84,9 @@ type t =
   | Dimension(Dimension.t)
   | Token(Token.t)
 
-let uuid: t => Gid.t
-let findByGid: (t, Gid.t) => option<t>
+let id: t => Gid.t
+let findById: (t, Gid.t) => option<t>
 let validate: t => Or_error.t<unit>
+
 let toJson: t => Js.Json.t
 let fromJson: Js.Json.t => Or_error.t<t>

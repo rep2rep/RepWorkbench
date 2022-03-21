@@ -1,7 +1,7 @@
 @@warning("-30")
 
 type rec representation = {
-  uuid: Gid.t,
+  id: Gid.t,
   domain: string,
   display: Graphic.t,
   tokens: list<token>,
@@ -10,7 +10,7 @@ type rec representation = {
   subrepresentations: list<representation>,
 }
 and scheme = {
-  uuid: Gid.t,
+  id: Gid.t,
   concept_structure: string,
   graphic_structure: option<Graphic.t>,
   function: Function.t,
@@ -22,7 +22,7 @@ and scheme = {
   organisation: string,
 }
 and dimension = {
-  uuid: Gid.t,
+  id: Gid.t,
   concept: string,
   concept_scale: Quantity_scale.t,
   concept_attributes: list<Concept_attribute.t>,
@@ -37,7 +37,7 @@ and dimension = {
   organisation: string,
 }
 and token = {
-  uuid: Gid.t,
+  id: Gid.t,
   concept: string,
   graphic: option<Graphic.t>,
   is_class: bool,
@@ -71,8 +71,9 @@ type fromJsonHelper = (
 
 module type S = {
   type t
-  let uuid: t => Gid.t
+  let id: t => Gid.t
   let validate: t => Or_error.t<unit>
+
   let toJson: t => Js.Json.t
   let fromJson: Js.Json.t => Or_error.t<t>
 

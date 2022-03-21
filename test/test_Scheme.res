@@ -16,7 +16,7 @@ let json = %raw(`{
 }`)
 
 let s = {
-  Schema.Scheme.uuid: Gid.fromString("3"),
+  Schema.Scheme.id: Gid.fromString("3"),
   concept_structure: "Concept structure",
   graphic_structure: Some("Graphic"),
   function: Function.Arbitrary,

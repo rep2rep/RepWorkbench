@@ -3,7 +3,7 @@ module Make = (
   Token: Schema_intf.S with type t = Schema_intf.token,
 ) => {
   type rec t = Schema_intf.scheme = {
-    uuid: Gid.t,
+    id: Gid.t,
     concept_structure: string,
     graphic_structure: option<Graphic.t>,
     function: Function.t,
@@ -15,20 +15,20 @@ module Make = (
     organisation: string,
   }
 
-  let uuid = t => t.uuid
+  let id = t => t.id
 
   let rec validate = t =>
     Or_error.allUnit(list{
       (t.explicit === !Option.isNone(t.graphic_structure))
         ->Or_error.fromBool_ss([
           "Scheme '",
-          Gid.toString(t.uuid),
+          Gid.toString(t.id),
           "' must be explicit if and only if it has a graphic instance",
         ]),
       (t.dimensions->Non_empty_list.length > 2 || t.tokens->List.isEmpty->not)
         ->Or_error.fromBool_ss([
           "Scheme '",
-          Gid.toString(t.uuid),
+          Gid.toString(t.id),
           "' must have either at least two dimensions, or at least one dimension and one token",
         ]),
       t.tokens->List.map(Token.validate)->Or_error.allUnit,
@@ -37,31 +37,31 @@ module Make = (
     })
 
   let rec _toJsonHelper = (t, idxs) => {
-    let idxs0 = Gid.Set.add(idxs, t.uuid)
+    let idxs0 = Gid.Set.add(idxs, t.id)
     let (other_json1, idxs1) =
-      t.tokens->Schema_intf.collapse(List.empty, idxs0, Token.uuid, Token._toJsonHelper)
+      t.tokens->Schema_intf.collapse(List.empty, idxs0, Token.id, Token._toJsonHelper)
     let (other_json2, idxs2) =
       t.dimensions
       ->Non_empty_list.toList
-      ->Schema_intf.collapse(other_json1, idxs1, Dimension.uuid, Dimension._toJsonHelper)
+      ->Schema_intf.collapse(other_json1, idxs1, Dimension.id, Dimension._toJsonHelper)
     let (other_json3, idxs3) =
-      t.schemes->Schema_intf.collapse(other_json2, idxs2, uuid, _toJsonHelper)
+      t.schemes->Schema_intf.collapse(other_json2, idxs2, id, _toJsonHelper)
 
     (
       other_json3->List.add((
-        t.uuid,
+        t.id,
         Js.Dict.fromList(list{
           ("concept_structure", String.toJson(t.concept_structure)),
           ("graphic_structure", t.graphic_structure->Option.toJson(Graphic.toJson)),
           ("function", Function.toJson(t.function)),
           ("explicit", Bool.toJson(t.explicit)),
           ("scope", Scope.toJson(t.scope)),
-          ("tokens", t.tokens->List.map(Token.uuid)->List.toJson(Gid.toJson)),
+          ("tokens", t.tokens->List.map(Token.id)->List.toJson(Gid.toJson)),
           (
             "dimensions",
-            t.dimensions->Non_empty_list.map(Dimension.uuid)->Non_empty_list.toJson(Gid.toJson),
+            t.dimensions->Non_empty_list.map(Dimension.id)->Non_empty_list.toJson(Gid.toJson),
           ),
-          ("schemes", t.schemes->List.map(uuid)->List.toJson(Gid.toJson)),
+          ("schemes", t.schemes->List.map(id)->List.toJson(Gid.toJson)),
           ("organisation", String.toJson(t.organisation)),
         })->Js.Json.object_,
       )),
@@ -73,24 +73,17 @@ module Make = (
     t
     ->_toJsonHelper(Gid.Set.empty)
     ->(((json, _)) => json)
-    ->List.map(((uuid, json)) => (Gid.toString(uuid), json))
-    ->List.add(("start", Gid.toJson(t.uuid)))
+    ->List.map(((id, json)) => (Gid.toString(id), json))
+    ->List.add(("start", Gid.toJson(t.id)))
     ->Js.Dict.fromList
     ->Js.Json.object_
 
-  let rec _fromJsonHelper = (
-    global_dict,
-    uuid,
-    representations0,
-    schemes0,
-    dimensions0,
-    tokens0,
-  ) => {
+  let rec _fromJsonHelper = (global_dict, id, representations0, schemes0, dimensions0, tokens0) => {
     global_dict
-    ->Js.Dict.get(uuid->Gid.toString)
-    ->Or_error.fromOption_ss(["Cannot find object matching UUID '", uuid->Gid.toString, "'"])
+    ->Js.Dict.get(id->Gid.toString)
+    ->Or_error.fromOption_ss(["Cannot find object matching ID '", id->Gid.toString, "'"])
     ->Or_error.tag("Reading Schema.Scheme.t")
-    ->Or_error.tag(String.concat("Reading UUID ", uuid->Gid.toString))
+    ->Or_error.tag(String.concat("Reading ID ", id->Gid.toString))
     ->Or_error.flatMap(json =>
       Js.Json.decodeObject(json)
       ->Or_error.fromOption_s("JSON is not a valid object (reading Scheme.Scheme.t)")
@@ -151,10 +144,10 @@ module Make = (
               tokens2,
             )
             ->Or_error.flatMap(((representations3, schemes3, dimensions3, tokens3)) => {
-              let uuid_get = (map, uuid) =>
-                Gid.Map.get(map, uuid)->Or_error.fromOption_ss([
-                  "Unable to find value with UUID '",
-                  Gid.toString(uuid),
+              let id_get = (map, id) =>
+                Gid.Map.get(map, id)->Or_error.fromOption_ss([
+                  "Unable to find value with ID '",
+                  Gid.toString(id),
                   "' (reading Schema.Scheme.t)",
                 ])
 
@@ -162,21 +155,21 @@ module Make = (
                 token_ids
                 ->Or_error.tag("Loading tokens")
                 ->Or_error.flatMap(token_ids =>
-                  token_ids->List.map(uuid => tokens3->uuid_get(uuid))->Or_error.all
+                  token_ids->List.map(id => tokens3->id_get(id))->Or_error.all
                 )
               let dimensions =
                 dimension_ids
                 ->Or_error.tag("Loading dimensions")
                 ->Or_error.flatMap(dimension_ids =>
                   dimension_ids
-                  ->Non_empty_list.map(uuid => dimensions3->uuid_get(uuid))
+                  ->Non_empty_list.map(id => dimensions3->id_get(id))
                   ->Non_empty_list.or_error_all
                 )
               let schemes =
                 scheme_ids
                 ->Or_error.tag("Loading schemes")
                 ->Or_error.flatMap(scheme_ids =>
-                  scheme_ids->List.map(uuid => schemes3->uuid_get(uuid))->Or_error.all
+                  scheme_ids->List.map(id => schemes3->id_get(id))->Or_error.all
                 )
 
               Or_error.both9((
@@ -201,7 +194,7 @@ module Make = (
                 organisation,
               )) => {
                 let t = {
-                  uuid: uuid,
+                  id: id,
                   concept_structure: concept_structure,
                   graphic_structure: graphic_structure,
                   function: function,
@@ -215,11 +208,11 @@ module Make = (
 
                 Or_error.create((
                   representations3,
-                  schemes3->Gid.Map.set(uuid, t),
+                  schemes3->Gid.Map.set(id, t),
                   dimensions3,
                   tokens3,
                 ))->Or_error.tag(
-                  Js.String2.concat("Successfully read Scheme with UUID ", uuid->Gid.toString),
+                  Js.String2.concat("Successfully read Scheme with ID ", id->Gid.toString),
                 )
               })
             })
@@ -233,22 +226,22 @@ module Make = (
     Js.Json.decodeObject(json)
     ->Or_error.fromOption_s("JSON is not a valid object (reading Schema.Scheme.t)")
     ->Or_error.flatMap(dict => {
-      let uuid =
+      let id =
         dict
         ->Js.Dict.get("start")
         ->Or_error.fromOption_s("Unable to find start of model (reading Schema.Scheme.t)")
         ->Or_error.flatMap(Gid.fromJson)
-      uuid->Or_error.flatMap(uuid =>
+      id->Or_error.flatMap(id =>
         _fromJsonHelper(
           dict,
-          uuid,
+          id,
           Gid.Map.empty(),
           Gid.Map.empty(),
           Gid.Map.empty(),
           Gid.Map.empty(),
         )->Or_error.flatMap(((_, schemes, _, _)) =>
           schemes
-          ->Gid.Map.get(uuid)
+          ->Gid.Map.get(id)
           ->Or_error.fromOption_s("Missing start of model (reading Schema.Scheme.t)")
         )
       )
