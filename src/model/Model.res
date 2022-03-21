@@ -14,7 +14,15 @@ let schemas = t => {
   Array.dedup(schemas)
 }
 let relations = t => t.relations
-let validate = t => Schema.validate(t.root)
+let validate = t =>
+  switch t.root {
+  | Schema.Representation(_) => Schema.validate(t.root)
+  | Schema.Scheme(_) | Schema.Dimension(_) | Schema.Token(_) =>
+    Or_error.both((
+      Schema.validate(t.root),
+      Or_error.error_s("Model root must be a Representation schema."),
+    ))->Or_error.map(((s, _)) => s)
+  }
 
 let toJson = t =>
   Js.Dict.fromList(list{
