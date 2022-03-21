@@ -87,6 +87,7 @@ type t =
 let id: t => Gid.t
 let findById: (t, Gid.t) => option<t>
 let validate: t => Or_error.t<unit>
+let children: t => list<t>
 
 let toJson: t => Js.Json.t
 let fromJson: Js.Json.t => Or_error.t<t>

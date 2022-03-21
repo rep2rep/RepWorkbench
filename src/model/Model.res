@@ -1,16 +1,25 @@
 type t = {
   root: Schema.t,
-  relations: list<SchemaRelation.t>,
+  relations: array<SchemaRelation.t>,
 }
 
 let root = t => t.root
+let schemas = t => {
+  let schemas = []
+  let rec f = schema => {
+    schemas->Js.Array2.push(schema)->ignore
+    Schema.children(schema)->List.forEach(f)
+  }
+  f(t.root)
+  Array.dedup(schemas)
+}
 let relations = t => t.relations
 let validate = t => Schema.validate(t.root)
 
 let toJson = t =>
   Js.Dict.fromList(list{
     ("root", t.root->Schema.toJson),
-    ("relations", t.relations->List.toJson(SchemaRelation.toJson)),
+    ("relations", t.relations->Array.toJson(SchemaRelation.toJson)),
   })->Js.Json.object_
 
 let fromJson = json =>
@@ -27,7 +36,7 @@ let fromJson = json =>
       ->Js.Dict.get("relations")
       ->Or_error.fromOption_s("Unable to find model relations (reading Model.t)")
       ->Or_error.flatMap(l =>
-        l->List.fromJson(j => root->Or_error.flatMap(root => j->SchemaRelation.fromJson(root)))
+        l->Array.fromJson(j => root->Or_error.flatMap(root => j->SchemaRelation.fromJson(root)))
       )
 
     Or_error.both((root, relations))->Or_error.map(((root, relations)) => {

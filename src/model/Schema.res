@@ -108,40 +108,40 @@ let validate = t =>
   | Token(t) => Token.validate(t)
   }
 
+let children = t =>
+  switch t {
+  | Representation(r) =>
+    List.concatMany([
+      r.tokens->List.map(t => Token(t)),
+      r.schemes->List.map(s => Scheme(s)),
+      r.dimensions->List.map(d => Dimension(d)),
+      r.subrepresentations->List.map(r => Representation(r)),
+    ])
+  | Scheme(s) =>
+    List.concatMany([
+      s.tokens->List.map(t => Token(t)),
+      s.dimensions->Non_empty_list.toList->List.map(d => Dimension(d)),
+      s.schemes->List.map(s => Scheme(s)),
+    ])
+  | Dimension(d) =>
+    List.concatMany([
+      d.dimensions->List.map(d => Dimension(d)),
+      d.tokens->Non_empty_list.toList->List.map(t => Token(t)),
+    ])
+  | Token(t) =>
+    List.concatMany([
+      t.sub_tokens->List.map(t => Token(t)),
+      t.anchored_tokens->List.map(t => Token(t)),
+      t.anchored_dimensions->List.map(d => Dimension(d)),
+      t.anchored_schemes->List.map(s => Scheme(s)),
+    ])
+  }
 
 let rec findById = (t, gid) =>
   if id(t) == gid {
     Some(t)
   } else {
-    switch t {
-    | Representation(r) =>
-      List.concatMany([
-        r.tokens->List.map(t => Token(t)),
-        r.schemes->List.map(s => Scheme(s)),
-        r.dimensions->List.map(d => Dimension(d)),
-        r.subrepresentations->List.map(r => Representation(r)),
-      ])
-    | Scheme(s) =>
-      List.concatMany([
-        s.tokens->List.map(t => Token(t)),
-        s.dimensions->Non_empty_list.toList->List.map(d => Dimension(d)),
-        s.schemes->List.map(s => Scheme(s)),
-      ])
-    | Dimension(d) =>
-      List.concatMany([
-        d.dimensions->List.map(d => Dimension(d)),
-        d.tokens->Non_empty_list.toList->List.map(t => Token(t)),
-      ])
-    | Token(t) =>
-      List.concatMany([
-        t.sub_tokens->List.map(t => Token(t)),
-        t.anchored_tokens->List.map(t => Token(t)),
-        t.anchored_dimensions->List.map(d => Dimension(d)),
-        t.anchored_schemes->List.map(s => Scheme(s)),
-      ])
-    }
-    ->List.mapPartial(t => findByGid(t, uid))
-    ->List.head
+    children(t)->List.mapPartial(t => findById(t, gid))->List.head
   }
 
 let toJson = t => {
