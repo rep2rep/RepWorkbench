@@ -5,5 +5,10 @@ let schemas: t => array<Schema.t>
 let relations: t => array<SchemaRelation.t>
 let validate: t => Or_error.t<unit>
 
+let toSlotsAndLinks: t => (
+  Gid.Map.t<InspectorState.Schema.t>,
+  array<(Gid.t, Gid.t, ModelLink.Kind.t)>,
+)
+
 let toJson: t => Js.Json.t
 let fromJson: Js.Json.t => Or_error.t<t>
