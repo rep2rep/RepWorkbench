@@ -1,4 +1,51 @@
 module Conv = {
+  let toposort = (links, all_ids) => {
+    let result = []
+    let links = links->Array.filter(((_, _, k)) => k !== ModelLink.Kind.Relation)
+    let roots =
+      all_ids->Array.filter(id => links->Array.find(((_, id', _)) => id === id')->Option.isNone)
+    let rec f = links => {
+      if Array.length(roots) !== 0 {
+        let root = Js.Array2.pop(roots)->Option.getExn
+        result->Js.Array2.push(root)->ignore
+        links
+        ->Array.filter(l => {
+          let (s, t, _) = l
+          if s === root {
+            switch links->Array.filter(((_, x, _)) => t === x) {
+            | [] => roots->Js.Array2.push(t)->ignore
+            | [l'] =>
+              if l' === l {
+                roots->Js.Array2.push(t)->ignore
+              }
+            | _ => ()
+            }
+            false
+          } else {
+            true
+          }
+        })
+        ->f
+      }
+    }
+    f(links)
+    if Array.length(links) === 0 {
+      let errs =
+        links->Array.map(((s, t, _)) =>
+          ModelError.create(
+            ~nodes=[s, t],
+            ~message="Model has a cycle.",
+            ~details="Models should not contain cycles – that is, the hierarchy and anchoring links should always connect a higher schema to a lower schema. We have found a situation where a lower schema is connected to a higher schema.",
+            ~suggestion="We've detected a cycle involving these nodes, but it might not be here precisely. Find the link going the 'wrong way', and remove it.",
+            (),
+          )
+        )
+      (result, errs)
+    } else {
+      (result, [])
+    }
+  }
+
   let schema_to_links = (schema: Schema.t) =>
     switch schema {
     | Schema.Representation(r) =>
@@ -99,6 +146,22 @@ let validate = t =>
       Or_error.error_s("Model root must be a Representation schema."),
     ))->Or_error.map(((s, _)) => s)
   }
+
+let fromSlotsAndLinks = (slots, links) => {
+  let (order, errors) = Conv.toposort(links, Gid.Map.keys(slots))
+  let schemas = ref(Gid.Map.empty())
+  order->Array.forEach(id => {
+    Js.Console.log(id)
+  })
+  switch errors {
+  | [] =>
+    // Great! Carry on.
+    Result.Error(([], []))
+  | _ =>
+    // Do a best-effort check, but it will be a bit crude.
+    Result.Error((errors, []))
+  }
+}
 
 let toSlotsAndLinks = t => {
   let schemas = schemas(t)
