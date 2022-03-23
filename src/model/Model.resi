@@ -8,7 +8,7 @@ let validate: t => Or_error.t<unit>
 let fromSlotsAndLinks: (
   Gid.Map.t<InspectorState.Schema.t>,
   array<(Gid.t, Gid.t, ModelLink.Kind.t)>,
-) => Result.t<array<t>, (array<ModelError.t>, array<ModelWarning.t>)>
+) => Result.t<t, (array<ModelError.t>, array<ModelWarning.t>)>
 let toSlotsAndLinks: t => (
   Gid.Map.t<InspectorState.Schema.t>,
   array<(Gid.t, Gid.t, ModelLink.Kind.t)>,
