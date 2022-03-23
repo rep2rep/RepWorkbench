@@ -32,6 +32,8 @@ type t = {
   kind: Kind.t,
 }
 
+let create = (first, second, kind) => {first: first, second: second, kind: kind}
+
 let schema = t => (t.first, t.second)
 let kind = t => t.kind
 

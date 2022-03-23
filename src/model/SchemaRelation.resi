@@ -11,6 +11,8 @@ module Kind: {
 
 type t
 
+let create: (Schema.t, Schema.t, Kind.t) => t
+
 let toJson: t => Js.Json.t
 let fromJson: (Js.Json.t, Schema.t) => Or_error.t<t>
 
