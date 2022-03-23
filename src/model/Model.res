@@ -727,7 +727,31 @@ let fromSlotsAndLinks = (slots, links) => {
             errs->Js.Array2.push(e)->ignore
             None
           }
-        | Some(None) => None // Failed to build for other reasons.
+        | Some(None) =>
+          // Failed to build for other reasons.
+          switch slots->Gid.Map.get(root) {
+          | None => {
+              let e = Conv.internalError(
+                "EXTRA ROOT",
+                "We have found an ID (" ++
+                Gid.toString(root) ++ "), but have no idea what it's for!",
+              )
+              errs->Js.Array2.push(e)->ignore
+              None
+            }
+          | Some(slots) =>
+            // Check if it should be the root or not
+            switch slots {
+            | InspectorState.Schema.Placeholder(_)
+            | InspectorState.Schema.Representation(_) =>
+              None
+            | _ => {
+                let e = Conv.needsParentError([root])
+                errs->Js.Array2.push(e)->ignore
+                None
+              }
+            }
+          }
         | Some(Some(r)) =>
           switch r {
           | Schema.Representation(_) => {
@@ -784,7 +808,7 @@ let fromSlotsAndLinks = (slots, links) => {
               switch slots->Gid.Map.get(root) {
               | None => {
                   let e = Conv.internalError(
-                    "EXTRA ROOT",
+                    "EXTRA ROOT_MULTI",
                     "We have found an ID (" ++
                     Gid.toString(root) ++ "), but have no idea what it's for!",
                   )
