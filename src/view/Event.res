@@ -365,6 +365,14 @@ let shouldTriggerIntelligence = e =>
   switch e {
   | File(File.Intelligence(Intelligence.Init)) => true // MUST be true
   | Model(_, Model.Graph(Graph.SetSelection(_)))
+  | Model(_, Model.Graph(Graph.MoveNode(_, _, _)))
+  | Model(_, Model.Rename(_))
+  | Model(_, Model.SetNotes(_))
+  | Model(_, Model.Slots(_, Slots.Representation(Slots.Representation.Notes(_))))
+  | Model(_, Model.Slots(_, Slots.Scheme(Slots.Scheme.Notes(_))))
+  | Model(_, Model.Slots(_, Slots.Dimension(Slots.Dimension.Notes(_))))
+  | Model(_, Model.Slots(_, Slots.Token(Slots.Token.Notes(_))))
+  | Model(_, Model.Slots(_, Slots.Placeholder(Slots.Placeholder.Notes(_))))
   | File(File.Intelligence(_)) => false
   | _ => true
   }
