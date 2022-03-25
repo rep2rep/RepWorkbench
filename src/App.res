@@ -331,7 +331,7 @@ module App = {
             ~order="1",
             ~display="flex",
             ~alignItems="center",
-            ~height="40px",
+            ~height="30px",
             ~borderBottom="1px solid black",
             ~padding="0 0.5rem",
             (),

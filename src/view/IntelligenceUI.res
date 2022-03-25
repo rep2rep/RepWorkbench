@@ -128,12 +128,52 @@ module Error = {
 }
 
 module Indicator = {
-  @react.component
-  let make = (~status: [#ok | #warning | #error | #loading]) => {
-    if status === #loading {
-      <>
-        <style>
-          {React.string(`
+  let warning =
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      version="1.1"
+      width="0.88em"
+      height="0.8em"
+      style={ReactDOM.Style.make(
+        ~position="relative",
+        ~top="0.05em",
+        ~fill="none",
+        ~stroke="currentColor",
+        ~strokeLinejoin="round",
+        ~strokeLinecap="round",
+        (),
+      )}
+      viewBox="0 0 110 100">
+      <path d="M 55,10 100,90 10,90 z" strokeWidth="10" />
+      <path d="M 55,40 55,60" strokeWidth="12" />
+      <path d="M 55,75 55,75" strokeWidth="12" />
+    </svg>
+
+  let error =
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      version="1.1"
+      width="0.8em"
+      height="0.8em"
+      style={ReactDOM.Style.make(
+        ~position="relative",
+        ~top="0.05em",
+        ~fill="none",
+        ~stroke="currentColor",
+        ~strokeLinejoin="round",
+        ~strokeLinecap="round",
+        (),
+      )}
+      viewBox="0 0 100 100">
+      <path d="M 31,10 69,10 90,31 90,69 69,90 31,90 10,69 10,31 z" strokeWidth="10" />
+      <path d="M 35,35 65,65" strokeWidth="12" />
+      <path d="M 35,65 65,35" strokeWidth="12" />
+    </svg>
+
+  let spinner =
+    <>
+      <style>
+        {React.string(`
 @keyframes kf-loading-intelligence {
   0% {
     transform: rotate(0deg);
@@ -143,53 +183,85 @@ module Indicator = {
   }
 }
 `)}
-        </style>
-        <span
-          style={ReactDOM.Style.make(
-            ~width="12px",
-            ~height="12px",
-            ~position="relative",
-            ~borderRadius="6px",
-            ~display="inline-block",
-            ~margin="0 0.5em",
-            ~padding="0",
-            (),
-          )}>
-          <span
-            style={ReactDOM.Style.make(
-              ~display="inline-block",
-              ~width="10px",
-              ~height="10px",
-              ~borderRadius="5px",
-              ~border="1px solid #666",
-              ~borderColor="#666 transparent #666  transparent",
-              ~animation="kf-loading-intelligence 1.2s linear infinite",
-              (),
-            )}
-          />
-        </span>
-      </>
-    } else {
+      </style>
       <span
         style={ReactDOM.Style.make(
           ~width="12px",
           ~height="12px",
           ~position="relative",
           ~borderRadius="6px",
-          ~border="1px solid #888",
           ~display="inline-block",
-          ~margin="0 0.5em",
-          ~backgroundColor={
-            switch status {
-            | #ok => "rgb(0, 222, 0)"
-            | #warning => "rgb(255, 222, 0)"
-            | #error => "rgb(255, 0, 0)"
-            | #loading => "rgba(0,0,0,0)"
-            }
-          },
           (),
-        )}
-      />
+        )}>
+        <span
+          style={ReactDOM.Style.make(
+            ~display="inline-block",
+            ~width="10px",
+            ~height="10px",
+            ~borderRadius="5px",
+            ~border="1px solid #666",
+            ~borderColor="#666 transparent #666  transparent",
+            ~animation="kf-loading-intelligence 1.2s linear infinite",
+            (),
+          )}
+        />
+      </span>
+    </>
+
+  let spacer = (~small) =>
+    <span
+      style={ReactDOM.Style.make(
+        ~display="inline-block",
+        ~width={
+          if small {
+            "0.3em"
+          } else {
+            "0.7em"
+          }
+        },
+        (),
+      )}
+    />
+
+  @react.component
+  let make = (~status: [#ready | #loading], ~errors, ~warnings, ~ignoredWarnings=0) => {
+    let errorString = React.string(
+      switch errors {
+      | 1 => "1 error"
+      | n => Int.toString(n) ++ " errors"
+      },
+    )
+    let warningString = React.string(
+      switch warnings - ignoredWarnings {
+      | 1 => "1 warning"
+      | n => Int.toString(n) ++ " warnings"
+      } ++
+      switch ignoredWarnings {
+      | 0 => ""
+      | 1 => " (1 ignored warning)"
+      | n => " (" ++ Int.toString(n) ++ " ignored warnings)"
+      },
+    )
+    if status === #loading {
+      <>
+        {spinner}
+        {spacer(~small=true)}
+        {errorString}
+        {spacer(~small=false)}
+        {spinner}
+        {spacer(~small=true)}
+        {warningString}
+      </>
+    } else {
+      <>
+        {error}
+        {spacer(~small=true)}
+        {errorString}
+        {spacer(~small=false)}
+        {warning}
+        {spacer(~small=true)}
+        {warningString}
+      </>
     }
   }
 }
@@ -256,7 +328,7 @@ let make = (
     ~width="100%",
     (),
   )
-  let hiddenStyle = commonStyle->ReactDOM.Style.combine(ReactDOM.Style.make(~height="32px", ()))
+  let hiddenStyle = commonStyle->ReactDOM.Style.combine(ReactDOM.Style.make(~height="30px", ()))
   let visibleStyle = commonStyle->ReactDOM.Style.combine(ReactDOM.Style.make(~height="200px", ()))
   let defaultStyle = if visible {
     visibleStyle
@@ -275,50 +347,39 @@ let make = (
       | None => ()
       | Some(f) => f()
       }}>
-    <div style={ReactDOM.Style.make(~position="relative", ~top="2px", ())}>
+    <div
+      style={ReactDOM.Style.make(
+        ~padding="0 0.5rem",
+        ~fontSize="0.9rem",
+        ~color={
+          if visible {
+            "black"
+          } else {
+            "#666"
+          }
+        },
+        (),
+      )}>
       <Indicator
         status={if !isUpToDate {
           #loading
         } else {
-          switch (nErrors, nWarnings - nIgnoredWarnings) {
-          | (0, 0) => #ok
-          | (0, _) => #warning
-          | (_, _) => #error
-          }
+          #ready
         }}
+        errors=nErrors
+        warnings=nWarnings
+        ignoredWarnings=nIgnoredWarnings
       />
-      {React.string(
-        switch (nErrors, nWarnings - nIgnoredWarnings) {
-        | (0, 0) => "Ok"
-        | (1, 1) => "1 error, 1 warning"
-        | (1, _) => "1 error, " ++ Int.toString(nWarnings - nIgnoredWarnings) ++ " warnings"
-        | (_, 1) => Int.toString(nErrors) ++ " errors, 1 warning"
-        | (_, _) =>
-          Int.toString(nErrors) ++
-          " errors, " ++
-          Int.toString(nWarnings - nIgnoredWarnings) ++ " warnings"
-        } ++
-        switch nIgnoredWarnings {
-        | 0 => "."
-        | 1 => " (1 ignored warning)."
-        | _ => " (" ++ Int.toString(nIgnoredWarnings) ++ " ignored warnings)."
-        },
-      )}
-      {if nErrors + nWarnings > 0 {
-        <>
-          <span style={ReactDOM.Style.make(~display="inline-block", ~width="0.5em", ())} />
-          <Button
-            value={if visible {
-              "Hide"
-            } else {
-              "Show"
-            }}
-            onClick=toggle
-          />
-        </>
-      } else {
-        React.null
-      }}
+      <span style={ReactDOM.Style.make(~display="inline-block", ~width="0.5em", ())} />
+      <Button
+        value={if visible {
+          "Hide"
+        } else {
+          "Show"
+        }}
+        enabled={nErrors + nWarnings > 0}
+        onClick=toggle
+      />
     </div>
     {if visible {
       <div
