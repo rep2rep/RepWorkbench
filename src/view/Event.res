@@ -361,7 +361,6 @@ let dispatch = (state, t) =>
   }
 
 let shouldTriggerIntelligence = e =>
-  // TODO more thoroughly
   switch e {
   | File(File.Intelligence(Intelligence.Init)) => true // MUST be true
   | Model(_, Model.Graph(Graph.SetSelection(_)))
