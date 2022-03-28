@@ -282,6 +282,7 @@ let make = (
           id="import_models"
           type_="file"
           accept=".repn"
+          multiple={true}
           style={ReactDOM.Style.make(
             ~width="0.1px",
             ~height="0.1px",
@@ -294,8 +295,8 @@ let make = (
           onChange={e => {
             let files = e->ReactEvent.Form.currentTarget->(t => t["files"])
             switch files {
-            | [f] => onImport(f)
-            | _ => ()
+            | [] => ()
+            | fs => onImport(fs)
             }
           }}
         />

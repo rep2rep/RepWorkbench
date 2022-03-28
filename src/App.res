@@ -221,22 +221,23 @@ module App = {
     let deselectErrorOrWarning = _ => {
       dispatch(Event.Intelligence.Focus(None)->Event.File.Intelligence->Event.File)
     }
-    let importModel = f => {
-      File.text(f)
-      |> Js.Promise.then_(text => {
-        let model = try text->Js.Json.parseExn->State.Model.Stable.V3.fromJson catch {
-        | _ => Or_error.error_s("fail")
-        }
-        if Or_error.isOk(model) {
-          let model = Or_error.okExn(model)
-          dispatch(Event.File.ImportModel(model)->Event.File)
-        } else {
-          Dialog.alert("Failed to import '" ++ File.name(f) ++ "'.")
-        }
-        Js.Promise.resolve()
+    let importModels = fs =>
+      fs->Array.forEach(f => {
+        File.text(f)
+        |> Js.Promise.then_(text => {
+          let model = try text->Js.Json.parseExn->State.Model.Stable.V3.fromJson catch {
+          | _ => Or_error.error_s("fail")
+          }
+          if Or_error.isOk(model) {
+            let model = Or_error.okExn(model)
+            dispatch(Event.File.ImportModel(model)->Event.File)
+          } else {
+            Dialog.alert("Failed to import '" ++ File.name(f) ++ "'.")
+          }
+          Js.Promise.resolve()
+        })
+        |> ignore
       })
-      |> ignore
-    }
     let exportModel = id => {
       state
       ->State.model(id)
@@ -312,7 +313,7 @@ module App = {
         onDuplicate={duplicateModel}
         onChangedName={renameModel}
         onReorder={reorder}
-        onImport={importModel}
+        onImport={importModels}
         onExport={exportModel}
       />
       <div
