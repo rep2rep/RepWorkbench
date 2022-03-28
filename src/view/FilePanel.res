@@ -162,6 +162,7 @@ let make = (
   ~onExport,
 ) => {
   let container = React.useRef(Js.Nullable.null)
+  let (dropTargetActive, setDropTargetActive) = React.useState(() => false)
   <HideablePanel2
     id
     toggle={(~hidden) =>
@@ -225,6 +226,49 @@ let make = (
           "onSelect": onSelect,
           "onChangedName": onChangedName,
         }
+      />
+      <div
+        style={ReactDOM.Style.make(
+          ~flexGrow="1",
+          ~background={
+            if dropTargetActive {
+              "rgba(0,0,0,0.1)"
+            } else {
+              "none"
+            }
+          },
+          ~border={
+            if dropTargetActive {
+              "2px solid rgba(0,0,0,0.2)"
+            } else {
+              "none"
+            }
+          },
+          (),
+        )}
+        onDragEnter={e => {
+          ReactEvent.Mouse.preventDefault(e)
+          setDropTargetActive(_ => true)
+        }}
+        onDragOver={e => ReactEvent.Mouse.preventDefault(e)}
+        onDragLeave={e => setDropTargetActive(_ => false)}
+        onDrop={e => {
+          ReactEvent.Mouse.preventDefault(e)
+          setDropTargetActive(_ => false)
+          let files: array<File.t> = Obj.magic(e)["dataTransfer"]["files"] // Absolute hack
+          let (keep, reject) = files->Array.partition(f => File.name(f)->String.endsWith(".repn"))
+          if keep != [] {
+            onImport(keep)
+          }
+          if reject != [] {
+            Dialog.alert(
+              "Could not upload files:\n" ++
+              reject
+              ->Array.map(f => "  " ++ File.name(f) ++ "\n")
+              ->Js.Array2.joinWith("") ++ "Not '.repn' files.",
+            )
+          }
+        }}
       />
     </div>
     <div
