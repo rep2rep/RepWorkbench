@@ -9,7 +9,8 @@ let json = %raw(`{
 "sub_tokens": [],
 "anchored_tokens": [],
 "anchored_dimensions": [],
-"anchored_schemes": []
+"anchored_schemes": [],
+"anchored_representations": [],
 }}`)
 
 let t = {
@@ -23,6 +24,7 @@ let t = {
   anchored_tokens: List.empty,
   anchored_dimensions: List.empty,
   anchored_schemes: List.empty,
+  anchored_representations: List.empty,
 }
 
 Testing.assertTrue("Valid token", () => () == Schema.Token.validate(t)->Or_error.okExn)

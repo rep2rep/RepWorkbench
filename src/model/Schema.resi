@@ -70,6 +70,7 @@ and Token: {
     anchored_tokens: list<t>,
     anchored_dimensions: list<Schema_intf.dimension>,
     anchored_schemes: list<Schema_intf.scheme>,
+    anchored_representations: list<Schema_intf.representation>,
   }
 
   let id: t => Gid.t

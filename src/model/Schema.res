@@ -76,6 +76,7 @@ and Token: {
     anchored_tokens: list<t>,
     anchored_dimensions: list<Schema_intf.dimension>,
     anchored_schemes: list<Schema_intf.scheme>,
+    anchored_representations: list<Schema_intf.representation>,
   }
 
   let id: t => Gid.t
@@ -84,7 +85,7 @@ and Token: {
   let fromJson: Js.Json.t => Or_error.t<t>
   let _toJsonHelper: (t, Gid.Set.t) => (list<(Gid.t, Js.Json.t)>, Gid.Set.t)
   let _fromJsonHelper: Schema_intf.fromJsonHelper
-} = Token_F.Make(Dimension, Scheme)
+} = Token_F.Make(Dimension, Scheme, Representation)
 
 type t =
   | Representation(Representation.t)

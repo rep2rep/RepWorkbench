@@ -734,29 +734,15 @@ module Conv = {
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
 
-    let anchored_representations__ = switch filterAnchored(ModelNode.Kind.Representation, (
-      id',
-      _,
-    ) => Some(id')) {
-    | [] => Result.Ok()
-    | rs =>
-      rs
-      ->Array.map(
-        Result.flatMap(_, id' => Result.Error(
-          [
-            ModelError.create(
-              ~nodes=[id, id'],
-              ~message="Token has a Representation anchored below it.",
-              ~details="This Representation schema is anchored below a Token schema. Only Token, R-dimension, and R-scheme schemas can be anchored below Tokens.",
-              ~suggestion="Remove this Representation schema, or place it elsewhere in the model.",
-              (),
-            ),
-          ],
-          [],
-        )),
+    let anchored_representations =
+      filterAnchored(ModelNode.Kind.Representation, (_, r) =>
+        switch r {
+        | Schema.Representation(r) => Some(r)
+        | _ => None
+        }
       )
-      ->Result.allUnit(combineMessages)
-    }
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
 
     (
       concept,
@@ -768,10 +754,10 @@ module Conv = {
       anchored_tokens,
       anchored_dimensions,
       anchored_schemes,
+      anchored_representations,
       dimensions__,
       schemes__,
       representations__,
-      anchored_representations__,
     )
     ->Result.both13(combineMessages)
     ->Result.map(((
@@ -784,7 +770,7 @@ module Conv = {
       anchored_tokens,
       anchored_dimensions,
       anchored_schemes,
-      (),
+      anchored_representations,
       (),
       (),
       (),
@@ -799,6 +785,7 @@ module Conv = {
       anchored_tokens: anchored_tokens,
       anchored_dimensions: anchored_dimensions,
       anchored_schemes: anchored_schemes,
+      anchored_representations: anchored_representations,
     }))
   }
 }

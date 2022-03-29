@@ -47,6 +47,7 @@ and token = {
   anchored_tokens: list<token>,
   anchored_dimensions: list<dimension>,
   anchored_schemes: list<scheme>,
+  anchored_representations: list<representation>,
 }
 
 type schema =
