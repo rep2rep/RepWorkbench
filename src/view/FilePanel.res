@@ -210,7 +210,13 @@ let make = (
       {React.string("V ##VERSION##")}
     </div>
     <div
-      style={ReactDOM.Style.make(~flexGrow="1", ~display="flex", ~flexDirection="column", ())}
+      style={ReactDOM.Style.make(
+        ~flexGrow="1",
+        ~display="flex",
+        ~flexDirection="column",
+        ~overflowY="auto",
+        (),
+      )}
       onClick={_ => onSelect(None)}>
       <ReactDraggableList.DraggableList
         items={models}
@@ -230,6 +236,7 @@ let make = (
       <div
         style={ReactDOM.Style.make(
           ~flexGrow="1",
+          ~minHeight="50px",
           ~background={
             if dropTargetActive {
               "rgba(0,0,0,0.1)"
