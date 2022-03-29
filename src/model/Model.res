@@ -171,14 +171,7 @@ module Conv = {
             ))->Some
           | Some((k, v)) =>
             if k === desiredKind {
-              v
-              ->Result.flatMap(v =>
-                switch f(id, v) {
-                | Some(v) => Result.Ok(v)
-                | None => Result.Error(([], [])) // Not something we're interested in, but no errors
-                }
-              )
-              ->Some
+              f(id, v)
             } else {
               None
             }
@@ -219,7 +212,8 @@ module Conv = {
     let tokens =
       filter(ModelNode.Kind.Token, (_, t) =>
         switch t {
-        | Schema.Token(t) => Some(t)
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Token(t)) => Some(Result.Ok(t))
         | _ => None
         }
       )
@@ -228,7 +222,8 @@ module Conv = {
     let dimensions =
       filter(ModelNode.Kind.Dimension, (_, d) =>
         switch d {
-        | Schema.Dimension(d) => Some(d)
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Dimension(d)) => Some(Result.Ok(d))
         | _ => None
         }
       )
@@ -237,7 +232,8 @@ module Conv = {
     let schemes =
       filter(ModelNode.Kind.Scheme, (_, s) =>
         switch s {
-        | Schema.Scheme(s) => Some(s)
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Scheme(s)) => Some(Result.Ok(s))
         | _ => None
         }
       )
@@ -246,7 +242,8 @@ module Conv = {
     let subrepresentations =
       filter(ModelNode.Kind.Representation, (_, r) =>
         switch r {
-        | Schema.Representation(r) => Some(r)
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Representation(r)) => Some(Result.Ok(r))
         | _ => None
         }
       )
@@ -312,7 +309,8 @@ module Conv = {
     let tokens =
       filter(ModelNode.Kind.Token, (_, t) =>
         switch t {
-        | Schema.Token(t) => Some(t)
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Token(t)) => Some(Result.Ok(t))
         | _ => None
         }
       )
@@ -321,7 +319,8 @@ module Conv = {
     let dimensions =
       filter(ModelNode.Kind.Dimension, (_, d) =>
         switch d {
-        | Schema.Dimension(d) => Some(d)
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Dimension(d)) => Some(Result.Ok(d))
         | _ => None
         }
       )
@@ -345,18 +344,16 @@ module Conv = {
     let schemes =
       filter(ModelNode.Kind.Scheme, (_, s) =>
         switch s {
-        | Schema.Scheme(s) => Some(s)
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Scheme(s)) => Some(Result.Ok(s))
         | _ => None
         }
       )
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
-    let representations__ = switch filter(ModelNode.Kind.Representation, (id', _) => Some(id')) {
-    | [] => Result.Ok()
-    | rs =>
-      rs
-      ->Array.map(
-        Result.flatMap(_, id' => Result.Error(
+    let representations__ =
+      filter(ModelNode.Kind.Representation, (id', _) => Some(
+        Result.Error(
           [
             ModelError.create(
               ~nodes=[id, id'],
@@ -367,10 +364,9 @@ module Conv = {
             ),
           ],
           [],
-        )),
-      )
-      ->Result.allUnit(combineMessages)
-    }
+        ),
+      ))->Result.allUnit(combineMessages)
+
     (
       concept_structure,
       graphic_structure,
@@ -461,9 +457,13 @@ module Conv = {
     let tokens =
       filter(ModelNode.Kind.Token, (_, t) =>
         switch t {
-        | Schema.Token(t) => {
+        | Result.Error(e) => {
             tokCount := tokCount.contents + 1
-            Some(t)
+            Some(Result.Error(e))
+          }
+        | Result.Ok(Schema.Token(t)) => {
+            tokCount := tokCount.contents + 1
+            Some(Result.Ok(t))
           }
         | _ => None
         }
@@ -473,21 +473,22 @@ module Conv = {
     let dimensions =
       filter(ModelNode.Kind.Dimension, (_, d) =>
         switch d {
-        | Schema.Dimension(d) => {
+        | Result.Error(e) => {
             dimCount := dimCount.contents + 1
-            Some(d)
+            Some(Result.Error(e))
+          }
+        | Result.Ok(Schema.Dimension(d)) => {
+            dimCount := dimCount.contents + 1
+            Some(Result.Ok(d))
           }
         | _ => None
         }
       )
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
-    let representations__ = switch filter(ModelNode.Kind.Representation, (id', _) => Some(id')) {
-    | [] => Result.Ok()
-    | rs =>
-      rs
-      ->Array.map(
-        Result.flatMap(_, id' => Result.Error(
+    let representations__ =
+      filter(ModelNode.Kind.Representation, (id', _) => Some(
+        Result.Error(
           [
             ModelError.create(
               ~nodes=[id, id'],
@@ -498,16 +499,11 @@ module Conv = {
             ),
           ],
           [],
-        )),
-      )
-      ->Result.allUnit(combineMessages)
-    }
-    let schemes__ = switch filter(ModelNode.Kind.Scheme, (id', _) => Some(id')) {
-    | [] => Result.Ok()
-    | ss =>
-      ss
-      ->Array.map(
-        Result.flatMap(_, id' => Result.Error(
+        ),
+      ))->Result.allUnit(combineMessages)
+    let schemes__ =
+      filter(ModelNode.Kind.Scheme, (id', _) => Some(
+        Result.Error(
           [
             ModelError.create(
               ~nodes=[id, id'],
@@ -518,10 +514,8 @@ module Conv = {
             ),
           ],
           [],
-        )),
-      )
-      ->Result.allUnit(combineMessages)
-    }
+        ),
+      ))->Result.allUnit(combineMessages)
 
     let at_least_one_token_or_dimension__ = if tokCount.contents + dimCount.contents >= 1 {
       Result.Ok()
@@ -669,46 +663,32 @@ module Conv = {
     let sub_tokens =
       filter(ModelNode.Kind.Token, (_, t) =>
         switch t {
-        | Schema.Token(t) => Some(t)
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Token(t)) => Some(Result.Ok(t))
         | _ => None
         }
       )
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
-    let dimensions__ = switch filter(ModelNode.Kind.Dimension, (id', _) => Some(id')) {
-    | [] => Result.Ok()
-    | ds =>
-      ds
-      ->Array.map(
-        Result.flatMap(_, id' => Result.Error([badNonAnchorError(id', "R-dimension", true)], [])),
-      )
-      ->Result.allUnit(combineMessages)
-    }
-    let schemes__ = switch filter(ModelNode.Kind.Scheme, (id', _) => Some(id')) {
-    | [] => Result.Ok()
-    | ss =>
-      ss
-      ->Array.map(
-        Result.flatMap(_, id' => Result.Error([badNonAnchorError(id', "R-scheme", true)], [])),
-      )
-      ->Result.allUnit(combineMessages)
-    }
-    let representations__ = switch filter(ModelNode.Kind.Representation, (id', _) => Some(id')) {
-    | [] => Result.Ok()
-    | rs =>
-      rs
-      ->Array.map(
-        Result.flatMap(_, id' => Result.Error(
-          [badNonAnchorError(id', "Representation", false)],
-          [],
-        )),
-      )
-      ->Result.allUnit(combineMessages)
-    }
+    let dimensions__ =
+      filter(ModelNode.Kind.Dimension, (id', _) => Some(
+        Result.Error([badNonAnchorError(id', "R-dimension", true)], []),
+      ))->Result.allUnit(combineMessages)
+
+    let schemes__ =
+      filter(ModelNode.Kind.Scheme, (id', _) => Some(
+        Result.Error([badNonAnchorError(id', "R-scheme", true)], []),
+      ))->Result.allUnit(combineMessages)
+
+    let representations__ =
+      filter(ModelNode.Kind.Representation, (id', _) => Some(
+        Result.Error([badNonAnchorError(id', "Representation", false)], []),
+      ))->Result.allUnit(combineMessages)
     let anchored_tokens =
       filterAnchored(ModelNode.Kind.Token, (_, t) =>
         switch t {
-        | Schema.Token(t) => Some(t)
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Token(t)) => Some(Result.Ok(t))
         | _ => None
         }
       )
@@ -717,7 +697,8 @@ module Conv = {
     let anchored_dimensions =
       filterAnchored(ModelNode.Kind.Dimension, (_, d) =>
         switch d {
-        | Schema.Dimension(d) => Some(d)
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Dimension(d)) => Some(Result.Ok(d))
         | _ => None
         }
       )
@@ -727,7 +708,8 @@ module Conv = {
     let anchored_schemes =
       filterAnchored(ModelNode.Kind.Scheme, (_, s) =>
         switch s {
-        | Schema.Scheme(s) => Some(s)
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Scheme(s)) => Some(Result.Ok(s))
         | _ => None
         }
       )
@@ -737,7 +719,8 @@ module Conv = {
     let anchored_representations =
       filterAnchored(ModelNode.Kind.Representation, (_, r) =>
         switch r {
-        | Schema.Representation(r) => Some(r)
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Representation(r)) => Some(Result.Ok(r))
         | _ => None
         }
       )
