@@ -340,6 +340,20 @@ let make = (
     ->Option.map(ReactDOM.Style.combine(defaultStyle))
     ->Option.getWithDefault(defaultStyle)
 
+  let section = title =>
+    <div
+      style={ReactDOM.Style.make(
+        ~padding="0.25rem 1.5rem",
+        ~color="#333",
+        ~background="#eee",
+        ~fontSize="0.6rem",
+        ~textTransform="uppercase",
+        ~letterSpacing="0.05em",
+        (),
+      )}>
+      {React.string(title)}
+    </div>
+
   <div
     style
     onClick={_ =>
@@ -355,7 +369,7 @@ let make = (
           if visible {
             "black"
           } else {
-            "#666"
+            "#333"
           }
         },
         (),
@@ -387,24 +401,13 @@ let make = (
           ~width="calc(100% - 1rem)",
           ~flexGrow="1",
           ~margin="0.25rem 0.5rem 0.5rem 0.5rem",
-          ~padding="0.25rem 0",
           ~borderRadius="2px",
           ~border="1px solid #aaa",
           ~overflowY="scroll",
           (),
         )}>
         {if errors != [] {
-          <div
-            style={ReactDOM.Style.make(
-              ~padding="0 1.5rem 0.25rem 1.5rem",
-              ~color="#333",
-              ~fontSize="0.6rem",
-              ~textTransform="uppercase",
-              ~letterSpacing="0.05em",
-              (),
-            )}>
-            {React.string("Errors")}
-          </div>
+          section("Errors")
         } else {
           React.null
         }}
@@ -422,22 +425,12 @@ let make = (
         })
         ->React.array}
         {if nErrors > 0 && nWarnings > 0 {
-          <hr style={ReactDOM.Style.make(~margin="0.25rem 0", ())} />
+          <div style={ReactDOM.Style.make(~margin="0.5rem 0", ())} />
         } else {
           React.null
         }}
         {if warnings != [] {
-          <div
-            style={ReactDOM.Style.make(
-              ~padding="0 1.5rem 0.25rem 1.5rem",
-              ~color="#333",
-              ~fontSize="0.6rem",
-              ~textTransform="uppercase",
-              ~letterSpacing="0.05em",
-              (),
-            )}>
-            {React.string("Warnings")}
-          </div>
+          section("Warnings")
         } else {
           React.null
         }}
