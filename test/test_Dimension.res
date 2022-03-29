@@ -29,7 +29,7 @@ let d = {
   scope: Scope.Local,
   explicit: false,
   dimensions: list{},
-  tokens: Non_empty_list.singleton(Test_Token.t),
+  tokens: list{Test_Token.t},
   organisation: "Organisation",
 }
 

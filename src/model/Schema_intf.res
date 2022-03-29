@@ -33,7 +33,7 @@ and dimension = {
   scope: Scope.t,
   explicit: bool,
   dimensions: list<dimension>,
-  tokens: Non_empty_list.t<token>,
+  tokens: list<token>,
   organisation: string,
 }
 and token = {

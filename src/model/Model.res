@@ -140,9 +140,7 @@ module Conv = {
     | Schema.Dimension(d) =>
       [
         d.dimensions->List.map(d' => (d.id, d'.id, ModelLink.Kind.Hierarchy)),
-        d.tokens
-        ->Non_empty_list.map(t => (d.id, t.id, ModelLink.Kind.Hierarchy))
-        ->Non_empty_list.toList,
+        d.tokens->List.map(t => (d.id, t.id, ModelLink.Kind.Hierarchy)),
       ]->Array.flatMap(List.toArray)
     | Schema.Token(t) =>
       [
@@ -457,34 +455,28 @@ module Conv = {
     let explicit = slots.explicit->Result.fromOption(() => ([noExplicitError([id])], []))
     let scope = slots.scope->Result.fromOption(() => ([noScopeError([id])], []))
     let organisation = Result.Ok(slots.organisation)
+
+    let tokCount = ref(0)
+    let dimCount = ref(0)
     let tokens =
       filter(ModelNode.Kind.Token, (_, t) =>
         switch t {
-        | Schema.Token(t) => Some(t)
+        | Schema.Token(t) => {
+            tokCount := tokCount.contents + 1
+            Some(t)
+          }
         | _ => None
         }
       )
       ->Result.all(combineMessages)
-      ->Result.flatMap(a =>
-        a
-        ->Non_empty_list.fromArray
-        ->Result.fromOption(() => (
-          [
-            ModelError.create(
-              ~nodes=[id],
-              ~message="R-dimension has no Tokens below it.",
-              ~details="This R-dimension has no immediate children that are Tokens. However, an R-dimension must directly encapsulate at least one Token.",
-              ~suggestion="Add a Token, or replace this R-dimension with another schema.",
-              (),
-            ),
-          ],
-          [],
-        ))
-      )
+      ->Result.map(List.fromArray)
     let dimensions =
       filter(ModelNode.Kind.Dimension, (_, d) =>
         switch d {
-        | Schema.Dimension(d) => Some(d)
+        | Schema.Dimension(d) => {
+            dimCount := dimCount.contents + 1
+            Some(d)
+          }
         | _ => None
         }
       )
@@ -530,6 +522,23 @@ module Conv = {
       )
       ->Result.allUnit(combineMessages)
     }
+
+    let at_least_one_token_or_dimension__ = if tokCount.contents + dimCount.contents >= 1 {
+      Result.Ok()
+    } else {
+      Result.Error(
+        [
+          ModelError.create(
+            ~nodes=[id],
+            ~message="R-dimensions must have at least one child.",
+            ~details="R-dimensions must contain at least one Token, or the must split into sub-R-dimensions (or do both). This R-dimension has no Token children and no sub-R-dimensions.",
+            ~suggestion="Add a Token or a sub-R-dimension below this R-dimension.",
+            (),
+          ),
+        ],
+        [],
+      )
+    }
     (
       concept,
       concept_scale,
@@ -545,8 +554,9 @@ module Conv = {
       organisation,
       representations__,
       schemes__,
+      at_least_one_token_or_dimension__,
     )
-    ->Result.both14(combineMessages)
+    ->Result.both15(combineMessages)
     ->Result.map(((
       concept,
       concept_scale,
@@ -560,6 +570,7 @@ module Conv = {
       tokens,
       dimensions,
       organisation,
+      (),
       (),
       (),
     )) => Schema.Dimension({
@@ -630,8 +641,20 @@ module Conv = {
     let badNonAnchorError = (id', kind, anchor) =>
       ModelError.create(
         ~nodes=[id, id'],
-        ~message="All " ++ kind ++ " schema below a Token must be anchored.",
-        ~details="Children of Tokens must either be a sub-Token, or it must be an anchored schema. This schema is not anchored, but it is not a sub-Token – it is a " ++
+        ~message={
+          if kind->String.startsWith("R-") {
+            "An "
+          } else {
+            "A "
+          } ++
+          kind ++ " schema below a Token must be anchored."
+        },
+        ~details="Children of Tokens must either be a sub-Token, or it must be an anchored schema. This schema is not anchored, but it is not a sub-Token: it is " ++
+        if kind->String.startsWith("R-") {
+          "an "
+        } else {
+          "a "
+        } ++
         kind ++ ".",
         ~suggestion={
           if anchor {

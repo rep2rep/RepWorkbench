@@ -28,7 +28,7 @@ and Dimension: {
     scope: Scope.t,
     explicit: bool,
     dimensions: list<t>,
-    tokens: Non_empty_list.t<Schema_intf.token>,
+    tokens: list<Schema_intf.token>,
     organisation: string,
   }
 

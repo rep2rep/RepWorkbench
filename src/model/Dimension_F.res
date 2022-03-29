@@ -11,7 +11,7 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
     scope: Scope.t,
     explicit: bool,
     dimensions: list<t>,
-    tokens: Non_empty_list.t<Token.t>,
+    tokens: list<Token.t>,
     organisation: string,
   }
 
@@ -27,7 +27,7 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
           "' must be explicit if and only if it has a graphic instance",
         ]),
       t.dimensions->List.map(validate)->Or_error.allUnit,
-      t.tokens->Non_empty_list.map(Token.validate)->Non_empty_list.toList->Or_error.allUnit,
+      t.tokens->List.map(Token.validate)->Or_error.allUnit,
     })
 
   let rec _toJsonHelper = (t, idxs) => {
@@ -35,9 +35,7 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
     let (other_json1, idxs1) =
       t.dimensions->Schema_intf.collapse(List.empty, idxs0, id, _toJsonHelper)
     let (other_json2, idxs2) =
-      t.tokens
-      ->Non_empty_list.toList
-      ->Schema_intf.collapse(other_json1, idxs1, Token.id, Token._toJsonHelper)
+      t.tokens->Schema_intf.collapse(other_json1, idxs1, Token.id, Token._toJsonHelper)
 
     (
       other_json2->List.add((
@@ -53,7 +51,7 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
           ("scope", Scope.toJson(t.scope)),
           ("explicit", Bool.toJson(t.explicit)),
           ("dimensions", t.dimensions->List.map(id)->List.toJson(Gid.toJson)),
-          ("tokens", t.tokens->Non_empty_list.map(Token.id)->Non_empty_list.toJson(Gid.toJson)),
+          ("tokens", t.tokens->List.map(Token.id)->List.toJson(Gid.toJson)),
           ("organisation", String.toJson(t.organisation)),
         })->Js.Json.object_,
       )),
@@ -102,7 +100,7 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
         let organisation = get_value("organisation", String.fromJson)
 
         let dimension_ids = get_value("dimensions", j => j->List.fromJson(Gid.fromJson))
-        let token_ids = get_value("tokens", j => j->Non_empty_list.fromJson(Gid.fromJson))
+        let token_ids = get_value("tokens", j => j->List.fromJson(Gid.fromJson))
 
         dimension_ids
         ->Or_error.tag("Reading dimensions")
@@ -118,7 +116,6 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
         ->Or_error.flatMap(((representations1, schemes1, dimensions1, tokens1)) =>
           token_ids
           ->Or_error.tag("Reading tokens")
-          ->Or_error.map(Non_empty_list.toList)
           ->Schema_intf.recurse(
             Token._fromJsonHelper,
             global_dict,
@@ -146,9 +143,7 @@ module Make = (Token: Schema_intf.S with type t = Schema_intf.token) => {
               token_ids
               ->Or_error.tag("Loading tokens")
               ->Or_error.flatMap(token_ids =>
-                token_ids
-                ->Non_empty_list.map(id => tokens2->id_get(id))
-                ->Non_empty_list.or_error_all
+                token_ids->List.map(id => tokens2->id_get(id))->Or_error.all
               )
 
             Or_error.both12((

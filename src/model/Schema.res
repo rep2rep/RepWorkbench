@@ -30,7 +30,7 @@ and Dimension: {
     scope: Scope.t,
     explicit: bool,
     dimensions: list<t>,
-    tokens: Non_empty_list.t<Schema_intf.token>,
+    tokens: list<Schema_intf.token>,
     organisation: string,
   }
 
@@ -124,10 +124,7 @@ let children = t =>
       s.schemes->List.map(s => Scheme(s)),
     ])
   | Dimension(d) =>
-    List.concatMany([
-      d.dimensions->List.map(d => Dimension(d)),
-      d.tokens->Non_empty_list.toList->List.map(t => Token(t)),
-    ])
+    List.concatMany([d.dimensions->List.map(d => Dimension(d)), d.tokens->List.map(t => Token(t))])
   | Token(t) =>
     List.concatMany([
       t.sub_tokens->List.map(t => Token(t)),
