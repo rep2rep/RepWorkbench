@@ -21,7 +21,7 @@ module Conv = {
     ModelError.create(
       ~nodes,
       ~message="Missing \"Function\" of schema.",
-      ~details="This schema requires a \"Function\" – whether it is semantic, auxiliary, or arbitrary. This has not been set.",
+      ~details="This schema requires a \"Function\", whether it is semantic, auxiliary, or arbitrary. This has not been set.",
       ~suggestion="Select the appropriate \"Function\" from the dropdown menu.",
       (),
     )
@@ -109,7 +109,7 @@ module Conv = {
           ModelError.create(
             ~nodes=[s, t],
             ~message="Model has a cycle.",
-            ~details="Models should not contain cycles – that is, the hierarchy and anchoring links should always connect a higher schema to a lower schema. We have found a situation where a lower schema is connected to a higher schema.",
+            ~details="Models should not contain cycles: that is, the hierarchy and anchoring links should always connect a higher schema to a lower schema. We have found a situation where a lower schema is connected to a higher schema.",
             ~suggestion="We've detected a cycle involving these nodes, but it might not be here precisely. Find the link going the 'wrong way', and remove it.",
             (),
           )
@@ -628,7 +628,7 @@ module Conv = {
           ModelError.create(
             ~nodes=[id],
             ~message="Unspecified if Token is a \"class\" Token.",
-            ~details="Tokens can be \"standard\" or \"class\" – that is, they can stand in for more than one actual thing in the representation. This has not been specified.",
+            ~details="Tokens can be \"standard\" or \"class\": that is, they can stand in for more than one actual thing in the representation. This has not been specified.",
             ~suggestion="Select whether this token is a class using the \"Is class?\" dropdown.",
             (),
           ),
