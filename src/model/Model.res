@@ -153,30 +153,40 @@ module Conv = {
       ]->Array.flatMap(List.toArray)
     }
 
-  let filter = (below, schemas, f) =>
-    below
-    ->Array.map(id =>
+  let filter = (below, schemas, desiredKind, f) =>
+    below->Array.mapPartial(id =>
       schemas
       ->Gid.Map.get(id)
-      ->(r =>
-        switch r {
-        | Some(None) => Result.Error(([], [])) // We tried to build it in the past and failed
-        | None =>
-          Result.Error((
-            [
-              internalError(
-                "MISSING",
-                "Expected node with ID " ++ Gid.toString(id) ++ " is missing",
-              ),
-            ],
-            [],
-          )) // Straight-up missing - eek!
-        | Some(Some(r)) => Result.Ok(r)
-        })
-      ->Result.flatMap(f)
+      ->(
+        r =>
+          switch r {
+          | None =>
+            // Straight-up missing - eek!
+            Result.Error((
+              [
+                internalError(
+                  "MISSING",
+                  "Expected node with ID " ++ Gid.toString(id) ++ " is missing",
+                ),
+              ],
+              [],
+            ))->Some
+          | Some((k, v)) =>
+            if k === desiredKind {
+              v
+              ->Result.flatMap(v =>
+                switch f(id, v) {
+                | Some(v) => Result.Ok(v)
+                | None => Result.Error(([], [])) // Not something we're interested in, but no errors
+                }
+              )
+              ->Some
+            } else {
+              None
+            }
+          }
+      )
     )
-    ->Result.all(combineMessages)
-    ->Result.map(List.fromArray)
 
   let representation_to_slots = (
     rep: Schema.Representation.t,
@@ -187,7 +197,7 @@ module Conv = {
   })
 
   let slots_to_representation = (id, slots: InspectorState.Representation.t, schemas, below) => {
-    let filter = f => filter(below, schemas, f)
+    let filter = (k, f) => filter(below, schemas, k, f)
     let domain = switch slots.domain {
     | "#Rep#" =>
       Result.Error((
@@ -208,30 +218,42 @@ module Conv = {
     | "#Ref#" => Result.Error(([], [defaultReferenceWarning([id], "display", "Representation")]))
     | s => Result.Ok(s)
     }
-    let tokens = filter(t =>
-      switch t {
-      | Schema.Token(t) => Result.Ok(t)
-      | _ => Result.Error(([], []))
-      }
-    )
-    let dimensions = filter(d =>
-      switch d {
-      | Schema.Dimension(d) => Result.Ok(d)
-      | _ => Result.Error(([], []))
-      }
-    )
-    let schemes = filter(s =>
-      switch s {
-      | Schema.Scheme(s) => Result.Ok(s)
-      | _ => Result.Error(([], []))
-      }
-    )
-    let subrepresentations = filter(r =>
-      switch r {
-      | Schema.Representation(r) => Result.Ok(r)
-      | _ => Result.Error(([], []))
-      }
-    )
+    let tokens =
+      filter(ModelNode.Kind.Token, (_, t) =>
+        switch t {
+        | Schema.Token(t) => Some(t)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
+    let dimensions =
+      filter(ModelNode.Kind.Dimension, (_, d) =>
+        switch d {
+        | Schema.Dimension(d) => Some(d)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
+    let schemes =
+      filter(ModelNode.Kind.Scheme, (_, s) =>
+        switch s {
+        | Schema.Scheme(s) => Some(s)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
+    let subrepresentations =
+      filter(ModelNode.Kind.Representation, (_, r) =>
+        switch r {
+        | Schema.Representation(r) => Some(r)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
     (domain, display, tokens, dimensions, schemes, subrepresentations)
     ->Result.both6(combineMessages)
     ->Result.map(((
@@ -263,7 +285,7 @@ module Conv = {
   })
 
   let slots_to_scheme = (id, slots: InspectorState.Scheme.t, schemas, below) => {
-    let filter = f => filter(below, schemas, f)
+    let filter = (k, f) => filter(below, schemas, k, f)
     let concept_structure = switch slots.concept_structure {
     | "#Sch#" =>
       Result.Error((
@@ -289,39 +311,68 @@ module Conv = {
     let explicit = slots.explicit->Result.fromOption(() => ([noExplicitError([id])], []))
     let scope = slots.scope->Result.fromOption(() => ([noScopeError([id])], []))
     let organisation = Result.Ok(slots.organisation)
-    let tokens = filter(t =>
-      switch t {
-      | Schema.Token(t) => Result.Ok(t)
-      | _ => Result.Error(([], []))
-      }
-    )
-    let dimensions = filter(d =>
-      switch d {
-      | Schema.Dimension(d) => Result.Ok(d)
-      | _ => Result.Error(([], []))
-      }
-    )->Result.flatMap(l =>
-      l
-      ->Non_empty_list.fromList
-      ->Result.fromOption(() => (
-        [
-          ModelError.create(
-            ~nodes=[id],
-            ~message="R-scheme has no R-dimension below it.",
-            ~details="This R-scheme has no immediate children that are R-dimensions. However, an R-scheme must directly encapsulate at least one R-dimension.",
-            ~suggestion="Add an R-dimension, or replace this R-scheme with another schema.",
-            (),
-          ),
-        ],
-        [],
-      ))
-    )
-    let schemes = filter(s =>
-      switch s {
-      | Schema.Scheme(s) => Result.Ok(s)
-      | _ => Result.Error(([], []))
-      }
-    )
+    let tokens =
+      filter(ModelNode.Kind.Token, (_, t) =>
+        switch t {
+        | Schema.Token(t) => Some(t)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
+    let dimensions =
+      filter(ModelNode.Kind.Dimension, (_, d) =>
+        switch d {
+        | Schema.Dimension(d) => Some(d)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.flatMap(a =>
+        a
+        ->Non_empty_list.fromArray
+        ->Result.fromOption(() => (
+          [
+            ModelError.create(
+              ~nodes=[id],
+              ~message="R-scheme has no R-dimension below it.",
+              ~details="This R-scheme has no immediate children that are R-dimensions. However, an R-scheme must directly encapsulate at least one R-dimension.",
+              ~suggestion="Add an R-dimension, or replace this R-scheme with another schema.",
+              (),
+            ),
+          ],
+          [],
+        ))
+      )
+    let schemes =
+      filter(ModelNode.Kind.Scheme, (_, s) =>
+        switch s {
+        | Schema.Scheme(s) => Some(s)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
+    let representations__ = switch filter(ModelNode.Kind.Representation, (id', _) => Some(id')) {
+    | [] => Result.Ok()
+    | rs =>
+      rs
+      ->Array.map(
+        Result.flatMap(_, id' => Result.Error(
+          [
+            ModelError.create(
+              ~nodes=[id, id'],
+              ~message="R-scheme has a Representation below it.",
+              ~details="R-scheme schemas cannot have Representation schemas as direct descendants.",
+              ~suggestion="Remove this Representation schema, or connect it elsewhere in the model.",
+              (),
+            ),
+          ],
+          [],
+        )),
+      )
+      ->Result.allUnit(combineMessages)
+    }
     (
       concept_structure,
       graphic_structure,
@@ -332,8 +383,9 @@ module Conv = {
       dimensions,
       schemes,
       organisation,
+      representations__,
     )
-    ->Result.both9(combineMessages)
+    ->Result.both10(combineMessages)
     ->Result.map(((
       concept_structure,
       graphic_structure,
@@ -344,6 +396,7 @@ module Conv = {
       dimensions,
       schemes,
       organisation,
+      (),
     )) => Schema.Scheme({
       Schema.Scheme.id: id,
       concept_structure: concept_structure,
@@ -373,7 +426,7 @@ module Conv = {
   })
 
   let slots_to_dimension = (id, slots: InspectorState.Dimension.t, schemas, below) => {
-    let filter = f => filter(below, schemas, f)
+    let filter = (k, f) => filter(below, schemas, k, f)
     let concept = switch slots.concept {
     | "#Dim#" =>
       Result.Error((
@@ -404,51 +457,79 @@ module Conv = {
     let explicit = slots.explicit->Result.fromOption(() => ([noExplicitError([id])], []))
     let scope = slots.scope->Result.fromOption(() => ([noScopeError([id])], []))
     let organisation = Result.Ok(slots.organisation)
-    let tokens = filter(t =>
-      switch t {
-      | Schema.Token(t) => Result.Ok(t)
-      | _ => Result.Error(([], []))
-      }
-    )->Result.flatMap(l =>
-      l
-      ->Non_empty_list.fromList
-      ->Result.fromOption(() => (
-        [
-          ModelError.create(
-            ~nodes=[id],
-            ~message="R-dimension has no Tokens below it.",
-            ~details="This R-dimension has no immediate children that are Tokens. However, an R-dimension must directly encapsulate at least one Token.",
-            ~suggestion="Add a Token, or replace this R-dimension with another schema.",
-            (),
-          ),
-        ],
-        [],
-      ))
-    )
-    let dimensions = filter(d =>
-      switch d {
-      | Schema.Dimension(d) => Result.Ok(d)
-      | _ => Result.Error(([], []))
-      }
-    )
-    let result_both12 = ((a, b, c, d, e, f, g, h, i, j, k, l), combine) =>
-      Result.both(
-        (Result.both6((a, b, c, d, e, f), combine), Result.both6((g, h, i, j, k, l), combine)),
-        combine,
-      )->Result.map((((a, b, c, d, e, f), (g, h, i, j, k, l))) => (
-        a,
-        b,
-        c,
-        d,
-        e,
-        f,
-        g,
-        h,
-        i,
-        j,
-        k,
-        l,
-      ))
+    let tokens =
+      filter(ModelNode.Kind.Token, (_, t) =>
+        switch t {
+        | Schema.Token(t) => Some(t)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.flatMap(a =>
+        a
+        ->Non_empty_list.fromArray
+        ->Result.fromOption(() => (
+          [
+            ModelError.create(
+              ~nodes=[id],
+              ~message="R-dimension has no Tokens below it.",
+              ~details="This R-dimension has no immediate children that are Tokens. However, an R-dimension must directly encapsulate at least one Token.",
+              ~suggestion="Add a Token, or replace this R-dimension with another schema.",
+              (),
+            ),
+          ],
+          [],
+        ))
+      )
+    let dimensions =
+      filter(ModelNode.Kind.Dimension, (_, d) =>
+        switch d {
+        | Schema.Dimension(d) => Some(d)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
+    let representations__ = switch filter(ModelNode.Kind.Representation, (id', _) => Some(id')) {
+    | [] => Result.Ok()
+    | rs =>
+      rs
+      ->Array.map(
+        Result.flatMap(_, id' => Result.Error(
+          [
+            ModelError.create(
+              ~nodes=[id, id'],
+              ~message="R-dimension has a Representation below it.",
+              ~details="R-dimension schemas cannot have Representation schemas as direct descendants.",
+              ~suggestion="Remove this Representation schema, or connect it elsewhere in the model.",
+              (),
+            ),
+          ],
+          [],
+        )),
+      )
+      ->Result.allUnit(combineMessages)
+    }
+    let schemes__ = switch filter(ModelNode.Kind.Scheme, (id', _) => Some(id')) {
+    | [] => Result.Ok()
+    | ss =>
+      ss
+      ->Array.map(
+        Result.flatMap(_, id' => Result.Error(
+          [
+            ModelError.create(
+              ~nodes=[id, id'],
+              ~message="R-dimensions has an R-scheme below it.",
+              ~details="R-dimension schemas cannot have R-scheme schemas as direct descendants.",
+              ~suggestion="Remove this R-scheme schema, or connect it elsewhere in the model.",
+              (),
+            ),
+          ],
+          [],
+        )),
+      )
+      ->Result.allUnit(combineMessages)
+    }
     (
       concept,
       concept_scale,
@@ -462,8 +543,10 @@ module Conv = {
       tokens,
       dimensions,
       organisation,
+      representations__,
+      schemes__,
     )
-    ->result_both12(combineMessages)
+    ->Result.both14(combineMessages)
     ->Result.map(((
       concept,
       concept_scale,
@@ -477,6 +560,8 @@ module Conv = {
       tokens,
       dimensions,
       organisation,
+      (),
+      (),
     )) => Schema.Dimension({
       Schema.Dimension.id: id,
       concept: concept,
@@ -504,8 +589,8 @@ module Conv = {
   })
 
   let slots_to_token = (id, slots: InspectorState.Token.t, schemas, below, anchored) => {
-    let filterAnchored = f => filter(anchored, schemas, f)
-    let filter = f => filter(below, schemas, f)
+    let filterAnchored = (k, f) => filter(anchored, schemas, k, f)
+    let filter = (k, f) => filter(below, schemas, k, f)
     let concept = switch slots.concept {
     | "#Tok#" =>
       Result.Error((
@@ -541,42 +626,115 @@ module Conv = {
       ))
     let function = slots.function->Result.fromOption(() => ([noFunctionError([id])], []))
     let explicit = slots.explicit->Result.fromOption(() => ([noExplicitError([id])], []))
-    let sub_tokens = filter(t =>
-      switch t {
-      | Schema.Token(t) => Result.Ok(t)
-      | _ =>
-        Result.Error((
+
+    let badNonAnchorError = (id', kind, anchor) =>
+      ModelError.create(
+        ~nodes=[id, id'],
+        ~message="All " ++ kind ++ " schema below a Token must be anchored.",
+        ~details="Children of Tokens must either be a sub-Token, or it must be an anchored schema. This schema is not anchored, but it is not a sub-Token – it is a " ++
+        kind ++ ".",
+        ~suggestion={
+          if anchor {
+            "Replace this connection with an anchoring connection."
+          } else {
+            "Remove this schema, or place it elsewhere in the hierarchy."
+          }
+        },
+        (),
+      )
+
+    let sub_tokens =
+      filter(ModelNode.Kind.Token, (_, t) =>
+        switch t {
+        | Schema.Token(t) => Some(t)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
+    let dimensions__ = switch filter(ModelNode.Kind.Dimension, (id', _) => Some(id')) {
+    | [] => Result.Ok()
+    | ds =>
+      ds
+      ->Array.map(
+        Result.flatMap(_, id' => Result.Error([badNonAnchorError(id', "R-dimension", true)], [])),
+      )
+      ->Result.allUnit(combineMessages)
+    }
+    let schemes__ = switch filter(ModelNode.Kind.Scheme, (id', _) => Some(id')) {
+    | [] => Result.Ok()
+    | ss =>
+      ss
+      ->Array.map(
+        Result.flatMap(_, id' => Result.Error([badNonAnchorError(id', "R-scheme", true)], [])),
+      )
+      ->Result.allUnit(combineMessages)
+    }
+    let representations__ = switch filter(ModelNode.Kind.Representation, (id', _) => Some(id')) {
+    | [] => Result.Ok()
+    | rs =>
+      rs
+      ->Array.map(
+        Result.flatMap(_, id' => Result.Error(
+          [badNonAnchorError(id', "Representation", false)],
+          [],
+        )),
+      )
+      ->Result.allUnit(combineMessages)
+    }
+    let anchored_tokens =
+      filterAnchored(ModelNode.Kind.Token, (_, t) =>
+        switch t {
+        | Schema.Token(t) => Some(t)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
+    let anchored_dimensions =
+      filterAnchored(ModelNode.Kind.Dimension, (_, d) =>
+        switch d {
+        | Schema.Dimension(d) => Some(d)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
+
+    let anchored_schemes =
+      filterAnchored(ModelNode.Kind.Scheme, (_, s) =>
+        switch s {
+        | Schema.Scheme(s) => Some(s)
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
+
+    let anchored_representations__ = switch filterAnchored(ModelNode.Kind.Representation, (
+      id',
+      _,
+    ) => Some(id')) {
+    | [] => Result.Ok()
+    | rs =>
+      rs
+      ->Array.map(
+        Result.flatMap(_, id' => Result.Error(
           [
             ModelError.create(
-              ~nodes=[id, Schema.id(t)],
-              ~message="All non-Token schema below a token must be anchored.",
-              ~details="Children of Tokens must either be a sub-Token, or it must be an anchored schema. This schema is not anchored, but it is not a sub-Token.",
-              ~suggestion="Replace this connection with an anchoring connection.",
+              ~nodes=[id, id'],
+              ~message="Token has a Representation anchored below it.",
+              ~details="This Representation schema is anchored below a Token schema. Only Token, R-dimension, and R-scheme schemas can be anchored below Tokens.",
+              ~suggestion="Remove this Representation schema, or place it elsewhere in the model.",
               (),
             ),
           ],
           [],
-        ))
-      }
-    )
-    let anchored_tokens = filterAnchored(t =>
-      switch t {
-      | Schema.Token(t) => Result.Ok(t)
-      | _ => Result.Error(([], []))
-      }
-    )
-    let anchored_dimensions = filterAnchored(d =>
-      switch d {
-      | Schema.Dimension(d) => Result.Ok(d)
-      | _ => Result.Error(([], []))
-      }
-    )
-    let anchored_schemes = filterAnchored(s =>
-      switch s {
-      | Schema.Scheme(s) => Result.Ok(s)
-      | _ => Result.Error(([], []))
-      }
-    )
+        )),
+      )
+      ->Result.allUnit(combineMessages)
+    }
+
     (
       concept,
       graphic,
@@ -587,8 +745,12 @@ module Conv = {
       anchored_tokens,
       anchored_dimensions,
       anchored_schemes,
+      dimensions__,
+      schemes__,
+      representations__,
+      anchored_representations__,
     )
-    ->Result.both9(combineMessages)
+    ->Result.both13(combineMessages)
     ->Result.map(((
       concept,
       graphic,
@@ -599,6 +761,10 @@ module Conv = {
       anchored_tokens,
       anchored_dimensions,
       anchored_schemes,
+      (),
+      (),
+      (),
+      (),
     )) => Schema.Token({
       Schema.Token.id: id,
       concept: concept,
@@ -645,7 +811,6 @@ let fromSlotsAndLinks = (slots, links) => {
   switch errors {
   | [] => {
       // Great! Carry on.
-      let (errs, warns) = ([], [])
       let rec f = (schemas, i) => {
         if i >= 0 {
           let id = order->Array.getExn(i)
@@ -663,71 +828,79 @@ let fromSlotsAndLinks = (slots, links) => {
               None
             }
           )
-          let s = switch slots->Gid.Map.get(id) {
-          | Some(InspectorState.Schema.Representation(r)) =>
-            Conv.slots_to_representation(id, r, schemas, children)
-          | Some(InspectorState.Schema.Scheme(s)) => Conv.slots_to_scheme(id, s, schemas, children)
-          | Some(InspectorState.Schema.Dimension(d)) =>
-            Conv.slots_to_dimension(id, d, schemas, children)
-          | Some(InspectorState.Schema.Token(t)) =>
-            Conv.slots_to_token(id, t, schemas, children, anchoredChildren)
-          | Some(InspectorState.Schema.Placeholder(_)) =>
-            Result.Error((
-              [],
-              [
-                ModelWarning.create(
-                  ~nodes=[id],
-                  ~message="Placeholder",
-                  ~details="The Intelligence Engine cannot understand placeholders yet.",
-                  (),
-                ),
-              ],
-            ))
-          | None =>
-            Result.Error((
-              [Conv.internalError("BAD LINK", "Node with ID " ++ Gid.toString(id) ++ " missing.")],
-              [],
-            ))
+          let (k, s) = switch slots->Gid.Map.get(id) {
+          | Some(InspectorState.Schema.Representation(r)) => (
+              ModelNode.Kind.Representation,
+              Conv.slots_to_representation(id, r, schemas, children),
+            )
+          | Some(InspectorState.Schema.Scheme(s)) => (
+              ModelNode.Kind.Scheme,
+              Conv.slots_to_scheme(id, s, schemas, children),
+            )
+          | Some(InspectorState.Schema.Dimension(d)) => (
+              ModelNode.Kind.Dimension,
+              Conv.slots_to_dimension(id, d, schemas, children),
+            )
+          | Some(InspectorState.Schema.Token(t)) => (
+              ModelNode.Kind.Token,
+              Conv.slots_to_token(id, t, schemas, children, anchoredChildren),
+            )
+          | Some(InspectorState.Schema.Placeholder(_)) => (
+              ModelNode.Kind.Placeholder,
+              Result.Error((
+                [],
+                [
+                  ModelWarning.create(
+                    ~nodes=[id],
+                    ~message="Placeholder",
+                    ~details="The Intelligence Engine cannot understand placeholders yet.",
+                    (),
+                  ),
+                ],
+              )),
+            )
+          | None => (
+              ModelNode.Kind.Placeholder,
+              Result.Error((
+                [
+                  Conv.internalError(
+                    "BAD LINK",
+                    "Node with ID " ++ Gid.toString(id) ++ " missing.",
+                  ),
+                ],
+                [],
+              )),
+            )
           }
-          s
-          ->Result.mapError(((e, w)) => {
-            Js.Array2.pushMany(errs, e)->ignore
-            Js.Array2.pushMany(warns, w)->ignore
-          })
-          ->ignore
-          let schemas = schemas->Gid.Map.set(id, Result.toOption(s))
+
+          let schemas = schemas->Gid.Map.set(id, (k, s))
           f(schemas, i - 1)
         } else {
           schemas
         }
       }
+
       let schemas = f(Gid.Map.empty(), Array.length(order) - 1)
-      let model = switch roots {
-      | [] =>
-        if Gid.Map.isEmpty(slots) {
-          None // No model, but it's OK because it's empty!
-        } else {
-          let e = ModelError.create(
-            ~nodes=[],
-            ~message="Could not determine root of model.",
-            ~details="Each model should have a root. Somehow, we failed to find a root!",
-            (),
-          )
-          errs->Js.Array2.push(e)->ignore
-          None
-        }
-      | [root] =>
+
+      let handleRoot = (root, ~multi) =>
         switch schemas->Gid.Map.get(root) {
         | None => {
             let e = Conv.internalError(
-              "LOST ROOT",
+              "LOST ROOT" ++ if multi {
+                " MULTI"
+              } else {
+                ""
+              },
               "We know what the root should be (" ++
               Gid.toString(root) ++ "), but somehow never found it!",
             )
-            errs->Js.Array2.push(e)->ignore
-            None
+            schemas
+            ->Gid.Map.values
+            ->Array.map(((_, r)) => r)
+            ->Result.all(Conv.combineMessages)
+            ->Result.thenError(([e], []), Conv.combineMessages)
           }
-        | Some(None) =>
+        | Some((_, Result.Error(_) as err)) =>
           // Failed to build for other reasons.
           switch slots->Gid.Map.get(root) {
           | None => {
@@ -736,110 +909,87 @@ let fromSlotsAndLinks = (slots, links) => {
                 "We have found an ID (" ++
                 Gid.toString(root) ++ "), but have no idea what it's for!",
               )
-              errs->Js.Array2.push(e)->ignore
-              None
+              err->Result.thenError(([e], []), Conv.combineMessages)
             }
           | Some(slots) =>
             // Check if it should be the root or not
             switch slots {
             | InspectorState.Schema.Placeholder(_)
-            | InspectorState.Schema.Representation(_) =>
-              None
+            | InspectorState.Schema.Representation(_) => err
             | _ => {
                 let e = Conv.needsParentError([root])
-                errs->Js.Array2.push(e)->ignore
-                None
+                err->Result.thenError(([e], []), Conv.combineMessages)
               }
             }
           }
-        | Some(Some(r)) =>
+        | Some((_, Result.Ok(r))) =>
           switch r {
           | Schema.Representation(_) => {
-              let relations = links->Array.keepMap(((s, t, k)) =>
-                if k === ModelLink.Kind.Relation {
-                  switch (schemas->Gid.Map.get(s), schemas->Gid.Map.get(t)) {
-                  | (Some(Some(s)), Some(Some(t))) =>
-                    Some(
-                      SchemaRelation.create(
-                        s,
-                        t,
-                        SchemaRelation.Kind.Other("Automatic conversion"),
-                      ),
-                    )
-                  | (Some(None), Some(None)) => None // Failed to build them, but we did find them.
-                  | _ => {
-                      let e = Conv.internalError(
-                        "REL MISSING",
-                        "A relation link should be between two nodes (" ++
-                        Gid.toString(s) ++
-                        ", " ++
-                        Gid.toString(t) ++ "), but I can't find them!",
-                      )
-                      errs->Js.Array2.push(e)->ignore
-                      None
+              let relations =
+                links
+                ->Array.keepMap(((s, t, k)) =>
+                  if k === ModelLink.Kind.Relation {
+                    switch (schemas->Gid.Map.get(s), schemas->Gid.Map.get(t)) {
+                    | (Some((_, Result.Ok(s))), Some((_, Result.Ok(t)))) =>
+                      Result.Ok(
+                        SchemaRelation.create(
+                          s,
+                          t,
+                          SchemaRelation.Kind.Other("Automatic conversion"),
+                        ),
+                      )->Some
+                    | (Some((_, Result.Error(_))), Some((_, Result.Error(_)))) => None // Failed to build them, but we did find them.
+                    | _ => {
+                        let e = Conv.internalError(
+                          "REL MISSING",
+                          "A relation link should be between two nodes (" ++
+                          Gid.toString(s) ++
+                          ", " ++
+                          Gid.toString(t) ++ "), but I can't find them!",
+                        )
+                        Result.Error(([e], []))->Some
+                      }
                     }
+                  } else {
+                    None
                   }
-                } else {
-                  None
-                }
-              )
-              Some({root: r, relations: relations})
+                )
+                ->Result.all(Conv.combineMessages)
+              relations->Result.map(relations => {root: r, relations: relations})
             }
           | Schema.Scheme(_) | Schema.Dimension(_) | Schema.Token(_) => {
               let e = Conv.needsParentError([root])
-              errs->Js.Array2.push(e)->ignore
-              None
+              Result.Error(([e], []))
             }
           }
         }
-      | _ => {
-          roots->Array.forEach(root =>
-            switch schemas->Gid.Map.get(root) {
-            | None => {
-                let e = Conv.internalError(
-                  "LOST ROOT_MULTI",
-                  "We know what this root should be (" ++
-                  Gid.toString(root) ++ "), but somehow never found it!",
-                )
-                errs->Js.Array2.push(e)->ignore
-              }
-            | Some(None) =>
-              // Failed to build for some other reason
-              switch slots->Gid.Map.get(root) {
-              | None => {
-                  let e = Conv.internalError(
-                    "EXTRA ROOT_MULTI",
-                    "We have found an ID (" ++
-                    Gid.toString(root) ++ "), but have no idea what it's for!",
-                  )
-                  errs->Js.Array2.push(e)->ignore
-                }
-              | Some(slots) =>
-                switch slots {
-                | InspectorState.Schema.Placeholder(_)
-                | InspectorState.Schema.Representation(_) => ()
-                | _ => {
-                    let e = Conv.needsParentError([root])
-                    errs->Js.Array2.push(e)->ignore
-                  }
-                }
-              }
-            | Some(Some(_)) => () // It went fine, but it's just one of many.
-            }
+      switch roots {
+      | [] =>
+        if Gid.Map.isEmpty(slots) {
+          Result.Error(([], [])) // No model, but it's OK because it's empty!
+        } else {
+          let e = ModelError.create(
+            ~nodes=[],
+            ~message="Could not determine root of model.",
+            ~details="Each model should have a root. Somehow, we failed to find a root!",
+            (),
           )
+          Result.Error(([e], []))
+        }
+      | [root] => handleRoot(root, ~multi=false)
+      | _ => {
+          let models = roots->Array.map(handleRoot(_, ~multi=true))
           let w = ModelWarning.create(
             ~nodes=roots,
             ~message="More than one model detected.",
             ~details="There are multiple models in this file, or a model with multiple roots.",
             (),
           )
-          warns->Js.Array2.push(w)->ignore
-          None
+          models
+          ->Result.all(Conv.combineMessages)
+          ->Result.thenError(([], [w]), Conv.combineMessages)
         }
       }
-      errs->Js.Array2.reverseInPlace->ignore
-      warns->Js.Array2.reverseInPlace->ignore
-      model->Result.fromOption(() => (errs, warns))
     }
   | _ =>
     // Do a best-effort check, but it will be a bit crude.
