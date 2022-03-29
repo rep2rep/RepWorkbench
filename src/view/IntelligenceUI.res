@@ -393,6 +393,21 @@ let make = (
           ~overflowY="scroll",
           (),
         )}>
+        {if errors != [] {
+          <div
+            style={ReactDOM.Style.make(
+              ~padding="0 1.5rem 0.25rem 1.5rem",
+              ~color="#333",
+              ~fontSize="0.6rem",
+              ~textTransform="uppercase",
+              ~letterSpacing="0.05em",
+              (),
+            )}>
+            {React.string("Errors")}
+          </div>
+        } else {
+          React.null
+        }}
         {errors
         ->Array.map(w => {
           let onClick = onClickError
@@ -408,6 +423,21 @@ let make = (
         ->React.array}
         {if nErrors > 0 && nWarnings > 0 {
           <hr style={ReactDOM.Style.make(~margin="0.25rem 0", ())} />
+        } else {
+          React.null
+        }}
+        {if warnings != [] {
+          <div
+            style={ReactDOM.Style.make(
+              ~padding="0 1.5rem 0.25rem 1.5rem",
+              ~color="#333",
+              ~fontSize="0.6rem",
+              ~textTransform="uppercase",
+              ~letterSpacing="0.05em",
+              (),
+            )}>
+            {React.string("Warnings")}
+          </div>
         } else {
           React.null
         }}
