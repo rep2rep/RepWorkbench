@@ -388,7 +388,6 @@ module App = {
             type_="checkbox"
             label="gridToggle"
             onChange={toggleGrid}
-            disabled={!toolbarActive}
             checked={showGrid}
             style={ReactDOM.Style.make(~marginLeft="0.5em", ())}
           />
