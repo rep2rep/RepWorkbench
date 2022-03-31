@@ -23,7 +23,10 @@ type response = Response.t
 let create: string => t
 let listen: (t, response => unit) => unit
 let post: (t, request) => unit
+let terminate: t => unit
 
 module WorkerThread: {
   @inline let create: (request => response) => unit
+  @inline let listen: (request => unit) => unit
+  @inline let respond: response => unit
 }
