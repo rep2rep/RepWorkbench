@@ -299,14 +299,67 @@
       the entire model is shown.
     </p>
     <p>
-      The information associated with a schema varies based on whether it is a Representation,
-      R-Scheme, Dimension, or Token, so only some subset of these listed is available for each schema.
-    </p>
-    <p>TODO: DOCUMENT SLOTS</p>
-    <p>
       The Slots inspector can be hidden using the &nbsp;&nbsp;〉 button that floats at the top left of the
       inspector. A 〈&nbsp;&nbsp; button will appear in the top right of the screen; this can be used to show
       the Slots inspector again.
     </p>
+    <!-- <tr><td>X</td><td>Y</td></tr> -->
+    <h3 id="slots-model">Model Slots</h3>
+    <p>Note that these are available when no schemas are selected.</p>
+    <table>
+      <tr><th>Slot</th><th>Description</th></tr>
+      <tr><td>Name</td><td>Set the name of this model.</td></tr>
+      <tr><td>Notes</td><td>Add any other comments about this model here.</td></tr>
+    </table>
+    <h3 id="slots-representation">Representation Schema Slots</h3>
+    <table>
+      <tr><th>Slot</th><th>Description</th></tr>
+      <tr><td>Domain</td><td>Indicate the title of the diagram.</td></tr>
+      <tr><td>Display</td><td>Indicate the physical location of the diagram (e.g., top right image, Dropbox folder).</td></tr>
+      <tr><td>Notes</td><td>Add any other comments about this schema here.</td></tr>
+    </table>
+    <h3 id="slots-scheme">R-Scheme Schema Slots</h3>
+    <table>
+      <tr><th>Slot</th><th>Description</th></tr>
+      <tr><td>Concept</td><td>A description of the concept.</td></tr>
+      <tr><td>Graphic</td><td>The annotation used in the diagram that represents the concept. If the concept is represented then use ## to indicate that there is no graphic element for the concept.</td></tr>
+      <tr><td>Function</td><td>Specifies the role of the schema as semantic, auxiliary, or arbitrary. Select semantic if the schema is essential for the interpretation; auxiliary if the schema is to pragmatically aid the interpretation; and arbitrary if it only has a decoratively or aesthetic purpose.</td></tr>
+      <tr><td>Explicit?</td><td>Yes, if there is a graphic object for the concept. No, if there is not a graphic object for the concept.</td></tr>
+      <tr><td>Scope</td><td>Global if it affects the overall representation. Local, if it affects part of the representation.</td></tr>
+      <tr><td>Organisation</td><td>Indicated how the concept is related to the graphic. Summarises how all the pieces in the R-Scheme schema are put together.</td></tr>
+      <tr><td>Notes</td><td>Add any other comments about this schema here.</td></tr>
+    </table>
+    <h3 id="slots-dimension">R-Dimension Schema Slots</h3>
+    <table>
+      <tr><th>Slot</th><th>Description</th></tr>
+      <tr><td>Concept</td><td>A description of the concept.</td></tr>
+      <tr><td>Concept Scale</td><td>Indicates what kind of quantity is associated with the concept. If the concept is about categories or groups, use Nominal; for concepts that can be ordered, use Ordinal; if instances in the concept can be ordered at specific intervals, use Interval; and for instances of the concept whose proportions can be compared, use Ratio.</td></tr>
+      <tr><td>Concept Attributes</td><td>List of attributes that are relevant to the concept. They may not be present in the graphic. Example: maximum values, minimum values.</td></tr>
+      <tr><td>Graphic</td><td>The annotation used in the diagram that represents the concept. If the concept is represented then use ## to indicate that there is no graphic element for the concept.</td></tr>
+      <tr><td>Graphic Scale</td><td>Indicates what kind of quantity is associated with the graphic. If the graphic can be categorised or grouped, use Nominal; if the graphic that can be ordered, use Ordinal; if instances in the graphic can be ordered at specific intervals, use Interval; and for instances of the graphic whose proportions can be compared, use Ratio.</td></tr>
+      <tr><td>Graphic Attributes</td><td>Parts of the display that can potentially be meaningful. Example: blue, red.</td></tr>
+      <tr><td>Function</td><td>Specifies the role of the schema as semantic, auxiliary, or arbitrary. Select semantic if the schema is essential for the interpretation; auxiliary if the schema is to pragmatically aid the interpretation; and arbitrary if it only has a decoratively or aesthetic purpose.</td></tr>
+      <tr><td>Explicit?</td><td>Yes, if there is a graphic object for the concept. No, if there is not a graphic object for the concept.</td></tr>
+      <tr><td>Scope</td><td>Global if it affects the overall representation. Local, if it affects part of the representation.</td></tr>
+      <tr><td>Organisation</td><td>Indicated how the concept is related to the graphic. Summarises how all the pieces in the R-Dimension schema are put together.</td></tr>
+      <tr><td>Notes</td><td>Add any other comments about this schema here.</td></tr>
+    </table>
+    <h3 id="slots-symbol">R-Symbol Schema Slots</h3>
+    <table>
+      <tr><th>Slot</th><th>Description</th></tr>
+      <tr><td>Concept</td><td>A description of the concept.</td></tr>
+      <tr><td>Graphic</td><td>The annotation used in the diagram that represents the concept. If the concept is represented then use ## to indicate that there is no graphic element for the concept.</td></tr>
+      <tr><td>Is Class?</td><td>Yes, if this R-symbol is standing in for many closely related concepts. No, if this R-symbol is just for one concept.</td></tr>
+      <tr><td>Function</td><td>Specifies the role of the schema as semantic, auxiliary, or arbitrary. Select semantic if the schema is essential for the interpretation; auxiliary if the schema is to pragmatically aid the interpretation; and arbitrary if it only has a decoratively or aesthetic purpose.</td></tr>
+      <tr><td>Explicit?</td><td>Yes, if there is a graphic object for the concept. No, if there is not a graphic object for the concept.</td></tr>
+      <tr><td>Notes</td><td>Add any other comments about this schema here.</td></tr>
+    </table>
+    <h3 id="slots-placeholder">Placeholder Schema Slots</h3>
+    <table>
+      <tr><th>Slot</th><th>Description</th></tr>
+      <tr><td>Description</td><td>Briefly describe what you are omitting.</td></tr>
+      <tr><td>Omitted but understood?</td><td>If you are inserting this node because this interpretation is missing aspects that would go in the model, select No. If instead this aspect is being omitted purely for space/time/effort reasons, but the interpretation is complete, select Yes.</td></tr>
+      <tr><td>Notes</td><td>Add any other comments about this schema here.</td></tr>
+    </table>
   </body>
 </html>
