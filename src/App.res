@@ -262,6 +262,7 @@ module App = {
       ("s", addSchNodeAt),
       ("d", addDimNodeAt),
       ("t", addTokNodeAt),
+      ("y", addTokNodeAt),
       ("q", addPlcNodeAt),
       ("c", (e, ~x as _, ~y as _) => connectNodes(e)),
       ("a", (e, ~x as _, ~y as _) => anchorNodes(e)),
@@ -348,21 +349,21 @@ module App = {
           />
           <Button
             onClick={addSchNodeAt(_, ~x=0., ~y=0.)}
-            value="Scheme"
+            value="R-Scheme"
             enabled={toolbarActive}
             tooltip="S"
           />
           <Button
             onClick={addDimNodeAt(_, ~x=0., ~y=0.)}
-            value="Dimension"
+            value="R-Dimension"
             enabled={toolbarActive}
             tooltip="D"
           />
           <Button
             onClick={addTokNodeAt(_, ~x=0., ~y=0.)}
-            value="Token"
+            value="R-Symbol"
             enabled={toolbarActive}
-            tooltip="T"
+            tooltip="Y"
           />
           <Button
             onClick={addPlcNodeAt(_, ~x=0., ~y=0.)}
@@ -377,7 +378,7 @@ module App = {
           <Button.Separator />
           <Button onClick={connectNodes} value="Connect" enabled={toolbarActive} tooltip="C" />
           <Button onClick={anchorNodes} value="Anchor" enabled={toolbarActive} tooltip="A" />
-          <Button onClick={relateNodes} value="Relate" enabled={toolbarActive} tooltip="E" />
+          <Button onClick={relateNodes} value="Equivalence" enabled={toolbarActive} tooltip="E" />
           <Button.Separator />
           <Button onClick={unlinkNodes} value="Unlink" enabled={toolbarActive} tooltip="V" />
           <Button.Separator />
