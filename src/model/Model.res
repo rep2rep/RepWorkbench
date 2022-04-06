@@ -12,7 +12,7 @@ module Conv = {
     ModelError.create(
       ~nodes,
       ~message="Schema has no parent, but it needs one.",
-      ~details="All schemas, except for Representation schemas, must either be in the hierarchy, or be anchored below a Token in the hierarchy. This schema is neither in the hierarchy, nor anchored.",
+      ~details="All schemas, except for Representation schemas, must either be in the hierarchy, or be anchored below a R-symbol in the hierarchy. This schema is neither in the hierarchy, nor anchored.",
       ~suggestion="Connect this schema below another schema.",
       (),
     )
@@ -199,10 +199,10 @@ module Conv = {
             ~nodes=[node],
             ~message={kind ++ " schema has unexpected anchored children."},
             ~details={
-              "Anchoring is a type of link that is uniquely below R-Symbol schemas. However, this node is a " ++
+              "Anchoring is a type of link that is uniquely below R-symbol schemas. However, this node is a " ++
               kind ++ " schema."
             },
-            ~suggestion="(1) Make this schema an R-Symbol. (2) Connect the children using hierarchy. (3) Remove the children.",
+            ~suggestion="(1) Make this schema an R-symbol. (2) Connect the children using hierarchy. (3) Remove the children.",
             (),
           ),
         ],
@@ -570,8 +570,8 @@ module Conv = {
           ModelError.create(
             ~nodes=[id],
             ~message="R-dimensions must have at least one child.",
-            ~details="R-dimensions must contain at least one Token, or the must split into sub-R-dimensions (or do both). This R-dimension has no Token children and no sub-R-dimensions.",
-            ~suggestion="Add a Token or a sub-R-dimension below this R-dimension.",
+            ~details="R-dimensions must contain at least one R-symbol, or the must split into sub-R-dimensions (or do both). This R-dimension has no R-symbol children and no sub-R-dimensions.",
+            ~suggestion="Add an R-symbol or a sub-R-dimension below this R-dimension.",
             (),
           ),
         ],
@@ -650,9 +650,9 @@ module Conv = {
         [
           ModelWarning.create(
             ~nodes=[id],
-            ~message="Token is using default concept.",
-            ~details="We give each Token the default concept \"#Tok#\", but this is intended only as a placeholder.",
-            ~suggestion="Replace this Token schema's concept.",
+            ~message="R-symbol is using default concept.",
+            ~details="We give each R-symbol the default concept \"#Tok#\", but this is intended only as a placeholder.",
+            ~suggestion="Replace this R-symbol schema's concept.",
             (),
           ),
         ],
@@ -660,7 +660,7 @@ module Conv = {
     | s => Result.Ok(s)
     }
     let graphic = switch slots.graphic {
-    | "#Ref#" => Result.Error(([], [defaultReferenceWarning([id], "graphic", "Token")]))
+    | "#Ref#" => Result.Error(([], [defaultReferenceWarning([id], "graphic", "R-symbol")]))
     | s => Result.Ok(s)
     }
     let is_class =
@@ -668,8 +668,8 @@ module Conv = {
         [
           ModelError.create(
             ~nodes=[id],
-            ~message="Unspecified if Token is a \"class\" Token.",
-            ~details="Tokens can be \"standard\" or \"class\": that is, they can stand in for more than one actual thing in the representation. This has not been specified.",
+            ~message="Unspecified if R-symbol is a \"class\" R-symbol.",
+            ~details="R-symbols can be \"standard\" or \"class\": that is, they can stand in for more than one actual thing in the representation. This has not been specified.",
             ~suggestion="Select whether this token is a class using the \"Is class?\" dropdown.",
             (),
           ),
@@ -688,9 +688,9 @@ module Conv = {
           } else {
             "A "
           } ++
-          kind ++ " schema below a Token must be anchored."
+          kind ++ " schema below an R-symbol must be anchored."
         },
-        ~details="Children of Tokens must either be a sub-Token, or it must be an anchored schema. This schema is not anchored, but it is not a sub-Token: it is " ++
+        ~details="Children of R-symbols must either be a sub-R-symbol, or it must be an anchored schema. This schema is not anchored, but it is not a sub-R-symbol: it is " ++
         if kind->String.startsWith("R-") {
           "an "
         } else {
