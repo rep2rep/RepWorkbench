@@ -103,7 +103,7 @@ module Conv = {
       }
     }
     f(links)
-    if Array.length(firstRoots) === 0 {
+    if Array.length(firstRoots) === 0 && Array.length(all_ids) !== 0 {
       let err = ModelError.create(
         ~nodes=[],
         ~message="Model has a cycle.",
