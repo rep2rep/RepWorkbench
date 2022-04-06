@@ -625,7 +625,7 @@ module Token = {
   }
 
   let empty = {
-    concept: "#Tok#",
+    concept: "#Sym#",
     graphic: "#Ref#",
     is_class: None,
     function: None,

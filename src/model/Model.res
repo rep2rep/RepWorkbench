@@ -644,14 +644,14 @@ module Conv = {
     let filterAnchored = (k, f) => filter(anchored, schemas, k, f)
     let filter = (~allowPlaceholders=true, k, f) => filter(~allowPlaceholders, below, schemas, k, f)
     let concept = switch slots.concept {
-    | "#Tok#" =>
+    | "#Sym#" =>
       Result.Error((
         [],
         [
           ModelWarning.create(
             ~nodes=[id],
             ~message="R-symbol is using default concept.",
-            ~details="We give each R-symbol the default concept \"#Tok#\", but this is intended only as a placeholder.",
+            ~details="We give each R-symbol the default concept \"#Sym#\", but this is intended only as a placeholder.",
             ~suggestion="Replace this R-symbol schema's concept.",
             (),
           ),
