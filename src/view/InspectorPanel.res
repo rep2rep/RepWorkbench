@@ -12,7 +12,7 @@ let boolFromStringYN = s =>
 
 module Row = {
   @react.component
-  let make = (~children) => {
+  let make = (~style=ReactDOM.Style.make(), ~children) => {
     <div
       style={ReactDOM.Style.make(
         ~margin="0.125rem 0.5rem",
@@ -20,7 +20,7 @@ module Row = {
         ~display="flex",
         ~alignItems="center",
         (),
-      )}
+      )->ReactDOM.Style.combine(style)}
       className="inspector-row">
       {children}
     </div>
@@ -29,9 +29,15 @@ module Row = {
 
 module Label = {
   @react.component
-  let make = (~htmlFor=?, ~help as title=?, ~children) => {
+  let make = (~htmlFor=?, ~help as title=?, ~style=ReactDOM.Style.make(), ~children) => {
     <label
-      style={ReactDOM.Style.make(~fontSize="small", ~marginRight="0.5rem", ())} ?htmlFor ?title>
+      style={ReactDOM.Style.make(
+        ~fontSize="small",
+        ~marginRight="0.5rem",
+        (),
+      )->ReactDOM.Style.combine(style)}
+      ?htmlFor
+      ?title>
       {children}
     </label>
   }
@@ -39,7 +45,7 @@ module Label = {
 
 module Input = {
   @react.component
-  let make = (~name=?, ~value=?, ~onChange=?) => {
+  let make = (~name=?, ~value=?, ~onChange=?, ~style=ReactDOM.Style.make()) => {
     <input
       type_="text"
       ?name
@@ -47,11 +53,11 @@ module Input = {
       ?onChange
       style={ReactDOM.Style.make(
         ~flexGrow="1",
-        ~border="1px solid black",
+        ~border="1px solid #777",
         ~borderRadius="2px",
         ~padding="0.125rem 0.25rem",
         (),
-      )}
+      )->ReactDOM.Style.combine(style)}
     />
   }
 }
@@ -82,6 +88,45 @@ module Selector = {
   }
 }
 
+module AttributesEditor = {
+  @react.component
+  let make = (~name, ~value, ~onChange) => {
+    let onChange = e => {
+      Js.Console.log(e)
+      onChange(e)
+    }
+    let add = _ => value->List.concat(List.singleton(""))->onChange
+    let edit = (e, i) =>
+      value
+      ->List.mapWithIndex((idx, v) =>
+        if idx === i {
+          ReactEvent.Form.target(e)["value"]
+        } else {
+          v
+        }
+      )
+      ->onChange
+    let remove = i => value->List.keepWithIndex((_, idx) => idx !== i)->onChange
+    <div style={ReactDOM.Style.make(~display="inline-block", ())}>
+      {value
+      ->List.toArray
+      ->Array.mapWithIndex((idx, attr) => {
+        <span
+          key={name ++ "-" ++ Int.toString(idx)} style={ReactDOM.Style.make(~display="block", ())}>
+          <Input
+            value={attr}
+            onChange={e => edit(e, idx)}
+            style={ReactDOM.Style.make(~marginBottom="0.25rem", ~marginRight="0.5rem", ())}
+          />
+          <input type_="button" value="Delete" onClick={_ => remove(idx)} />
+        </span>
+      })
+      ->React.array}
+      <input type_="button" value="Add Attribute" onClick=add />
+    </div>
+  }
+}
+
 module Notes = {
   @react.component
   let make = (~name, ~value=?, ~onChange=?, ~help=?) => {
@@ -100,7 +145,7 @@ module Notes = {
         ?value
         style={ReactDOM.Style.make(
           ~height="200px",
-          ~border="1px solid black",
+          ~border="1px solid #777",
           ~borderRadius="2px",
           ~padding="0.25rem",
           ~marginTop="0.125rem",
@@ -276,7 +321,19 @@ module Dimension = {
           onChange={e => onChange(Event.Slots.Dimension.Concept_scale(e))}
         />
       </Row>
-      // Need to add concept attributes
+      <Row style={ReactDOM.Style.make(~alignItems="top", ())}>
+        <Label
+          htmlFor="inspector-dim-concept-attr"
+          style={ReactDOM.Style.make(~marginTop="0.125rem", ())}
+          help="List of attributes that are relevant to the concept. They may not be present in the graphic. Example: maximum values, minimum values.">
+          {React.string("Concept Attributes")}
+        </Label>
+        <AttributesEditor
+          name="inspector-dim-concept-attr"
+          value={slots.concept_attributes}
+          onChange={e => onChange(Event.Slots.Dimension.Concept_attributes(e))}
+        />
+      </Row>
       <Row>
         <Label
           htmlFor="inspector-dim-graphic"
@@ -305,7 +362,19 @@ module Dimension = {
           onChange={e => onChange(Event.Slots.Dimension.Graphic_scale(e))}
         />
       </Row>
-      // Need to add graphic attributes
+      <Row style={ReactDOM.Style.make(~alignItems="top", ())}>
+        <Label
+          htmlFor="inspector-dim-graphic-attr"
+          style={ReactDOM.Style.make(~marginTop="0.125rem", ())}
+          help="Parts of the display that can potentially be meaningful. Example: blue, red.">
+          {React.string("Graphic Attributes")}
+        </Label>
+        <AttributesEditor
+          name="inspector-dim-graphic-attr"
+          value={slots.graphic_attributes}
+          onChange={e => onChange(Event.Slots.Dimension.Graphic_attributes(e))}
+        />
+      </Row>
       <Row>
         <Label
           htmlFor="inspector-dim-function"
