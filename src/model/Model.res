@@ -103,18 +103,15 @@ module Conv = {
       }
     }
     f(links)
-    if Array.length(links) === 0 {
-      let errs =
-        links->Array.map(((s, t, _)) =>
-          ModelError.create(
-            ~nodes=[s, t],
-            ~message="Model has a cycle.",
-            ~details="Models should not contain cycles: that is, the hierarchy and anchoring links should always connect a higher schema to a lower schema. We have found a situation where a lower schema is connected to a higher schema.",
-            ~suggestion="We've detected a cycle involving these nodes, but it might not be here precisely. Find the link going the 'wrong way', and remove it.",
-            (),
-          )
-        )
-      (firstRoots, result, errs)
+    if Array.length(firstRoots) === 0 {
+      let err = ModelError.create(
+        ~nodes=[],
+        ~message="Model has a cycle.",
+        ~details="Models should not contain cycles: that is, the hierarchy and anchoring links should always connect a higher schema to a lower schema. We have found a situation where a lower schema is connected to a higher schema.",
+        ~suggestion="We've detected a cycle. Find the link going the 'wrong way', and remove it.",
+        (),
+      )
+      (firstRoots, result, [err])
     } else {
       (firstRoots, result, [])
     }
@@ -151,7 +148,7 @@ module Conv = {
       ]->Array.flatMap(List.toArray)
     }
 
-  let filter = (below, schemas, desiredKind, f) =>
+  let filter = (~allowPlaceholders=true, below, schemas, desiredKind, f) =>
     below->Array.mapPartial(id =>
       schemas
       ->Gid.Map.get(id)
@@ -170,7 +167,7 @@ module Conv = {
               [],
             ))->Some
           | Some((k, v)) =>
-            if k === desiredKind {
+            if k === desiredKind || (k == ModelNode.Kind.Placeholder && allowPlaceholders) {
               f(id, v)
             } else {
               None
@@ -188,7 +185,7 @@ module Conv = {
   })
 
   let slots_to_representation = (id, slots: InspectorState.Representation.t, schemas, below) => {
-    let filter = (k, f) => filter(below, schemas, k, f)
+    let filter = (~allowPlaceholders=true, k, f) => filter(~allowPlaceholders, below, schemas, k, f)
     let domain = switch slots.domain {
     | "#Rep#" =>
       Result.Error((
@@ -280,7 +277,7 @@ module Conv = {
   })
 
   let slots_to_scheme = (id, slots: InspectorState.Scheme.t, schemas, below) => {
-    let filter = (k, f) => filter(below, schemas, k, f)
+    let filter = (~allowPlaceholders=true, k, f) => filter(~allowPlaceholders, below, schemas, k, f)
     let concept_structure = switch slots.concept_structure {
     | "#Sch#" =>
       Result.Error((
@@ -352,7 +349,7 @@ module Conv = {
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
     let representations__ =
-      filter(ModelNode.Kind.Representation, (id', _) => Some(
+      filter(~allowPlaceholders=false, ModelNode.Kind.Representation, (id', _) => Some(
         Result.Error(
           [
             ModelError.create(
@@ -420,7 +417,7 @@ module Conv = {
   })
 
   let slots_to_dimension = (id, slots: InspectorState.Dimension.t, schemas, below) => {
-    let filter = (k, f) => filter(below, schemas, k, f)
+    let filter = (~allowPlaceholders=true, k, f) => filter(~allowPlaceholders, below, schemas, k, f)
     let concept = switch slots.concept {
     | "#Dim#" =>
       Result.Error((
@@ -487,7 +484,7 @@ module Conv = {
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
     let representations__ =
-      filter(ModelNode.Kind.Representation, (id', _) => Some(
+      filter(~allowPlaceholders=false, ModelNode.Kind.Representation, (id', _) => Some(
         Result.Error(
           [
             ModelError.create(
@@ -502,7 +499,7 @@ module Conv = {
         ),
       ))->Result.allUnit(combineMessages)
     let schemes__ =
-      filter(ModelNode.Kind.Scheme, (id', _) => Some(
+      filter(~allowPlaceholders=false, ModelNode.Kind.Scheme, (id', _) => Some(
         Result.Error(
           [
             ModelError.create(
@@ -595,7 +592,7 @@ module Conv = {
 
   let slots_to_token = (id, slots: InspectorState.Token.t, schemas, below, anchored) => {
     let filterAnchored = (k, f) => filter(anchored, schemas, k, f)
-    let filter = (k, f) => filter(below, schemas, k, f)
+    let filter = (~allowPlaceholders=true, k, f) => filter(~allowPlaceholders, below, schemas, k, f)
     let concept = switch slots.concept {
     | "#Tok#" =>
       Result.Error((
@@ -670,20 +667,22 @@ module Conv = {
       )
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
+
     let dimensions__ =
-      filter(ModelNode.Kind.Dimension, (id', _) => Some(
+      filter(~allowPlaceholders=false, ModelNode.Kind.Dimension, (id', _) => Some(
         Result.Error([badNonAnchorError(id', "R-dimension", true)], []),
       ))->Result.allUnit(combineMessages)
 
     let schemes__ =
-      filter(ModelNode.Kind.Scheme, (id', _) => Some(
+      filter(~allowPlaceholders=false, ModelNode.Kind.Scheme, (id', _) => Some(
         Result.Error([badNonAnchorError(id', "R-scheme", true)], []),
       ))->Result.allUnit(combineMessages)
 
     let representations__ =
-      filter(ModelNode.Kind.Representation, (id', _) => Some(
+      filter(~allowPlaceholders=false, ModelNode.Kind.Representation, (id', _) => Some(
         Result.Error([badNonAnchorError(id', "Representation", false)], []),
       ))->Result.allUnit(combineMessages)
+
     let anchored_tokens =
       filterAnchored(ModelNode.Kind.Token, (_, t) =>
         switch t {
@@ -694,6 +693,7 @@ module Conv = {
       )
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
+
     let anchored_dimensions =
       filterAnchored(ModelNode.Kind.Dimension, (_, d) =>
         switch d {
@@ -771,6 +771,125 @@ module Conv = {
       anchored_representations: anchored_representations,
     }))
   }
+
+  let slots_to_placeholder = (
+    id,
+    slots: InspectorState.Placeholder.t,
+    schemas,
+    below,
+    anchored,
+  ) => {
+    let filterAnchored = (~allowPlaceholders=true, k, f) =>
+      filter(~allowPlaceholders, anchored, schemas, k, f)
+    let filter = (~allowPlaceholders=true, k, f) => filter(~allowPlaceholders, below, schemas, k, f)
+
+    let description = switch slots.description {
+    | "#Placeholder#" =>
+      Result.Error(([], [defaultReferenceWarning([id], "description", "Placeholder")]))
+    | s => Result.Ok(s)
+    }
+    let isIntensional =
+      slots.isIntensional->Result.fromOption(() => (
+        [
+          ModelError.create(
+            ~nodes=[id],
+            ~message="Unspecified why Placeholder is included.",
+            ~details="Placeholders can be included because the substructure is not understood, or because it is understood but has chosen not to be modelled. You must indicate which case this is.",
+            ~suggestion="Select whether this Placeholder is understood using the \"Omitted but understood?\" dropdown.",
+            (),
+          ),
+        ],
+        [],
+      ))
+
+    let representations__ = filter(~allowPlaceholders=true, ModelNode.Kind.Representation, (_, t) =>
+      switch t {
+      | Result.Error(e) => Some(Result.Error(e))
+      | Result.Ok(Schema.Representation(_)) => Some(Result.Ok())
+      | _ => None
+      }
+    )->Result.allUnit(combineMessages)
+
+    let schemes__ = filter(~allowPlaceholders=false, ModelNode.Kind.Scheme, (_, t) =>
+      switch t {
+      | Result.Error(e) => Some(Result.Error(e))
+      | Result.Ok(Schema.Scheme(_)) => Some(Result.Ok())
+      | _ => None
+      }
+    )->Result.allUnit(combineMessages)
+
+    let dimensions__ = filter(~allowPlaceholders=false, ModelNode.Kind.Dimension, (_, t) =>
+      switch t {
+      | Result.Error(e) => Some(Result.Error(e))
+      | Result.Ok(Schema.Dimension(_)) => Some(Result.Ok())
+      | _ => None
+      }
+    )->Result.allUnit(combineMessages)
+
+    let tokens__ = filter(~allowPlaceholders=false, ModelNode.Kind.Token, (_, t) =>
+      switch t {
+      | Result.Error(e) => Some(Result.Error(e))
+      | Result.Ok(Schema.Token(_)) => Some(Result.Ok())
+      | _ => None
+      }
+    )->Result.allUnit(combineMessages)
+
+    let anchored_representations__ = filterAnchored(
+      ~allowPlaceholders=true,
+      ModelNode.Kind.Representation,
+      (_, t) =>
+        switch t {
+        | Result.Error(e) => Some(Result.Error(e))
+        | Result.Ok(Schema.Representation(_)) => Some(Result.Ok())
+        | _ => None
+        },
+    )->Result.allUnit(combineMessages)
+
+    let anchored_schemes__ = filterAnchored(~allowPlaceholders=false, ModelNode.Kind.Scheme, (
+      _,
+      t,
+    ) =>
+      switch t {
+      | Result.Error(e) => Some(Result.Error(e))
+      | Result.Ok(Schema.Scheme(_)) => Some(Result.Ok())
+      | _ => None
+      }
+    )->Result.allUnit(combineMessages)
+
+    let anchored_dimensions__ = filterAnchored(~allowPlaceholders=false, ModelNode.Kind.Dimension, (
+      _,
+      t,
+    ) =>
+      switch t {
+      | Result.Error(e) => Some(Result.Error(e))
+      | Result.Ok(Schema.Dimension(_)) => Some(Result.Ok())
+      | _ => None
+      }
+    )->Result.allUnit(combineMessages)
+
+    let anchored_tokens__ = filterAnchored(~allowPlaceholders=false, ModelNode.Kind.Token, (_, t) =>
+      switch t {
+      | Result.Error(e) => Some(Result.Error(e))
+      | Result.Ok(Schema.Token(_)) => Some(Result.Ok())
+      | _ => None
+      }
+    )->Result.allUnit(combineMessages)
+
+    (
+      description,
+      isIntensional,
+      representations__,
+      schemes__,
+      dimensions__,
+      tokens__,
+      anchored_representations__,
+      anchored_schemes__,
+      anchored_dimensions__,
+      anchored_tokens__,
+    )
+    ->Result.both10(combineMessages)
+    ->Result.flatMap(_ => Result.Error(([], [])))
+  }
 }
 
 type t = {
@@ -838,19 +957,9 @@ let fromSlotsAndLinks = (slots, links) => {
               ModelNode.Kind.Token,
               Conv.slots_to_token(id, t, schemas, children, anchoredChildren),
             )
-          | Some(InspectorState.Schema.Placeholder(_)) => (
+          | Some(InspectorState.Schema.Placeholder(p)) => (
               ModelNode.Kind.Placeholder,
-              Result.Error((
-                [],
-                [
-                  ModelWarning.create(
-                    ~nodes=[id],
-                    ~message="Placeholder",
-                    ~details="The Intelligence Engine cannot understand placeholders yet.",
-                    (),
-                  ),
-                ],
-              )),
+              Conv.slots_to_placeholder(id, p, schemas, children, anchoredChildren), // Always returns an error.
             )
           | None => (
               ModelNode.Kind.Placeholder,
