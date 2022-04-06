@@ -84,7 +84,8 @@ module Selector = {
 
 module Notes = {
   @react.component
-  let make = (~name, ~value=?, ~onChange=?) => {
+  let make = (~name, ~value=?, ~onChange=?, ~help=?) => {
+    let help = help->Option.getWithDefault("Add any other comments about this schema here.")
     <div
       style={ReactDOM.Style.make(
         ~display="flex",
@@ -92,9 +93,7 @@ module Notes = {
         ~margin="0.125rem 0.5rem",
         (),
       )}>
-      <Label htmlFor={name} help="Add any other comments about this schema here.">
-        {React.string("Notes")}
-      </Label>
+      <Label htmlFor={name} help> {React.string("Notes")} </Label>
       <textarea
         name
         ?onChange
@@ -119,7 +118,9 @@ module Representation = {
   let make = (~slots: InspectorState.Representation.t, ~onChange) => {
     <>
       <Row>
-        <Label htmlFor="inspector-rep-domain"> {React.string("Domain")} </Label>
+        <Label htmlFor="inspector-rep-domain" help="Indicate the title of the diagram.">
+          {React.string("Domain")}
+        </Label>
         <Input
           value={slots.domain}
           name="inspector-rep-domain"
@@ -128,7 +129,11 @@ module Representation = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-rep-display"> {React.string("Display")} </Label>
+        <Label
+          htmlFor="inspector-rep-display"
+          help="Indicate the physical location of the diagram (e.g., top right image, Dropbox folder).">
+          {React.string("Display")}
+        </Label>
         <Input
           value={slots.display}
           name="inspector-rep-display"
@@ -151,7 +156,9 @@ module Scheme = {
   let make = (~slots: InspectorState.Scheme.t, ~onChange) => {
     <>
       <Row>
-        <Label htmlFor="inspector-sch-concept"> {React.string("Concept")} </Label>
+        <Label htmlFor="inspector-sch-concept" help="A description of the concept.">
+          {React.string("Concept")}
+        </Label>
         <Input
           value={slots.concept_structure}
           name="inspector-sch-concept"
@@ -160,7 +167,11 @@ module Scheme = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-sch-graphic"> {React.string("Graphic")} </Label>
+        <Label
+          htmlFor="inspector-sch-graphic"
+          help="The annotation used in the diagram that represents the concept. If the concept is represented then use ## to indicate that there is no graphic element for the concept.">
+          {React.string("Graphic")}
+        </Label>
         <Input
           value={slots.graphic_structure}
           name="inspector-sch-graphic"
@@ -169,7 +180,11 @@ module Scheme = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-sch-function"> {React.string("Function")} </Label>
+        <Label
+          htmlFor="inspector-sch-function"
+          help="Specifies the role of the schema as semantic, auxiliary, or arbitrary. Select semantic if the schema is essential for the interpretation; auxiliary if the schema is to pragmatically aid the interpretation; and arbitrary if it only has a decoratively or aesthetic purpose.">
+          {React.string("Function")}
+        </Label>
         <Selector
           name="inspector-sch-function"
           options={Function.all}
@@ -180,7 +195,11 @@ module Scheme = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-sch-explicit"> {React.string("Explicit?")} </Label>
+        <Label
+          htmlFor="inspector-sch-explicit"
+          help="Yes, if there is a graphic object for the concept. No, if there is not a graphic object for the concept.">
+          {React.string("Explicit?")}
+        </Label>
         <Selector
           name="inspector-sch-explicit"
           options={[true, false]}
@@ -191,7 +210,11 @@ module Scheme = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-sch-scope"> {React.string("Scope")} </Label>
+        <Label
+          htmlFor="inspector-sch-scope"
+          help="Global if it affects the overall representation. Local, if it affects part of the representation.">
+          {React.string("Scope")}
+        </Label>
         <Selector
           name="inspector-sch-scope"
           options={Scope.all}
@@ -202,7 +225,11 @@ module Scheme = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-sch-organisation"> {React.string("Organisation")} </Label>
+        <Label
+          htmlFor="inspector-sch-organisation"
+          help="Indicated how the concept is related to the graphic. Summarises how all the pieces in the R-Scheme schema are put together.">
+          {React.string("Organisation")}
+        </Label>
         <Input
           value={slots.organisation}
           name="inspector-sch-organisation"
@@ -224,7 +251,9 @@ module Dimension = {
   let make = (~slots: InspectorState.Dimension.t, ~onChange) => {
     <>
       <Row>
-        <Label htmlFor="inspector-dim-concept"> {React.string("Concept")} </Label>
+        <Label htmlFor="inspector-dim-concept" help="A description of the concept.">
+          {React.string("Concept")}
+        </Label>
         <Input
           value={slots.concept}
           name="inspector-dim-concept"
@@ -233,7 +262,11 @@ module Dimension = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-dim-concept-scale"> {React.string("Concept Scale")} </Label>
+        <Label
+          htmlFor="inspector-dim-concept-scale"
+          help="Indicates what kind of quantity is associated with the concept. If the concept is about categories or groups, use Nominal; for concepts that can be ordered, use Ordinal; if instances in the concept can be ordered at specific intervals, use Interval; and for instances of the concept whose proportions can be compared, use Ratio.">
+          {React.string("Concept Scale")}
+        </Label>
         <Selector
           name="inspector-dim-concept-scale"
           options={Quantity_scale.all}
@@ -245,7 +278,11 @@ module Dimension = {
       </Row>
       // Need to add concept attributes
       <Row>
-        <Label htmlFor="inspector-dim-graphic"> {React.string("Graphic")} </Label>
+        <Label
+          htmlFor="inspector-dim-graphic"
+          help="The annotation used in the diagram that represents the concept. If the concept is represented then use ## to indicate that there is no graphic element for the concept.">
+          {React.string("Graphic")}
+        </Label>
         <Input
           value={slots.graphic}
           name="inspector-dim-graphic"
@@ -254,7 +291,11 @@ module Dimension = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-dim-graphic-scale"> {React.string("Graphic Scale")} </Label>
+        <Label
+          htmlFor="inspector-dim-graphic-scale"
+          help="Indicates what kind of quantity is associated with the graphic. If the graphic can be categorised or grouped, use Nominal; if the graphic that can be ordered, use Ordinal; if instances in the graphic can be ordered at specific intervals, use Interval; and for instances of the graphic whose proportions can be compared, use Ratio.">
+          {React.string("Graphic Scale")}
+        </Label>
         <Selector
           name="inspector-dim-graphic-scale"
           options={Quantity_scale.all}
@@ -266,7 +307,11 @@ module Dimension = {
       </Row>
       // Need to add graphic attributes
       <Row>
-        <Label htmlFor="inspector-dim-function"> {React.string("Function")} </Label>
+        <Label
+          htmlFor="inspector-dim-function"
+          help="Specifies the role of the schema as semantic, auxiliary, or arbitrary. Select semantic if the schema is essential for the interpretation; auxiliary if the schema is to pragmatically aid the interpretation; and arbitrary if it only has a decoratively or aesthetic purpose.">
+          {React.string("Function")}
+        </Label>
         <Selector
           name="inspector-dim-function"
           options={Function.all}
@@ -277,7 +322,11 @@ module Dimension = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-dim-explicit"> {React.string("Explicit?")} </Label>
+        <Label
+          htmlFor="inspector-dim-explicit"
+          help="Yes, if there is a graphic object for the concept. No, if there is not a graphic object for the concept.">
+          {React.string("Explicit?")}
+        </Label>
         <Selector
           name="inspector-dim-explicit"
           options={[true, false]}
@@ -288,7 +337,11 @@ module Dimension = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-dim-scope"> {React.string("Scope")} </Label>
+        <Label
+          htmlFor="inspector-dim-scope"
+          help="Global if it affects the overall representation. Local, if it affects part of the representation.">
+          {React.string("Scope")}
+        </Label>
         <Selector
           name="inspector-dim-scope"
           options={Scope.all}
@@ -299,7 +352,11 @@ module Dimension = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-dim-organisation"> {React.string("Organisation")} </Label>
+        <Label
+          htmlFor="inspector-dim-organisation"
+          help="Indicated how the concept is related to the graphic. Summarises how all the pieces in the R-Dimension schema are put together.">
+          {React.string("Organisation")}
+        </Label>
         <Input
           value={slots.organisation}
           name="inspector-dim-organisation"
@@ -321,7 +378,9 @@ module Token = {
   let make = (~slots: InspectorState.Token.t, ~onChange) => {
     <>
       <Row>
-        <Label htmlFor="inspector-tok-concept"> {React.string("Concept")} </Label>
+        <Label htmlFor="inspector-tok-concept" help="A description of the concept.">
+          {React.string("Concept")}
+        </Label>
         <Input
           value={slots.concept}
           name="inspector-tok-concept"
@@ -329,7 +388,11 @@ module Token = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-tok-graphic"> {React.string("Graphic")} </Label>
+        <Label
+          htmlFor="inspector-tok-graphic"
+          help="The annotation used in the diagram that represents the concept. If the concept is  not represented, use '##' to indicate that there is no graphic element for the concept.">
+          {React.string("Graphic")}
+        </Label>
         <Input
           value={slots.graphic}
           name="inspector-tok-graphic"
@@ -337,7 +400,11 @@ module Token = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-tok-class"> {React.string("Is class?")} </Label>
+        <Label
+          htmlFor="inspector-tok-class"
+          help="Yes, if this R-symbol is standing in for many closely related concepts. No, if this R-symbol is just for one concept.">
+          {React.string("Is class?")}
+        </Label>
         <Selector
           name="inspector-tok-class"
           options={[true, false]}
@@ -348,7 +415,11 @@ module Token = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-tok-function"> {React.string("Function")} </Label>
+        <Label
+          htmlFor="inspector-tok-function"
+          help="Specifies the role of the schema as semantic, auxiliary, or arbitrary. Select semantic if the schema is essential for the interpretation; auxiliary if the schema is to pragmatically aid the interpretation; and arbitrary if it only has a decoratively or aesthetic purpose.">
+          {React.string("Function")}
+        </Label>
         <Selector
           name="inspector-tok-function"
           options={Function.all}
@@ -359,7 +430,11 @@ module Token = {
         />
       </Row>
       <Row>
-        <Label htmlFor="inspector-tok-explicit"> {React.string("Explicit?")} </Label>
+        <Label
+          htmlFor="inspector-tok-explicit"
+          help="Yes, if there is a graphic object for the concept. No, if there is not a graphic object for the concept.">
+          {React.string("Explicit?")}
+        </Label>
         <Selector
           name="inspector-tok-explicit"
           options={[true, false]}
@@ -383,7 +458,11 @@ module Placeholder = {
   let make = (~slots: InspectorState.Placeholder.t, ~onChange) => {
     <>
       <Row>
-        <Label htmlFor="inspector-placeholder-description"> {React.string("Description")} </Label>
+        <Label
+          htmlFor="inspector-placeholder-description"
+          help="Briefly describe what you are omitting.">
+          {React.string("Description")}
+        </Label>
         <Input
           value={slots.description}
           name="inspector-placeholder-description"
@@ -433,6 +512,7 @@ module Model = {
         name="inspector-model-notes"
         onChange={e => onChange(Event.Model.SetNotes(ReactEvent.Form.target(e)["value"]))}
         value={slots.notes}
+        help="Add any other comments about this model here."
       />
     </>
   }
