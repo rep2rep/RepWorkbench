@@ -4,7 +4,7 @@ module App = {
   type state = State.t
   type action = Event.t
 
-  let intelligence = Intelligence_Intf.create("worker.js")
+  let intelligence = Intelligence_Intf.create("worker.js?v=##VERSION##")
   let sendToIntelligence = state => {
     let sentId = switch State.focused(state) {
     | None => {
