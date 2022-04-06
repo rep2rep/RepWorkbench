@@ -176,6 +176,42 @@ module Conv = {
       )
     )
 
+  let hasAnchorsResult = (node, anchors, schemas, kind) => {
+    if Array.length(anchors) === 0 {
+      Result.Ok()
+    } else {
+      let msgs =
+        anchors
+        ->Array.mapPartial(id =>
+          schemas
+          ->Gid.Map.get(id)
+          ->Option.map(((_, v)) =>
+            switch v {
+            | Result.Ok(_) => Result.Ok()
+            | Result.Error(e) => Result.Error(e)
+            }
+          )
+        )
+        ->Result.allUnit(combineMessages)
+      let anchors = Result.Error(
+        [
+          ModelError.create(
+            ~nodes=[node],
+            ~message={kind ++ " schema has unexpected anchored children."},
+            ~details={
+              "Anchoring is a type of link that is uniquely below R-Symbol schemas. However, this node is a " ++
+              kind ++ " schema."
+            },
+            ~suggestion="(1) Make this schema an R-Symbol. (2) Connect the children using hierarchy. (3) Remove the children.",
+            (),
+          ),
+        ],
+        [],
+      )
+      [msgs, anchors]->Result.allUnit(combineMessages)
+    }
+  }
+
   let representation_to_slots = (
     rep: Schema.Representation.t,
   ) => InspectorState.Schema.Representation({
@@ -184,7 +220,13 @@ module Conv = {
     notes: "Automatically converted from verified model.",
   })
 
-  let slots_to_representation = (id, slots: InspectorState.Representation.t, schemas, below) => {
+  let slots_to_representation = (
+    id,
+    slots: InspectorState.Representation.t,
+    schemas,
+    below,
+    anchored,
+  ) => {
     let filter = (~allowPlaceholders=true, k, f) => filter(~allowPlaceholders, below, schemas, k, f)
     let domain = switch slots.domain {
     | "#Rep#" =>
@@ -246,8 +288,9 @@ module Conv = {
       )
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
-    (domain, display, tokens, dimensions, schemes, subrepresentations)
-    ->Result.both6(combineMessages)
+    let anchors__ = hasAnchorsResult(id, anchored, schemas, "Representation")
+    (domain, display, tokens, dimensions, schemes, subrepresentations, anchors__)
+    ->Result.both7(combineMessages)
     ->Result.map(((
       domain,
       display,
@@ -255,6 +298,7 @@ module Conv = {
       dimensions,
       schemes,
       subrepresentations,
+      (),
     )) => Schema.Representation({
       Schema.Representation.id: id,
       domain: domain,
@@ -276,7 +320,7 @@ module Conv = {
     notes: "",
   })
 
-  let slots_to_scheme = (id, slots: InspectorState.Scheme.t, schemas, below) => {
+  let slots_to_scheme = (id, slots: InspectorState.Scheme.t, schemas, below, anchored) => {
     let filter = (~allowPlaceholders=true, k, f) => filter(~allowPlaceholders, below, schemas, k, f)
     let concept_structure = switch slots.concept_structure {
     | "#Sch#" =>
@@ -363,6 +407,7 @@ module Conv = {
           [],
         ),
       ))->Result.allUnit(combineMessages)
+    let anchors__ = hasAnchorsResult(id, anchored, schemas, "R-scheme")
 
     (
       concept_structure,
@@ -375,8 +420,9 @@ module Conv = {
       schemes,
       organisation,
       representations__,
+      anchors__,
     )
-    ->Result.both10(combineMessages)
+    ->Result.both11(combineMessages)
     ->Result.map(((
       concept_structure,
       graphic_structure,
@@ -387,6 +433,7 @@ module Conv = {
       dimensions,
       schemes,
       organisation,
+      (),
       (),
     )) => Schema.Scheme({
       Schema.Scheme.id: id,
@@ -416,7 +463,7 @@ module Conv = {
     notes: "",
   })
 
-  let slots_to_dimension = (id, slots: InspectorState.Dimension.t, schemas, below) => {
+  let slots_to_dimension = (id, slots: InspectorState.Dimension.t, schemas, below, anchored) => {
     let filter = (~allowPlaceholders=true, k, f) => filter(~allowPlaceholders, below, schemas, k, f)
     let concept = switch slots.concept {
     | "#Dim#" =>
@@ -513,6 +560,7 @@ module Conv = {
           [],
         ),
       ))->Result.allUnit(combineMessages)
+    let anchors__ = hasAnchorsResult(id, anchored, schemas, "R-dimension")
 
     let at_least_one_token_or_dimension__ = if tokCount.contents + dimCount.contents >= 1 {
       Result.Ok()
@@ -545,9 +593,10 @@ module Conv = {
       organisation,
       representations__,
       schemes__,
+      anchors__,
       at_least_one_token_or_dimension__,
     )
-    ->Result.both15(combineMessages)
+    ->Result.both16(combineMessages)
     ->Result.map(((
       concept,
       concept_scale,
@@ -561,6 +610,7 @@ module Conv = {
       tokens,
       dimensions,
       organisation,
+      (),
       (),
       (),
       (),
@@ -943,15 +993,15 @@ let fromSlotsAndLinks = (slots, links) => {
           let (k, s) = switch slots->Gid.Map.get(id) {
           | Some(InspectorState.Schema.Representation(r)) => (
               ModelNode.Kind.Representation,
-              Conv.slots_to_representation(id, r, schemas, children),
+              Conv.slots_to_representation(id, r, schemas, children, anchoredChildren),
             )
           | Some(InspectorState.Schema.Scheme(s)) => (
               ModelNode.Kind.Scheme,
-              Conv.slots_to_scheme(id, s, schemas, children),
+              Conv.slots_to_scheme(id, s, schemas, children, anchoredChildren),
             )
           | Some(InspectorState.Schema.Dimension(d)) => (
               ModelNode.Kind.Dimension,
-              Conv.slots_to_dimension(id, d, schemas, children),
+              Conv.slots_to_dimension(id, d, schemas, children, anchoredChildren),
             )
           | Some(InspectorState.Schema.Token(t)) => (
               ModelNode.Kind.Token,
