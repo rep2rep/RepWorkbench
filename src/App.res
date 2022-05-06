@@ -27,7 +27,16 @@ module App = {
             ModelLink.kind(link),
           ))
         let id = Gid.create()
-        intelligence->Intelligence_Intf.post({id: id, slots: slots, links: links})
+        intelligence->Intelligence_Intf.post({
+          id: id,
+          slots: slots->Gid.Map.mapPartial((_, slot) =>
+            switch slot {
+            | InspectorState.SchemaOrLink.Schema(s) => Some(s)
+            | _ => None
+            }
+          ),
+          links: links,
+        })
         id
       })
     }
@@ -118,9 +127,12 @@ module App = {
         let eLinks = switch ids {
         | [] => []
         | _ =>
-          ids->Array.map(source => Event.Model.Graph(
-            Event.Graph.LinkNodes(source, id, ModelLink.Kind.Hierarchy),
-          ))
+          ids->Array.map(source => Event.Model.LinkNodes({
+            linkId: Gid.create(),
+            source: source,
+            target: id,
+            kind: ModelLink.Kind.Hierarchy,
+          }))
         }
         let eFinal = Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.ofNodes([id])))
 
@@ -135,7 +147,9 @@ module App = {
       let ids = selection->ModelSelection.nodes
       switch ids {
       | [source, target] =>
-        dispatchM(Event.Model.Graph(Event.Graph.LinkNodes(source, target, kind)))
+        dispatchM(
+          Event.Model.LinkNodes({linkId: Gid.create(), source: source, target: target, kind: kind}),
+        )
       | _ => ()
       }
     }
@@ -225,7 +239,7 @@ module App = {
       fs->Array.forEach(f => {
         File.text(f)
         |> Js.Promise.then_(text => {
-          let model = try text->Js.Json.parseExn->State.Model.Stable.V3.fromJson catch {
+          let model = try text->Js.Json.parseExn->State.Model.Stable.V4.fromJson catch {
           | _ => Or_error.error_s("fail")
           }
           if Or_error.isOk(model) {
@@ -243,7 +257,7 @@ module App = {
       ->State.model(id)
       ->Option.iter(model => {
         let name = State.Model.info(model).name
-        let json = State.Model.Stable.V3.toJson(model)
+        let json = State.Model.Stable.V4.toJson(model)
         let content =
           "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
         Downloader.download(name ++ ".repn", content)
@@ -447,10 +461,12 @@ module App = {
               state
               ->State.model(focused)
               ->Option.map(model => {
-                let slots = model->State.Model.slotsForSelection(selection)->Gid.Map.toArray
+                let slots = model->State.Model.slotsForSelection(selection)
                 switch slots {
                 | [] => InspectorState.Global(State.Model.info(model))
-                | [(id, slot)] => InspectorState.Single(id, slot)
+                | [(id, InspectorState.SchemaOrLink.Schema(slot))] =>
+                  InspectorState.Schema(id, slot)
+                | [(id, InspectorState.SchemaOrLink.Link(slot))] => InspectorState.Link(id, slot)
                 | multi => InspectorState.Multiple(multi)
                 }
               })

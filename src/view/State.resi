@@ -3,12 +3,12 @@ module Model: {
 
   let info: t => InspectorState.Model.t
   let graph: t => ModelState.t
-  let slots: t => Gid.Map.t<InspectorState.Schema.t>
-  let slotsForSelection: (t, ModelSelection.t) => Gid.Map.t<InspectorState.Schema.t>
+  let slots: t => Gid.Map.t<InspectorState.SchemaOrLink.t>
+  let slotsForSelection: (t, ModelSelection.t) => array<(Gid.t, InspectorState.SchemaOrLink.t)>
 
   let updateInfo: (t, InspectorState.Model.t) => t
   let updateGraph: (t, ModelState.t) => t
-  let updateSlots: (t, Gid.Map.t<InspectorState.Schema.t>) => t
+  let updateSlots: (t, Gid.Map.t<InspectorState.SchemaOrLink.t>) => t
 
   module Stable: {
     module V1: {
@@ -24,6 +24,12 @@ module Model: {
     }
 
     module V3: {
+      type t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+
+    module V4: {
       type t = t
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>

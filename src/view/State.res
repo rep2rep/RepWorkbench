@@ -2,7 +2,7 @@ module Model = {
   type t = {
     info: InspectorState.Model.t,
     graph: ModelState.t,
-    slots: Gid.Map.t<InspectorState.Schema.t>,
+    slots: Gid.Map.t<InspectorState.SchemaOrLink.t>,
   }
 
   module Stable = {
@@ -106,7 +106,7 @@ module Model = {
     }
 
     module V3 = {
-      type t = t = {
+      type t = {
         info: InspectorState.Model.Stable.V1.t,
         graph: ModelState.Stable.V3.t,
         slots: Gid.Map.t<InspectorState.Schema.Stable.V2.t>,
@@ -164,9 +164,103 @@ module Model = {
           }
         })
     }
+
+    module V4 = {
+      type t = t = {
+        info: InspectorState.Model.Stable.V1.t,
+        graph: ModelState.Stable.V4.t,
+        slots: Gid.Map.t<InspectorState.SchemaOrLink.Stable.V1.t>,
+      }
+
+      let v3_to_v4 = t => {
+        let graph = t.V3.graph->ModelState.Stable.V4.v3_to_v4
+        let slots = {
+          let schemas = t.V3.slots->Gid.Map.map(s => InspectorState.SchemaOrLink.Schema(s))
+          let links =
+            graph
+            ->ModelState.graph
+            ->ModelGraph.links
+            ->Array.map(link => (
+              ModelLink.id(link),
+              InspectorState.SchemaOrLink.Link(InspectorState.Link.empty(ModelLink.kind(link))),
+            ))
+            ->Gid.Map.fromArray
+          Gid.Map.merge(schemas, links, (_, l, r) =>
+            switch (l, r) {
+            | (Some(_), Some(_)) => None // Impossible?
+            | (Some(l), None) => Some(l)
+            | (None, Some(r)) => Some(r)
+            | (None, None) => None // Impossible?
+            }
+          )
+        }
+        {
+          info: t.V3.info,
+          graph: graph,
+          slots: slots,
+        }
+      }
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(4)),
+          ("info", t.info->InspectorState.Model.Stable.V1.toJson),
+          ("graph", t.graph->ModelState.Stable.V4.toJson),
+          ("slots", t.slots->Gid.Map.toJson(InspectorState.SchemaOrLink.Stable.V1.toJson)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Model state object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          switch version->Or_error.match {
+          | Or_error.Err(_) => {
+              Js.Console.log("Attempting to upgrade model from V1 to V4")
+              V1.fromJson(json)
+              ->Or_error.map(V2.v1_to_v2)
+              ->Or_error.map(V3.v2_to_v3)
+              ->Or_error.map(v3_to_v4)
+            }
+          | Or_error.Ok(2) => {
+              Js.Console.log("Attempting to upgrade model from V2 to V4")
+              V2.fromJson(json)->Or_error.map(V3.v2_to_v3)->Or_error.map(v3_to_v4)
+            }
+          | Or_error.Ok(3) => {
+              Js.Console.log("Attempting to upgrade model from V3 to V4")
+              V3.fromJson(json)->Or_error.map(v3_to_v4)
+            }
+          | Or_error.Ok(4) => {
+              let info = getValue("info", InspectorState.Model.Stable.V1.fromJson)
+              let graph = getValue("graph", ModelState.Stable.V4.fromJson)
+              let slots = getValue("slots", j =>
+                j->Gid.Map.fromJson(InspectorState.SchemaOrLink.Stable.V1.fromJson)
+              )
+
+              Or_error.both3((info, graph, slots))->Or_error.map(((info, graph, slots)) => {
+                info: info,
+                graph: graph,
+                slots: slots,
+              })
+            }
+          | Or_error.Ok(v) =>
+            Or_error.error_ss([
+              "Attempting to load unsupported Model version ",
+              Int.toString(v),
+              "!",
+            ])
+          }
+        })
+    }
   }
 
-  module Storage = LocalStorage.MakeJsonable(Stable.V3)
+  module Storage = LocalStorage.MakeJsonable(Stable.V4)
 
   let store = (t, id) => Storage.set("RepNotation:Model:" ++ Gid.toString(id), t)
   let load = id => Storage.get("RepNotation:Model:" ++ Gid.toString(id))
@@ -174,17 +268,10 @@ module Model = {
   let info = t => t.info
   let graph = t => t.graph
   let slots = t => t.slots
+
   let slotsForSelection = (t, selection) => {
-    let ids = ModelSelection.nodes(selection)
-    t.slots->Gid.Map.merge(Gid.Map.empty(), (key, left, _) =>
-      left->Option.flatMap(left =>
-        if ids->Array.includes(key) {
-          Some(left)
-        } else {
-          None
-        }
-      )
-    )
+    let ids = Array.concat(ModelSelection.nodes(selection), ModelSelection.links(selection))
+    ids->Array.mapPartial(id => t.slots->Gid.Map.get(id)->Option.map(slots => (id, slots)))
   }
 
   let updateInfo = (t, info) => {...t, info: info}

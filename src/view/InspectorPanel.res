@@ -27,6 +27,15 @@ module Row = {
   }
 }
 
+module Title = {
+  @react.component
+  let make = (~value: string) => {
+    <Row>
+      <h3 style={ReactDOM.Style.make(~marginBottom="0.5ex", ())}> {React.string(value)} </h3>
+    </Row>
+  }
+}
+
 module Label = {
   @react.component
   let make = (~htmlFor=?, ~help as title=?, ~style=ReactDOM.Style.make(), ~children) => {
@@ -162,6 +171,7 @@ module Representation = {
   @react.component
   let make = (~slots: InspectorState.Representation.t, ~onChange) => {
     <>
+      <Title value="Representation" />
       <Row>
         <Label htmlFor="inspector-rep-domain" help="Indicate the title of the diagram.">
           {React.string("Domain")}
@@ -200,6 +210,7 @@ module Scheme = {
   @react.component
   let make = (~slots: InspectorState.Scheme.t, ~onChange) => {
     <>
+      <Title value="R-Scheme" />
       <Row>
         <Label htmlFor="inspector-sch-concept" help="A description of the concept.">
           {React.string("Concept")}
@@ -295,6 +306,7 @@ module Dimension = {
   @react.component
   let make = (~slots: InspectorState.Dimension.t, ~onChange) => {
     <>
+      <Title value="R-Dimension" />
       <Row>
         <Label htmlFor="inspector-dim-concept" help="A description of the concept.">
           {React.string("Concept")}
@@ -446,6 +458,7 @@ module Token = {
   @react.component
   let make = (~slots: InspectorState.Token.t, ~onChange) => {
     <>
+      <Title value="R-Symbol" />
       <Row>
         <Label htmlFor="inspector-tok-concept" help="A description of the concept.">
           {React.string("Concept")}
@@ -526,6 +539,7 @@ module Placeholder = {
   @react.component
   let make = (~slots: InspectorState.Placeholder.t, ~onChange) => {
     <>
+      <Title value="Placeholder" />
       <Row>
         <Label
           htmlFor="inspector-placeholder-description"
@@ -555,8 +569,78 @@ module Placeholder = {
         />
       </Row>
       <Notes
-        name="inspector-placeholder-description"
+        name="inspector-placeholder-notes"
         onChange={e => onChange(Event.Slots.Placeholder.Notes(ReactEvent.Form.target(e)["value"]))}
+        value={slots.notes}
+      />
+    </>
+  }
+}
+
+module Hierarchy = {
+  @react.component
+  let make = (~slots: InspectorState.Hierarchy.t, ~onChange) => {
+    <>
+      <Title value="Hierarchy" />
+      <Notes
+        name="inspector-hierarchy-notes"
+        onChange={e => onChange(Event.Slots.Hierarchy.Notes(ReactEvent.Form.target(e)["value"]))}
+        value={slots.notes}
+      />
+    </>
+  }
+}
+
+module Anchor = {
+  @react.component
+  let make = (~slots: InspectorState.Anchor.t, ~onChange) => {
+    <>
+      <Title value="Anchor" />
+      <Notes
+        name="inspector-anchor-notes"
+        onChange={e => onChange(Event.Slots.Anchor.Notes(ReactEvent.Form.target(e)["value"]))}
+        value={slots.notes}
+      />
+    </>
+  }
+}
+
+module Relation = {
+  @react.component
+  let make = (~slots: InspectorState.Relation.t, ~onChange) => {
+    <>
+      <Title value="Equivalence" />
+      <Notes
+        name="inspector-relation-notes"
+        onChange={e => onChange(Event.Slots.Relation.Notes(ReactEvent.Form.target(e)["value"]))}
+        value={slots.notes}
+      />
+    </>
+  }
+}
+
+module Overlap = {
+  @react.component
+  let make = (~slots: InspectorState.Overlap.t, ~onChange) => {
+    <>
+      <Title value="Overlap" />
+      <Notes
+        name="inspector-overlap-notes"
+        onChange={e => onChange(Event.Slots.Overlap.Notes(ReactEvent.Form.target(e)["value"]))}
+        value={slots.notes}
+      />
+    </>
+  }
+}
+
+module Disjoint = {
+  @react.component
+  let make = (~slots: InspectorState.Disjoint.t, ~onChange) => {
+    <>
+      <Title value="Disjoint" />
+      <Notes
+        name="inspector-disjoint-notes"
+        onChange={e => onChange(Event.Slots.Disjoint.Notes(ReactEvent.Form.target(e)["value"]))}
         value={slots.notes}
       />
     </>
@@ -567,6 +651,7 @@ module Model = {
   @react.component
   let make = (~slots: InspectorState.Model.t, ~onChange) => {
     <>
+      <Title value="Model" />
       <Row>
         <Label htmlFor="inspector-model-name" help="Set the name of this model.">
           {React.string("Name")}
@@ -652,9 +737,9 @@ let make = (~id, ~data, ~onChange=?) => {
           (),
         )}
         className="inspector-panel-multiple-message">
-        {React.string("Multiple schema selected")}
+        {React.string("Multiple schema and/or links selected")}
       </span>
-    | InspectorState.Single(nodeId, schema) =>
+    | InspectorState.Schema(nodeId, schema) =>
       switch schema {
       | InspectorState.Schema.Representation(slots) =>
         <Representation
@@ -671,6 +756,27 @@ let make = (~id, ~data, ~onChange=?) => {
       | InspectorState.Schema.Placeholder(slots) =>
         <Placeholder
           slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Placeholder(c)))}
+        />
+      }
+    | InspectorState.Link(linkId, link) =>
+      switch link {
+      | InspectorState.Link.Hierarchy(slots) =>
+        <Hierarchy
+          slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Hierarchy(c)))}
+        />
+      | InspectorState.Link.Anchor(slots) =>
+        <Anchor slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Anchor(c)))} />
+      | InspectorState.Link.Relation(slots) =>
+        <Relation
+          slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Relation(c)))}
+        />
+      | InspectorState.Link.Overlap(slots) =>
+        <Overlap
+          slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Overlap(c)))}
+        />
+      | InspectorState.Link.Disjoint(slots) =>
+        <Disjoint
+          slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Disjoint(c)))}
         />
       }
     }}

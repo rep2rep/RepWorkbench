@@ -66,4 +66,4 @@ let ofNodes = nodeIds => {
 }
 
 let nodes = t => t.nodes->Array.map(id => id->ReactD3Graph.Node.Id.toString->Gid.fromString)
-let links = t => t.links
+let links = t => t.links->Array.map(id => id->ReactD3Graph.Link.Id.toString->Gid.fromString)

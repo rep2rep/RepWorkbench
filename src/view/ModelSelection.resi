@@ -6,7 +6,7 @@ let empty: t
 let ofNodes: array<Gid.t> => t
 
 let nodes: t => array<Gid.t>
-let links: t => array<ReactD3Graph.Link.Id.t>
+let links: t => array<Gid.t>
 
 module Stable: {
   module V1: {

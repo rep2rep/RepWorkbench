@@ -69,12 +69,37 @@ module Slots: {
       | Notes(string)
   }
 
+  module Hierarchy: {
+    type t = Notes(string)
+  }
+
+  module Anchor: {
+    type t = Notes(string)
+  }
+
+  module Relation: {
+    type t = Notes(string)
+  }
+
+  module Overlap: {
+    type t = Notes(string)
+  }
+
+  module Disjoint: {
+    type t = Notes(string)
+  }
+
   type t =
     | Representation(Representation.t)
     | Scheme(Scheme.t)
     | Dimension(Dimension.t)
     | Token(Token.t)
     | Placeholder(Placeholder.t)
+    | Hierarchy(Hierarchy.t)
+    | Anchor(Anchor.t)
+    | Relation(Relation.t)
+    | Overlap(Overlap.t)
+    | Disjoint(Disjoint.t)
 }
 
 module Graph: {
@@ -93,7 +118,7 @@ module Graph: {
     | DeleteNode(Gid.t)
     | DuplicateNodes(Gid.Map.t<Gid.t>)
     | MoveNode(Gid.t, float, float)
-    | LinkNodes(Gid.t, Gid.t, ModelLink.Kind.t)
+    | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
     | UnlinkNodes(Gid.t, Gid.t)
     | SetSelection(ModelSelection.t)
     | Seq(array<t>)
@@ -106,6 +131,7 @@ module Model: {
     | CreateNode(Gid.t, float, float, ModelNode.Kind.t)
     | DeleteNode(Gid.t)
     | DuplicateNodes(Gid.Map.t<Gid.t>)
+    | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
     | Graph(Graph.t)
     | Slots(Gid.t, Slots.t)
     | Seq(array<t>)

@@ -128,6 +128,96 @@ module Schema: {
   }
 }
 
+module Hierarchy: {
+  type t = {notes: string}
+
+  module Stable: {
+    module V1: {
+      type t = t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+  }
+}
+module Anchor: {
+  type t = {notes: string}
+
+  module Stable: {
+    module V1: {
+      type t = t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+  }
+}
+
+module Relation: {
+  type t = {notes: string}
+
+  module Stable: {
+    module V1: {
+      type t = t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+  }
+}
+module Overlap: {
+  type t = {notes: string}
+
+  module Stable: {
+    module V1: {
+      type t = t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+  }
+}
+module Disjoint: {
+  type t = {notes: string}
+
+  module Stable: {
+    module V1: {
+      type t = t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+  }
+}
+
+module Link: {
+  type t =
+    | Hierarchy(Hierarchy.t)
+    | Anchor(Anchor.t)
+    | Relation(Relation.t)
+    | Overlap(Overlap.t)
+    | Disjoint(Disjoint.t)
+
+  let empty: ModelLink.Kind.t => t
+
+  module Stable: {
+    module V1: {
+      type t = t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+  }
+}
+
+module SchemaOrLink: {
+  type t =
+    | Schema(Schema.t)
+    | Link(Link.t)
+
+  module Stable: {
+    module V1: {
+      type t = t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+  }
+}
+
 module Model: {
   type t = {name: string, notes: string}
 
@@ -148,5 +238,6 @@ module Model: {
 type t =
   | Empty
   | Global(Model.t)
-  | Multiple(array<(Gid.t, Schema.t)>)
-  | Single(Gid.t, Schema.t)
+  | Schema(Gid.t, Schema.t)
+  | Link(Gid.t, Link.t)
+  | Multiple(array<(Gid.t, SchemaOrLink.t)>)

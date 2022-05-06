@@ -139,25 +139,97 @@ module Slots = {
       }
   }
 
+  module Hierarchy = {
+    type t = Notes(string)
+
+    let dispatch = (_, t) =>
+      switch t {
+      | Notes(s) => {InspectorState.Hierarchy.notes: s}
+      }
+  }
+
+  module Anchor = {
+    type t = Notes(string)
+
+    let dispatch = (_, t) =>
+      switch t {
+      | Notes(s) => {InspectorState.Anchor.notes: s}
+      }
+  }
+
+  module Relation = {
+    type t = Notes(string)
+
+    let dispatch = (_, t) =>
+      switch t {
+      | Notes(s) => {InspectorState.Relation.notes: s}
+      }
+  }
+
+  module Overlap = {
+    type t = Notes(string)
+
+    let dispatch = (_, t) =>
+      switch t {
+      | Notes(s) => {InspectorState.Overlap.notes: s}
+      }
+  }
+  module Disjoint = {
+    type t = Notes(string)
+
+    let dispatch = (_, t) =>
+      switch t {
+      | Notes(s) => {InspectorState.Disjoint.notes: s}
+      }
+  }
+
   type t =
     | Representation(Representation.t)
     | Scheme(Scheme.t)
     | Dimension(Dimension.t)
     | Token(Token.t)
     | Placeholder(Placeholder.t)
+    | Hierarchy(Hierarchy.t)
+    | Anchor(Anchor.t)
+    | Relation(Relation.t)
+    | Overlap(Overlap.t)
+    | Disjoint(Disjoint.t)
 
   let dispatch = (state, t) =>
     switch (state, t) {
-    | (InspectorState.Schema.Representation(state), Representation(e)) =>
-      Representation.dispatch(state, e)->InspectorState.Schema.Representation
-    | (InspectorState.Schema.Scheme(state), Scheme(e)) =>
-      Scheme.dispatch(state, e)->InspectorState.Schema.Scheme
-    | (InspectorState.Schema.Dimension(state), Dimension(e)) =>
-      Dimension.dispatch(state, e)->InspectorState.Schema.Dimension
-    | (InspectorState.Schema.Token(state), Token(e)) =>
-      Token.dispatch(state, e)->InspectorState.Schema.Token
-    | (InspectorState.Schema.Placeholder(state), Placeholder(e)) =>
-      Placeholder.dispatch(state, e)->InspectorState.Schema.Placeholder
+    | (
+        InspectorState.SchemaOrLink.Schema(InspectorState.Schema.Representation(state)),
+        Representation(e),
+      ) =>
+      Representation.dispatch(state, e)
+      ->InspectorState.Schema.Representation
+      ->InspectorState.SchemaOrLink.Schema
+    | (InspectorState.SchemaOrLink.Schema(InspectorState.Schema.Scheme(state)), Scheme(e)) =>
+      Scheme.dispatch(state, e)->InspectorState.Schema.Scheme->InspectorState.SchemaOrLink.Schema
+    | (InspectorState.SchemaOrLink.Schema(InspectorState.Schema.Dimension(state)), Dimension(e)) =>
+      Dimension.dispatch(state, e)
+      ->InspectorState.Schema.Dimension
+      ->InspectorState.SchemaOrLink.Schema
+    | (InspectorState.SchemaOrLink.Schema(InspectorState.Schema.Token(state)), Token(e)) =>
+      Token.dispatch(state, e)->InspectorState.Schema.Token->InspectorState.SchemaOrLink.Schema
+    | (
+        InspectorState.SchemaOrLink.Schema(InspectorState.Schema.Placeholder(state)),
+        Placeholder(e),
+      ) =>
+      Placeholder.dispatch(state, e)
+      ->InspectorState.Schema.Placeholder
+      ->InspectorState.SchemaOrLink.Schema
+    | (InspectorState.SchemaOrLink.Link(InspectorState.Link.Hierarchy(state)), Hierarchy(e)) =>
+      Hierarchy.dispatch(state, e)->InspectorState.Link.Hierarchy->InspectorState.SchemaOrLink.Link
+    | (InspectorState.SchemaOrLink.Link(InspectorState.Link.Anchor(state)), Anchor(e)) =>
+      Anchor.dispatch(state, e)->InspectorState.Link.Anchor->InspectorState.SchemaOrLink.Link
+    | (InspectorState.SchemaOrLink.Link(InspectorState.Link.Relation(state)), Relation(e)) =>
+      Relation.dispatch(state, e)->InspectorState.Link.Relation->InspectorState.SchemaOrLink.Link
+    | (InspectorState.SchemaOrLink.Link(InspectorState.Link.Overlap(state)), Overlap(e)) =>
+      Overlap.dispatch(state, e)->InspectorState.Link.Overlap->InspectorState.SchemaOrLink.Link
+    | (InspectorState.SchemaOrLink.Link(InspectorState.Link.Disjoint(state)), Disjoint(e)) =>
+      Disjoint.dispatch(state, e)->InspectorState.Link.Disjoint->InspectorState.SchemaOrLink.Link
+
     | _ => state
     }
 }
@@ -191,7 +263,7 @@ module Graph = {
     | DeleteNode(Gid.t)
     | DuplicateNodes(Gid.Map.t<Gid.t>)
     | MoveNode(Gid.t, float, float)
-    | LinkNodes(Gid.t, Gid.t, ModelLink.Kind.t)
+    | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
     | UnlinkNodes(Gid.t, Gid.t)
     | SetSelection(ModelSelection.t)
     | Seq(array<t>)
@@ -211,12 +283,12 @@ module Graph = {
     | DeleteNode(id) => state->ModelState.removeNode(id)
     | DuplicateNodes(idMap) => state->ModelState.duplicateNodes(idMap)
     | MoveNode(id, x, y) => state->ModelState.moveNode(id, ~x, ~y)
-    | LinkNodes(source, target, kind) => {
+    | LinkNodes({linkId, source, target, kind}) => {
         let modelSource = state->ModelState.nodeWithId(source)
         let modelTarget = state->ModelState.nodeWithId(target)
         switch (modelSource, modelTarget) {
         | (Some(source), Some(target)) =>
-          state->ModelState.addLink(ModelLink.create(~source, ~target, kind))
+          state->ModelState.addLink(ModelLink.create(~linkId, ~source, ~target, kind))
         | _ => state
         }
       }
@@ -241,6 +313,7 @@ module Model = {
     | CreateNode(Gid.t, float, float, ModelNode.Kind.t)
     | DeleteNode(Gid.t)
     | DuplicateNodes(Gid.Map.t<Gid.t>)
+    | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
     | Graph(Graph.t)
     | Slots(Gid.t, Slots.t)
     | Seq(array<t>)
@@ -262,7 +335,8 @@ module Model = {
         let reference = InspectorState.Schema.reference(slots)
         let node = ModelNode.create(~name, ~reference, ~x, ~y, kind, id)
         let graph = state->State.Model.graph->Graph.dispatch(Graph.AddNode(node))
-        let allSlots = state->State.Model.slots->Gid.Map.set(id, slots)
+        let allSlots =
+          state->State.Model.slots->Gid.Map.set(id, InspectorState.SchemaOrLink.Schema(slots))
         state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
       }
     | DeleteNode(id) => {
@@ -283,6 +357,18 @@ module Model = {
           })
         state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
       }
+    | LinkNodes({linkId, source, target, kind}) => {
+        let slots = InspectorState.Link.empty(kind)->InspectorState.SchemaOrLink.Link
+        let allSlots = state->State.Model.slots->Gid.Map.set(linkId, slots)
+        let state = state->State.Model.updateSlots(allSlots)
+        let graph =
+          state
+          ->State.Model.graph
+          ->Graph.dispatch(
+            Graph.LinkNodes({linkId: linkId, source: source, target: target, kind: kind}),
+          )
+        state->State.Model.updateGraph(graph)
+      }
     | Graph(ev) => {
         let graph = state->State.Model.graph->Graph.dispatch(ev)
         state->State.Model.updateGraph(graph)
@@ -299,6 +385,8 @@ module Model = {
   let rec graphEvent = t =>
     switch t {
     | Rename(_) | SetNotes(_) | CreateNode(_, _, _, _) | DeleteNode(_) | DuplicateNodes(_) => None
+    | LinkNodes({linkId, source, target, kind}) =>
+      Some(Graph.LinkNodes({linkId: linkId, source: source, target: target, kind: kind}))
     | Seq(ts) => ts->Array.mapPartial(graphEvent)->Graph.Seq->Some
     | Graph(e) => Some(e)
     | Slots(id, e) => {
