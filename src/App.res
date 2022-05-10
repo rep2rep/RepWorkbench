@@ -63,6 +63,21 @@ module App = {
           id="arrowheadCircle" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
           <circle cx="6" cy="6" r="6" fill="black" />
         </marker>,
+        <marker
+          id="arrowheadCircleSmall"
+          markerWidth="6"
+          markerHeight="6"
+          refX="3"
+          refY="3"
+          orient="auto">
+          <circle
+            cx="3" cy="3" r="2" fill="white" stroke="black" strokeWidth="1" strokeDasharray="1000"
+          />
+        </marker>,
+        <marker
+          id="arrowheadDiamond" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <polygon points="3,0 6,3 3,6 0,3" fill="black" />
+        </marker>,
       ],
       (),
     ),

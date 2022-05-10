@@ -150,9 +150,43 @@ module Config = {
     ~strokeDasharray=5.,
     (),
   )
-  // TODO: TEMPORARY
-  let overlap = relation
-  let disjoint = relation
+  let overlapOffset = (source, target) =>
+    (source, target)
+    ->Option.both
+    ->Option.map(((source, target)) => {
+      let x1 = source["x"]
+      let x2 = target["x"]
+      let width = (source->ReactD3Graph.Core.readKeyExn("size"))["width"]
+      let dx = if x1 < x2 {
+        // Come out of right hand edge
+        width /. 20. -. 4.
+      } else {
+        // Come out of left hand edge
+        width /. -20. +. 1.
+      }
+      {"dx": dx, "dy": 0.}
+    })
+    ->Option.getWithDefault({"dx": 0., "dy": 0.})
+  let overlap = ReactD3Graph.Link.Config.create(
+    ~offsetSource=(source, target, _) => overlapOffset(source, target),
+    ~offsetTarget=(source, target, _) => overlapOffset(target, source),
+    ~color=ReactD3Graph.Color.ofHexString("#000000"),
+    ~strokeWidth=2.,
+    ~strokeDasharray=5.,
+    ~markerStart="arrowheadCircleSmall",
+    ~markerEnd="arrowheadCircleSmall",
+    (),
+  )
+  let disjoint = ReactD3Graph.Link.Config.create(
+    ~offsetSource=(source, target, _) => overlapOffset(source, target),
+    ~offsetTarget=(source, target, _) => overlapOffset(target, source),
+    ~color=ReactD3Graph.Color.ofHexString("#000000"),
+    ~strokeWidth=2.,
+    ~strokeDasharray=5.,
+    ~markerStart="arrowheadDiamond",
+    ~markerEnd="arrowheadDiamond",
+    (),
+  )
 }
 
 let create = (~linkId, ~source, ~target, kind) => {
