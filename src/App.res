@@ -171,6 +171,8 @@ module App = {
     let connectNodes = _ => linkNodes(ModelLink.Kind.Hierarchy)
     let anchorNodes = _ => linkNodes(ModelLink.Kind.Anchor)
     let relateNodes = _ => linkNodes(ModelLink.Kind.Relation)
+    let markOverlappingNodes = _ => linkNodes(ModelLink.Kind.Overlap)
+    let markDisjointNodes = _ => linkNodes(ModelLink.Kind.Disjoint)
     let unlinkNodes = _ => {
       let nodeIds = selection->ModelSelection.nodes
       dispatchM(
@@ -296,6 +298,8 @@ module App = {
       ("c", (e, ~x as _, ~y as _) => connectNodes(e)),
       ("a", (e, ~x as _, ~y as _) => anchorNodes(e)),
       ("e", (e, ~x as _, ~y as _) => relateNodes(e)),
+      ("o", (e, ~x as _, ~y as _) => markOverlappingNodes(e)),
+      ("j", (e, ~x as _, ~y as _) => markDisjointNodes(e)),
       ("x", (e, ~x as _, ~y as _) => deleteNodes(e)),
       ("ArrowLeft", (e, ~x as _, ~y as _) => nudge(e, ~dx=-10.0, ~dy=0.0)),
       ("ArrowRight", (e, ~x as _, ~y as _) => nudge(e, ~dx=10.0, ~dy=0.0)),
@@ -408,6 +412,12 @@ module App = {
           <Button onClick={connectNodes} value="Connect" enabled={toolbarActive} tooltip="C" />
           <Button onClick={anchorNodes} value="Anchor" enabled={toolbarActive} tooltip="A" />
           <Button onClick={relateNodes} value="Equivalence" enabled={toolbarActive} tooltip="E" />
+          <Button
+            onClick={markOverlappingNodes} value="Overlap" enabled={toolbarActive} tooltip="O"
+          />
+          <Button
+            onClick={markDisjointNodes} value="Disjoint" enabled={toolbarActive} tooltip="J"
+          />
           <Button.Separator />
           <Button onClick={unlinkNodes} value="Unlink" enabled={toolbarActive} tooltip="V" />
           <Button.Separator />
