@@ -259,8 +259,8 @@ let addLink = (t, link) => {...t, graph: t.graph->ModelGraph.addLink(link)}
 
 let addLinks = (t, links) => {...t, graph: t.graph->ModelGraph.addLinks(links)}
 
-let removeLinks = (t, links) => {
-  {...t, graph: t.graph->ModelGraph.removeLinks(links)}
+let removeLink = (t, link) => {
+  {...t, graph: t.graph->ModelGraph.removeLink(link)}
 }
 
 let selection = t => t.selection
@@ -301,4 +301,27 @@ let duplicateNodes = (t, nodeMap) => {
       }
     })
   t->addNodes(newNodes->Gid.Map.values)->addLinks(newLinks)
+}
+
+let incidentLinks = (t, ~nodeId) => {
+  let (incoming, outgoing) =
+    t
+    ->graph
+    ->ModelGraph.links
+    ->Array.mapPartial(link => {
+      let source = ModelLink.source(link)
+      let target = ModelLink.target(link)
+      let id = ModelLink.id(link)
+      if source === nodeId {
+        Some((false, id))
+      } else if target === nodeId {
+        Some((true, id))
+      } else {
+        None
+      }
+    })
+    ->Array.partition(((isIncoming, _)) => isIncoming)
+  let incoming = incoming->Array.map(((_, id)) => id)
+  let outgoing = outgoing->Array.map(((_, id)) => id)
+  {"incoming": Gid.Set.fromArray(incoming), "outgoing": Gid.Set.fromArray(outgoing)}
 }

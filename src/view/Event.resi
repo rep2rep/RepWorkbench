@@ -119,7 +119,7 @@ module Graph: {
     | DuplicateNodes(Gid.Map.t<Gid.t>)
     | MoveNode(Gid.t, float, float)
     | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
-    | UnlinkNodes(Gid.t, Gid.t)
+    | DeleteLink(Gid.t)
     | SetSelection(ModelSelection.t)
     | Seq(array<t>)
 }
@@ -132,6 +132,7 @@ module Model: {
     | DeleteNode(Gid.t)
     | DuplicateNodes(Gid.Map.t<Gid.t>)
     | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
+    | DeleteLink(Gid.t)
     | Graph(Graph.t)
     | Slots(Gid.t, Slots.t)
     | Seq(array<t>)

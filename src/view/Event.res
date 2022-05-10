@@ -264,7 +264,7 @@ module Graph = {
     | DuplicateNodes(Gid.Map.t<Gid.t>)
     | MoveNode(Gid.t, float, float)
     | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
-    | UnlinkNodes(Gid.t, Gid.t)
+    | DeleteLink(Gid.t)
     | SetSelection(ModelSelection.t)
     | Seq(array<t>)
 
@@ -292,16 +292,7 @@ module Graph = {
         | _ => state
         }
       }
-    | UnlinkNodes(source, target) => {
-        let toRemove =
-          state
-          ->ModelState.graph
-          ->ModelGraph.links
-          ->Array.filter(link =>
-            ModelLink.source(link) == source && ModelLink.target(link) == target
-          )
-        ModelState.removeLinks(state, toRemove)
-      }
+    | DeleteLink(linkId) => state->ModelState.removeLink(linkId)
     | SetSelection(selection) => state->ModelState.setSelection(selection)
     }
 }
@@ -314,6 +305,7 @@ module Model = {
     | DeleteNode(Gid.t)
     | DuplicateNodes(Gid.Map.t<Gid.t>)
     | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
+    | DeleteLink(Gid.t)
     | Graph(Graph.t)
     | Slots(Gid.t, Slots.t)
     | Seq(array<t>)
@@ -369,6 +361,11 @@ module Model = {
           )
         state->State.Model.updateGraph(graph)
       }
+    | DeleteLink(linkId) => {
+        let graph = state->State.Model.graph->Graph.dispatch(Graph.DeleteLink(linkId))
+        let allSlots = state->State.Model.slots->Gid.Map.remove(linkId)
+        state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
+      }
     | Graph(ev) => {
         let graph = state->State.Model.graph->Graph.dispatch(ev)
         state->State.Model.updateGraph(graph)
@@ -384,9 +381,14 @@ module Model = {
 
   let rec graphEvent = t =>
     switch t {
-    | Rename(_) | SetNotes(_) | CreateNode(_, _, _, _) | DeleteNode(_) | DuplicateNodes(_) => None
-    | LinkNodes({linkId, source, target, kind}) =>
-      Some(Graph.LinkNodes({linkId: linkId, source: source, target: target, kind: kind}))
+    | Rename(_)
+    | SetNotes(_)
+    | CreateNode(_, _, _, _)
+    | DeleteNode(_)
+    | DuplicateNodes(_)
+    | DeleteLink(_)
+    | LinkNodes(_) =>
+      None
     | Seq(ts) => ts->Array.mapPartial(graphEvent)->Graph.Seq->Some
     | Graph(e) => Some(e)
     | Slots(id, e) => {

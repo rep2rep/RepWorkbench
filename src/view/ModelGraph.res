@@ -178,7 +178,7 @@ let addLinks = (t, links) => {
   links: t.links->Array.concat(links),
 }
 let addLink = (t, link) => addLinks(t, [link])
-let removeLinks = (t, toRemove) => {
+let removeLink = (t, linkId) => {
   ...t,
-  links: t.links->Array.filter(link => !(toRemove->Array.includes(link))),
+  links: t.links->Array.filter(link => ModelLink.id(link) !== linkId),
 }

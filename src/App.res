@@ -173,21 +173,35 @@ module App = {
     let relateNodes = _ => linkNodes(ModelLink.Kind.Relation)
     let markOverlappingNodes = _ => linkNodes(ModelLink.Kind.Overlap)
     let markDisjointNodes = _ => linkNodes(ModelLink.Kind.Disjoint)
-    let unlinkNodes = _ => {
-      let nodeIds = selection->ModelSelection.nodes
-      dispatchM(
-        Event.Model.Seq(
-          nodeIds->Array.flatMap(source =>
-            nodeIds->Array.map(target => Event.Model.Graph(Event.Graph.UnlinkNodes(source, target)))
-          ),
-        ),
-      )
+    let delete = _ => {
+      let nodes = selection->ModelSelection.nodes->Array.map(id => Event.Model.DeleteNode(id))
+      let links = selection->ModelSelection.links->Array.map(id => Event.Model.DeleteLink(id))
+      let clearSelection = Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.empty))
+      dispatchM(Event.Model.Seq(Array.concatMany([nodes, links, [clearSelection]])))
     }
-    let deleteNodes = _ => {
-      let es = selection->ModelSelection.nodes->Array.map(id => Event.Model.DeleteNode(id))
-      let eFinal = Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.empty))
-
-      dispatchM(Event.Model.Seq(Array.concat(es, [eFinal])))
+    let unlinkNodes = _ => {
+      let edges =
+        focused
+        ->Option.flatMap(focused =>
+          state
+          ->State.model(focused)
+          ->Option.map(model =>
+            selection
+            ->ModelSelection.nodes
+            ->Array.map(nodeId => model->State.Model.graph->ModelState.incidentLinks(~nodeId))
+          )
+        )
+        ->Option.getWithDefault([])
+      let (allIncoming, allOutgoing) =
+        edges->Array.reduce((Gid.Set.empty, Gid.Set.empty), ((incoming, outgoing), newEdges) => (
+          incoming->Gid.Set.union(newEdges["incoming"]),
+          outgoing->Gid.Set.union(newEdges["outgoing"]),
+        ))
+      let events =
+        Gid.Set.intersect(allIncoming, allOutgoing)
+        ->Gid.Set.toArray
+        ->Array.map(id => Event.Model.DeleteLink(id))
+      dispatchM(Event.Model.Seq(events))
     }
     let movedNodes = (nodeId, ~x, ~y) =>
       focused->Option.iter(focused => {
@@ -300,7 +314,7 @@ module App = {
       ("e", (e, ~x as _, ~y as _) => relateNodes(e)),
       ("o", (e, ~x as _, ~y as _) => markOverlappingNodes(e)),
       ("j", (e, ~x as _, ~y as _) => markDisjointNodes(e)),
-      ("x", (e, ~x as _, ~y as _) => deleteNodes(e)),
+      ("x", (e, ~x as _, ~y as _) => delete(e)),
       ("ArrowLeft", (e, ~x as _, ~y as _) => nudge(e, ~dx=-10.0, ~dy=0.0)),
       ("ArrowRight", (e, ~x as _, ~y as _) => nudge(e, ~dx=10.0, ~dy=0.0)),
       ("ArrowUp", (e, ~x as _, ~y as _) => nudge(e, ~dx=0.0, ~dy=-10.0)),
@@ -309,8 +323,8 @@ module App = {
       ("Shift+ArrowRight", (e, ~x as _, ~y as _) => nudge(e, ~dx=1.0, ~dy=0.0)),
       ("Shift+ArrowUp", (e, ~x as _, ~y as _) => nudge(e, ~dx=0.0, ~dy=-1.0)),
       ("Shift+ArrowDown", (e, ~x as _, ~y as _) => nudge(e, ~dx=0.0, ~dy=1.0)),
-      ("Backspace", (e, ~x as _, ~y as _) => deleteNodes(e)),
-      ("Delete", (e, ~x as _, ~y as _) => deleteNodes(e)),
+      ("Backspace", (e, ~x as _, ~y as _) => delete(e)),
+      ("Delete", (e, ~x as _, ~y as _) => delete(e)),
       ("v", (e, ~x as _, ~y as _) => unlinkNodes(e)),
       ("Ctrl+d", (e, ~x as _, ~y as _) => duplicateNodes(e)),
     ])
@@ -421,7 +435,7 @@ module App = {
           <Button.Separator />
           <Button onClick={unlinkNodes} value="Unlink" enabled={toolbarActive} tooltip="V" />
           <Button.Separator />
-          <Button onClick={deleteNodes} value="Delete" enabled={toolbarActive} tooltip="X" />
+          <Button onClick={delete} value="Delete" enabled={toolbarActive} tooltip="X" />
           <Button.Separator />
           <label htmlFor="gridToggle"> {React.string("Grid")} </label>
           <input
