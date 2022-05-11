@@ -89,6 +89,10 @@ module Slots: {
     type t = Notes(string)
   }
 
+  module Generic: {
+    type t = Notes(string)
+  }
+
   type t =
     | Representation(Representation.t)
     | Scheme(Scheme.t)
@@ -100,6 +104,7 @@ module Slots: {
     | Relation(Relation.t)
     | Overlap(Overlap.t)
     | Disjoint(Disjoint.t)
+    | Generic(Generic.t)
 }
 
 module Graph: {

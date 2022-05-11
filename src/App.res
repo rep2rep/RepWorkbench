@@ -173,6 +173,7 @@ module App = {
     let relateNodes = _ => linkNodes(ModelLink.Kind.Relation)
     let markOverlappingNodes = _ => linkNodes(ModelLink.Kind.Overlap)
     let markDisjointNodes = _ => linkNodes(ModelLink.Kind.Disjoint)
+    let makeGenericLink = _ => linkNodes(ModelLink.Kind.Generic)
     let delete = _ => {
       let nodes = selection->ModelSelection.nodes->Array.map(id => Event.Model.DeleteNode(id))
       let links = selection->ModelSelection.links->Array.map(id => Event.Model.DeleteLink(id))
@@ -314,6 +315,7 @@ module App = {
       ("e", (e, ~x as _, ~y as _) => relateNodes(e)),
       ("o", (e, ~x as _, ~y as _) => markOverlappingNodes(e)),
       ("j", (e, ~x as _, ~y as _) => markDisjointNodes(e)),
+      ("g", (e, ~x as _, ~y as _) => makeGenericLink(e)),
       ("x", (e, ~x as _, ~y as _) => delete(e)),
       ("ArrowLeft", (e, ~x as _, ~y as _) => nudge(e, ~dx=-10.0, ~dy=0.0)),
       ("ArrowRight", (e, ~x as _, ~y as _) => nudge(e, ~dx=10.0, ~dy=0.0)),
@@ -432,6 +434,7 @@ module App = {
           <Button
             onClick={markDisjointNodes} value="Disjoint" enabled={toolbarActive} tooltip="J"
           />
+          <Button onClick={makeGenericLink} value="Generic" enabled={toolbarActive} tooltip="G" />
           <Button.Separator />
           <Button onClick={unlinkNodes} value="Unlink" enabled={toolbarActive} tooltip="V" />
           <Button.Separator />

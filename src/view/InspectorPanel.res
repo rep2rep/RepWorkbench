@@ -647,6 +647,21 @@ module Disjoint = {
   }
 }
 
+module Generic = {
+  @react.component
+  let make = (~slots: InspectorState.Generic.t, ~onChange) => {
+    <>
+      <Title value="Generic Link" />
+      <Row> {React.string("This link is intended for internal use only.")} </Row>
+      <Notes
+        name="inspector-generic-notes"
+        onChange={e => onChange(Event.Slots.Generic.Notes(ReactEvent.Form.target(e)["value"]))}
+        value={slots.notes}
+      />
+    </>
+  }
+}
+
 module Model = {
   @react.component
   let make = (~slots: InspectorState.Model.t, ~onChange) => {
@@ -777,6 +792,10 @@ let make = (~id, ~data, ~onChange=?) => {
       | InspectorState.Link.Disjoint(slots) =>
         <Disjoint
           slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Disjoint(c)))}
+        />
+      | InspectorState.Link.Generic(slots) =>
+        <Generic
+          slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Generic(c)))}
         />
       }
     }}

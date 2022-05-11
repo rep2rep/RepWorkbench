@@ -174,12 +174,22 @@ module Slots = {
       | Notes(s) => {InspectorState.Overlap.notes: s}
       }
   }
+
   module Disjoint = {
     type t = Notes(string)
 
     let dispatch = (_, t) =>
       switch t {
       | Notes(s) => {InspectorState.Disjoint.notes: s}
+      }
+  }
+
+  module Generic = {
+    type t = Notes(string)
+
+    let dispatch = (_, t) =>
+      switch t {
+      | Notes(s) => {InspectorState.Generic.notes: s}
       }
   }
 
@@ -194,6 +204,7 @@ module Slots = {
     | Relation(Relation.t)
     | Overlap(Overlap.t)
     | Disjoint(Disjoint.t)
+    | Generic(Generic.t)
 
   let dispatch = (state, t) =>
     switch (state, t) {
@@ -229,6 +240,8 @@ module Slots = {
       Overlap.dispatch(state, e)->InspectorState.Link.Overlap->InspectorState.SchemaOrLink.Link
     | (InspectorState.SchemaOrLink.Link(InspectorState.Link.Disjoint(state)), Disjoint(e)) =>
       Disjoint.dispatch(state, e)->InspectorState.Link.Disjoint->InspectorState.SchemaOrLink.Link
+    | (InspectorState.SchemaOrLink.Link(InspectorState.Link.Generic(state)), Generic(e)) =>
+      Generic.dispatch(state, e)->InspectorState.Link.Generic->InspectorState.SchemaOrLink.Link
 
     | _ => state
     }

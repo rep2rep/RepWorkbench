@@ -5,6 +5,7 @@ module Kind = {
     | Relation
     | Overlap
     | Disjoint
+    | Generic
 
   module Stable = {
     module V1 = {
@@ -40,6 +41,7 @@ module Kind = {
         | Relation
         | Overlap
         | Disjoint
+        | Generic
 
       let toJson = t =>
         switch t {
@@ -48,6 +50,7 @@ module Kind = {
         | Relation => "Relation"
         | Overlap => "Overlap"
         | Disjoint => "Disjoint"
+        | Generic => "Generic"
         }->String.toJson
 
       let fromJson = json =>
@@ -60,6 +63,7 @@ module Kind = {
           | "Relation" => Or_error.create(Relation)
           | "Overlap" => Or_error.create(Overlap)
           | "Disjoint" => Or_error.create(Disjoint)
+          | "Generic" => Or_error.create(Generic)
           | s => Or_error.error_ss(["Unknown relation value '", s, "'"])
           }
         )
@@ -187,6 +191,13 @@ module Config = {
     ~markerEnd="arrowheadDiamond",
     (),
   )
+  let generic = ReactD3Graph.Link.Config.create(
+    ~offsetSource=(source, target, _) => relOffset(source, target),
+    ~offsetTarget=(source, target, _) => relOffset(target, source),
+    ~color=ReactD3Graph.Color.ofHexString("#AA0000"),
+    ~strokeWidth=5.,
+    (),
+  )
 }
 
 let create = (~linkId, ~source, ~target, kind) => {
@@ -196,6 +207,7 @@ let create = (~linkId, ~source, ~target, kind) => {
   | Kind.Relation => Config.relation
   | Kind.Overlap => Config.overlap
   | Kind.Disjoint => Config.disjoint
+  | Kind.Generic => Config.generic
   }
   ReactD3Graph.Link.create(
     ~id=linkId->Gid.toString->ReactD3Graph.Link.Id.ofString,
@@ -328,6 +340,7 @@ module Stable = {
               | Kind.Stable.V2.Relation => Config.relation
               | Kind.Stable.V2.Overlap => Config.overlap
               | Kind.Stable.V2.Disjoint => Config.disjoint
+              | Kind.Stable.V2.Generic => Config.generic
               }->Obj.magic
               ReactD3Graph.Link.create(~source, ~target, ~payload, ~config, ~id, ())
             })

@@ -5,6 +5,7 @@ module Kind: {
     | Relation
     | Overlap
     | Disjoint
+    | Generic
 
   module Stable: {
     module V1: {

@@ -1054,6 +1054,46 @@ module Disjoint = {
   }
 }
 
+module Generic = {
+  type t = {notes: string}
+
+  let empty = {notes: ""}
+
+  module Stable = {
+    module V1 = {
+      type t = t = {notes: string}
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(1)),
+          ("notes", String.toJson(t.notes)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Generic slots object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          switch version->Or_error.match {
+          | Or_error.Ok(1) => {
+              let notes = getValue("notes", String.fromJson)
+              notes->Or_error.map(notes => {notes: notes})
+            }
+          | Or_error.Ok(v) =>
+            Or_error.error_ss(["Unrecognised version of InspectorState.Generic: ", Int.toString(v)])
+          | Or_error.Err(e) => Or_error.error(e)
+          }
+        })
+    }
+  }
+}
+
 module Link = {
   type t =
     | Hierarchy(Hierarchy.t)
@@ -1061,6 +1101,7 @@ module Link = {
     | Relation(Relation.t)
     | Overlap(Overlap.t)
     | Disjoint(Disjoint.t)
+    | Generic(Generic.t)
 
   let empty = kind =>
     switch kind {
@@ -1069,6 +1110,7 @@ module Link = {
     | ModelLink.Kind.Relation => Relation(Relation.empty)
     | ModelLink.Kind.Overlap => Overlap(Overlap.empty)
     | ModelLink.Kind.Disjoint => Disjoint(Disjoint.empty)
+    | ModelLink.Kind.Generic => Generic(Generic.empty)
     }
 
   module Stable = {
@@ -1079,6 +1121,7 @@ module Link = {
         | Relation(Relation.Stable.V1.t)
         | Overlap(Overlap.Stable.V1.t)
         | Disjoint(Disjoint.Stable.V1.t)
+        | Generic(Generic.Stable.V1.t)
 
       let toJson = t => {
         let version = ("version", Int.toJson(1))
@@ -1113,6 +1156,12 @@ module Link = {
             version,
             ("kind", String.toJson("disjoint")),
             ("payload", Disjoint.Stable.V1.toJson(rel)),
+          })
+        | Generic(rel) =>
+          Js.Dict.fromList(list{
+            version,
+            ("kind", String.toJson("generic")),
+            ("payload", Generic.Stable.V1.toJson(rel)),
           })
         }->Js.Json.object_
       }
@@ -1152,6 +1201,10 @@ module Link = {
               | Or_error.Ok("disjoint") => {
                   let payload = getValue("payload", Disjoint.Stable.V1.fromJson)
                   payload->Or_error.map(payload => Disjoint(payload))
+                }
+              | Or_error.Ok("generic") => {
+                  let payload = getValue("payload", Generic.Stable.V1.fromJson)
+                  payload->Or_error.map(payload => Generic(payload))
                 }
               | Or_error.Ok(k) => Or_error.error_ss(["Unrecognised InspectorState.Link kind: ", k])
               | Or_error.Err(e) => Or_error.error(e)
