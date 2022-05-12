@@ -136,17 +136,18 @@ let duplicate = (t, newIdMap) => {
     t.nodes->Array.map(node =>
       node->ModelNode.dupWithNewId(newIdMap->Gid.Map.get(ModelNode.id(node))->Option.getExn)
     )
+  let links = t.links->Array.map(link => {
+    let linkId = newIdMap->Gid.Map.get(ModelLink.id(link))->Option.getExn
+    let sourceId = newIdMap->Gid.Map.get(ModelLink.source(link))->Option.getExn
+    let source = nodes->Array.find(node => ModelNode.id(node) == sourceId)->Option.getExn
+    let targetId = newIdMap->Gid.Map.get(ModelLink.target(link))->Option.getExn
+    let target = nodes->Array.find(node => ModelNode.id(node) == targetId)->Option.getExn
+    let kind = ModelLink.kind(link)
+    ModelLink.create(~linkId, ~source, ~target, kind)
+  })
   {
     nodes: nodes,
-    links: t.links->Array.map(link => {
-      let linkId = newIdMap->Gid.Map.get(ModelLink.id(link))->Option.getExn
-      let sourceId = newIdMap->Gid.Map.get(ModelLink.source(link))->Option.getExn
-      let source = nodes->Array.find(node => ModelNode.id(node) == sourceId)->Option.getExn
-      let targetId = newIdMap->Gid.Map.get(ModelLink.target(link))->Option.getExn
-      let target = nodes->Array.find(node => ModelNode.id(node) == targetId)->Option.getExn
-      let kind = ModelLink.kind(link)
-      ModelLink.create(~linkId, ~source, ~target, kind)
-    }),
+    links: links,
   }
 }
 

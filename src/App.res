@@ -187,21 +187,13 @@ module App = {
           state
           ->State.model(focused)
           ->Option.map(model =>
-            selection
-            ->ModelSelection.nodes
-            ->Array.map(nodeId => model->State.Model.graph->ModelState.incidentLinks(~nodeId))
+            model
+            ->State.Model.graph
+            ->ModelState.linksConnectingNodes(selection->ModelSelection.nodes)
           )
         )
         ->Option.getWithDefault([])
-      let (allIncoming, allOutgoing) =
-        edges->Array.reduce((Gid.Set.empty, Gid.Set.empty), ((incoming, outgoing), newEdges) => (
-          incoming->Gid.Set.union(newEdges["incoming"]),
-          outgoing->Gid.Set.union(newEdges["outgoing"]),
-        ))
-      let events =
-        Gid.Set.intersect(allIncoming, allOutgoing)
-        ->Gid.Set.toArray
-        ->Array.map(id => Event.Model.DeleteLink(id))
+      let events = edges->Array.map(id => Event.Model.DeleteLink(id))
       dispatchM(Event.Model.Seq(events))
     }
     let movedNodes = (nodeId, ~x, ~y) =>
@@ -229,12 +221,27 @@ module App = {
     }
     let duplicateNodes = _ => {
       let nodeIds = selection->ModelSelection.nodes
-      if nodeIds != [] {
-        let nodeMap = nodeIds->Array.map(id => (id, Gid.create()))->Gid.Map.fromArray
-        let newSelection = nodeMap->Gid.Map.values->ModelSelection.ofNodes
+      let linkIds =
+        focused
+        ->Option.flatMap(focused =>
+          state
+          ->State.model(focused)
+          ->Option.map(model =>
+            model
+            ->State.Model.graph
+            ->ModelState.linksConnectingNodes(selection->ModelSelection.nodes)
+          )
+        )
+        ->Option.getWithDefault([])
+
+      let allIds = Array.concat(nodeIds, linkIds)
+      if allIds != [] {
+        let idMap = allIds->Array.map(id => (id, Gid.create()))->Gid.Map.fromArray
+        let newSelection =
+          nodeIds->Array.mapPartial(id => idMap->Gid.Map.get(id))->ModelSelection.ofNodes
         dispatchM(
           Event.Model.Seq([
-            Event.Model.DuplicateNodes(nodeMap),
+            Event.Model.Duplicate(idMap),
             Event.Model.Graph(Event.Graph.SetSelection(newSelection)),
           ]),
         )
@@ -274,11 +281,13 @@ module App = {
           let model = try text->Js.Json.parseExn->State.Model.Stable.V4.fromJson catch {
           | _ => Or_error.error_s("fail")
           }
-          if Or_error.isOk(model) {
-            let model = Or_error.okExn(model)
-            dispatch(Event.File.ImportModel(model)->Event.File)
-          } else {
-            Dialog.alert("Failed to import '" ++ File.name(f) ++ "'.")
+          Js.Console.log(model)
+          switch model->Or_error.match {
+          | Or_error.Ok(model) => dispatch(Event.File.ImportModel(model)->Event.File)
+          | Or_error.Err(e) => {
+              Js.Console.log(e)
+              Dialog.alert("Failed to import '" ++ File.name(f) ++ "'.")
+            }
           }
           Js.Promise.resolve()
         })

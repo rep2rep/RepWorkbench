@@ -267,9 +267,9 @@ let selection = t => t.selection
 
 let setSelection = (t, selection) => {...t, selection: selection}
 
-let duplicateNodes = (t, nodeMap) => {
+let duplicateNodes = (t, idMap) => {
   let newNodes =
-    nodeMap
+    idMap
     ->Gid.Map.toArray
     ->Array.mapPartial(((oldId, newId)) =>
       t
@@ -287,12 +287,13 @@ let duplicateNodes = (t, nodeMap) => {
     ->graph
     ->ModelGraph.links
     ->Array.mapPartial(link => {
+      let oldId = ModelLink.id(link)
       let source = ModelLink.source(link)
       let target = ModelLink.target(link)
-      switch (nodeMap->Gid.Map.get(source), nodeMap->Gid.Map.get(target)) {
+      switch (idMap->Gid.Map.get(source), idMap->Gid.Map.get(target)) {
       | (Some(newSource), Some(newTarget)) =>
         ModelLink.create(
-          ~linkId=Gid.create(),
+          ~linkId=idMap->Gid.Map.get(oldId)->Option.getExn,
           ~source=newNodes->Gid.Map.get(newSource)->Option.getExn,
           ~target=newNodes->Gid.Map.get(newTarget)->Option.getExn,
           ModelLink.kind(link),
@@ -324,4 +325,14 @@ let incidentLinks = (t, ~nodeId) => {
   let incoming = incoming->Array.map(((_, id)) => id)
   let outgoing = outgoing->Array.map(((_, id)) => id)
   {"incoming": Gid.Set.fromArray(incoming), "outgoing": Gid.Set.fromArray(outgoing)}
+}
+
+let linksConnectingNodes = (t, nodes) => {
+  let links = nodes->Array.map(nodeId => t->incidentLinks(~nodeId))
+  let (allIncoming, allOutgoing) =
+    links->Array.reduce((Gid.Set.empty, Gid.Set.empty), ((incoming, outgoing), newEdges) => (
+      incoming->Gid.Set.union(newEdges["incoming"]),
+      outgoing->Gid.Set.union(newEdges["outgoing"]),
+    ))
+  Gid.Set.intersect(allIncoming, allOutgoing)->Gid.Set.toArray
 }

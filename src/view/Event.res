@@ -274,7 +274,7 @@ module Graph = {
     | AddNode(ModelNode.t)
     | UpdateNode(Gid.t, Node.t)
     | DeleteNode(Gid.t)
-    | DuplicateNodes(Gid.Map.t<Gid.t>)
+    | Duplicate(Gid.Map.t<Gid.t>)
     | MoveNode(Gid.t, float, float)
     | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
     | DeleteLink(Gid.t)
@@ -294,7 +294,7 @@ module Graph = {
         }
       )
     | DeleteNode(id) => state->ModelState.removeNode(id)
-    | DuplicateNodes(idMap) => state->ModelState.duplicateNodes(idMap)
+    | Duplicate(idMap) => state->ModelState.duplicateNodes(idMap)
     | MoveNode(id, x, y) => state->ModelState.moveNode(id, ~x, ~y)
     | LinkNodes({linkId, source, target, kind}) => {
         let modelSource = state->ModelState.nodeWithId(source)
@@ -316,7 +316,7 @@ module Model = {
     | SetNotes(string)
     | CreateNode(Gid.t, float, float, ModelNode.Kind.t)
     | DeleteNode(Gid.t)
-    | DuplicateNodes(Gid.Map.t<Gid.t>)
+    | Duplicate(Gid.Map.t<Gid.t>)
     | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
     | DeleteLink(Gid.t)
     | Graph(Graph.t)
@@ -349,8 +349,8 @@ module Model = {
         let allSlots = state->State.Model.slots->Gid.Map.remove(id)
         state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
       }
-    | DuplicateNodes(idMap) => {
-        let graph = state->State.Model.graph->Graph.dispatch(Graph.DuplicateNodes(idMap))
+    | Duplicate(idMap) => {
+        let graph = state->State.Model.graph->Graph.dispatch(Graph.Duplicate(idMap))
         let allSlots =
           idMap
           ->Gid.Map.toArray
@@ -398,7 +398,7 @@ module Model = {
     | SetNotes(_)
     | CreateNode(_, _, _, _)
     | DeleteNode(_)
-    | DuplicateNodes(_)
+    | Duplicate(_)
     | DeleteLink(_)
     | LinkNodes(_) =>
       None

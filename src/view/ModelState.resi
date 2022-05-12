@@ -17,6 +17,7 @@ let moveNode: (t, Gid.t, ~x: float, ~y: float) => t
 let updateNodes: (t, ModelNode.t => ModelNode.t) => t
 let nodeWithId: (t, Gid.t) => option<ModelNode.t>
 let incidentLinks: (t, ~nodeId: Gid.t) => {"incoming": Gid.Set.t, "outgoing": Gid.Set.t}
+let linksConnectingNodes: (t, array<Gid.t>) => array<Gid.t>
 
 let selection: t => ModelSelection.t
 let setSelection: (t, ModelSelection.t) => t
