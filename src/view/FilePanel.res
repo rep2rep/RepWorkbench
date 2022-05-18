@@ -198,13 +198,13 @@ let make = (
       ~borderRight="1px solid black",
       (),
     )}>
-    <h1 style={ReactDOM.Style.make(~padding="1rem", ())}> {React.string("RepNotation")} </h1>
+    <h1 style={ReactDOM.Style.make(~padding="1rem", ())}> {React.string("RISN Editor")} </h1>
     <div
       style={ReactDOM.Style.make(
         ~fontSize="0.7rem",
         ~fontWeight="bold",
         ~textAlign="right",
-        ~margin="-1.2rem 1.5rem 1rem 0",
+        ~margin="-1.2rem 2.5rem 1rem 0",
         (),
       )}>
       {React.string("V ##VERSION##")}
