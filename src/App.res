@@ -60,7 +60,7 @@ module App = {
       ~height="calc(100vh - 40px)",
       ~defs=[
         <marker
-          id="arrowheadCircle" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
+          id="arrowheadCircle" markerWidth="12" markerHeight="12" refX="-6" refY="6" orient="auto">
           <circle cx="6" cy="6" r="6" fill="black" />
         </marker>,
         <marker
