@@ -417,26 +417,134 @@ module SchemaShape = {
 }
 
 module SchemaText = {
+  module EditableText = {
+    type state = {
+      value: string,
+      editing: bool,
+      changeSig: (Gid.t, string, string),
+    }
+    type event =
+      | StartEdit(string)
+      | MakeEdit(string)
+      | FinishEdit
+
+    let reducer = (state, event) =>
+      switch event {
+      | StartEdit(value) => {...state, value: value, editing: true}
+      | MakeEdit(value) => {...state, value: value}
+      | FinishEdit => {...state, editing: false}
+      }
+
+    @react.component
+    let make = (
+      ~showText: string,
+      ~hoverText: string,
+      ~editText: string,
+      ~width: float,
+      ~height: float,
+      ~y,
+      ~changeSig: (Gid.t, string, string),
+    ) => {
+      React.useEffect0(() => {
+        Some(() => ModelNodeEdit.clearLocal())
+      })
+      let (state, dispatch) = React.useReducer(
+        reducer,
+        {value: editText, editing: false, changeSig: changeSig},
+      )
+      if state.editing {
+        let (id, _, _) = changeSig
+        ModelNodeEdit.setLocal(selection =>
+          if selection->ModelSelection.nodes->Array.includes(id)->not && state.editing {
+            ModelNodeEdit.clearLocal()
+            dispatch(FinishEdit)
+          }
+        )
+        <foreignObject width={Float.toString(width)} height={Float.toString(height)}>
+          <input
+            autoFocus={true}
+            onKeyUp={e => {
+              ReactEvent.Keyboard.stopPropagation(e)
+              ReactEvent.Keyboard.preventDefault(e)
+              if ReactEvent.Keyboard.key(e) == "Enter" || ReactEvent.Keyboard.key(e) == "Escape" {
+                ModelNodeEdit.clearLocal()
+                dispatch(FinishEdit)
+                let (id, schema, slot) = state.changeSig
+                ModelNodeEdit.callGlobal(id, schema, slot, state.value)
+              }
+            }}
+            onChange={e => {
+              dispatch(MakeEdit(ReactEvent.Form.target(e)["value"]))
+              let (id, schema, slot) = state.changeSig
+              ModelNodeEdit.callGlobal(id, schema, slot, state.value)
+            }}
+            onBlur={e => {
+              ReactEvent.Focus.target(e)["focus"](.)
+            }}
+            type_="text"
+            value={state.value}
+            style={ReactDOM.Style.make(
+              ~width={Float.toString(width -. 10.) ++ "px"},
+              ~marginTop={Float.toString(Float.fromString(y)->Option.getExn -. 15.) ++ "px"},
+              ~marginLeft="6px",
+              ~fontSize="1rem",
+              ~textAlign="center",
+              (),
+            )}
+          />
+        </foreignObject>
+      } else {
+        <text
+          x="50%"
+          y
+          textAnchor={"middle"}
+          onDoubleClick={_ => {
+            ModelNodeEdit.callLocal(ModelSelection.empty)
+            dispatch(StartEdit(editText))
+          }}>
+          <title> {React.string(hoverText)} </title> {React.string(showText)}
+        </text>
+      }
+    }
+  }
+
   module OneLine = {
     @react.component
-    let make = (~text: string, ~hoverText: string) => {
+    let make = (
+      ~payload: Payload.t,
+      ~width: float,
+      ~height: float,
+      ~changeSig: (Gid.t, string, string),
+    ) => {
+      let showText = payload->Payload.visible_name_and_suffix(width->pxToEm)
+      let hoverText = payload->Payload.full_name_and_suffix
+
       <g>
-        <text x={"50%"} y={"57%"} textAnchor={"middle"}>
-          <title> {React.string(hoverText)} </title> {React.string(text)}
-        </text>
+        <EditableText
+          showText
+          editText=payload.name
+          hoverText
+          width
+          height
+          changeSig
+          y={Float.toString(height *. 0.57) ++ "px"}
+        />
       </g>
     }
   }
 
   @react.component
   let make = (
-    ~topText: string,
-    ~bottomText: string,
-    ~hoverTopText: string,
-    ~hoverBottomText: string,
+    ~payload: Payload.t,
     ~width: float,
     ~height: float,
+    ~changeSigTop: (Gid.t, string, string),
+    ~changeSigBottom: (Gid.t, string, string),
   ) => {
+    let topText = payload->Payload.visible_name_and_suffix(width->pxToEm)
+    let bottomText = payload->Payload.visible_reference_and_suffix(width->pxToEm)
+    let hoverTopText = payload->Payload.full_name_and_suffix
+    let hoverBottomText = payload->Payload.full_reference_and_suffix
     <g>
       <line
         x1="8"
@@ -445,12 +553,24 @@ module SchemaText = {
         y2="50%"
         style={ReactDOM.Style.make(~fill="white", ~stroke="black", ~strokeWidth="1", ())}
       />
-      <text x={"50%"} y={Float.toString(height /. 2. -. 5.)} textAnchor={"middle"}>
-        <title> {React.string(hoverTopText)} </title> {React.string(topText)}
-      </text>
-      <text x={"50%"} y={Float.toString(height -. 8.)} textAnchor={"middle"}>
-        <title> {React.string(hoverBottomText)} </title> {React.string(bottomText)}
-      </text>
+      <EditableText
+        y={Float.toString(height /. 2. -. 5.)}
+        showText=topText
+        hoverText=hoverTopText
+        editText=payload.name
+        width
+        height
+        changeSig=changeSigTop
+      />
+      <EditableText
+        y={Float.toString(height -. 8.)}
+        showText=bottomText
+        hoverText=hoverBottomText
+        editText=payload.reference
+        width
+        height
+        changeSig=changeSigBottom
+      />
     </g>
   }
 }
@@ -462,7 +582,7 @@ module Configs = {
       "height": 10.0 *. height +. 20.0,
     }
 
-  let representation = (width, height) => {
+  let representation = (id, width, height) => {
     ReactD3Graph.Node.Config.create(
       ~renderLabel=false,
       ~size=size(width, height),
@@ -471,12 +591,11 @@ module Configs = {
         <SchemaShape.Representation
           width={width} height={height} selected={ReactD3Graph.Node.selected(node)}>
           <SchemaText
-            topText={payload->Payload.visible_name_and_suffix(width->pxToEm)}
-            bottomText={payload->Payload.visible_reference_and_suffix(width->pxToEm)}
-            hoverTopText={payload->Payload.full_name_and_suffix}
-            hoverBottomText={payload->Payload.full_reference_and_suffix}
+            payload
             width={width}
             height={height}
+            changeSigTop={(id, "Representation", "Domain")}
+            changeSigBottom={(id, "Representation", "Display")}
           />
         </SchemaShape.Representation>
       },
@@ -484,7 +603,7 @@ module Configs = {
     )
   }
 
-  let scheme = (width, height) => {
+  let scheme = (id, width, height) => {
     ReactD3Graph.Node.Config.create(
       ~renderLabel=false,
       ~size=size(width, height),
@@ -493,12 +612,11 @@ module Configs = {
         <SchemaShape.Scheme
           width={width} height={height} selected={ReactD3Graph.Node.selected(node)}>
           <SchemaText
-            topText={payload->Payload.visible_name_and_suffix(width->pxToEm)}
-            bottomText={payload->Payload.visible_reference_and_suffix(width->pxToEm)}
-            hoverTopText={payload->Payload.full_name_and_suffix}
-            hoverBottomText={payload->Payload.full_reference_and_suffix}
+            payload
             width={width}
             height={height}
+            changeSigTop={(id, "Scheme", "Concept")}
+            changeSigBottom={(id, "Scheme", "Graphic")}
           />
         </SchemaShape.Scheme>
       },
@@ -506,7 +624,7 @@ module Configs = {
     )
   }
 
-  let dimension = (width, height) => {
+  let dimension = (id, width, height) => {
     ReactD3Graph.Node.Config.create(
       ~renderLabel=false,
       ~size=size(width, height),
@@ -515,12 +633,11 @@ module Configs = {
         <SchemaShape.Dimension
           width={width} height={height} selected={ReactD3Graph.Node.selected(node)}>
           <SchemaText
-            topText={payload->Payload.visible_name_and_suffix(width->pxToEm)}
-            bottomText={payload->Payload.visible_reference_and_suffix(width->pxToEm)}
-            hoverTopText={payload->Payload.full_name_and_suffix}
-            hoverBottomText={payload->Payload.full_reference_and_suffix}
+            payload
             width={width}
             height={height}
+            changeSigTop={(id, "Dimension", "Concept")}
+            changeSigBottom={(id, "Dimension", "Graphic")}
           />
         </SchemaShape.Dimension>
       },
@@ -528,7 +645,7 @@ module Configs = {
     )
   }
 
-  let token = (width, height) => {
+  let token = (id, width, height) => {
     ReactD3Graph.Node.Config.create(
       ~renderLabel=false,
       ~size=size(width, height),
@@ -540,12 +657,11 @@ module Configs = {
           selected={ReactD3Graph.Node.selected(node)}
           dashed={payload->Payload.dashed}>
           <SchemaText
-            topText={payload->Payload.visible_name_and_suffix(width->pxToEm)}
-            bottomText={payload->Payload.visible_reference_and_suffix(width->pxToEm)}
-            hoverTopText={payload->Payload.full_name_and_suffix}
-            hoverBottomText={payload->Payload.full_reference_and_suffix}
+            payload
             width={width}
             height={height}
+            changeSigTop={(id, "Token", "Concept")}
+            changeSigBottom={(id, "Token", "Graphic")}
           />
         </SchemaShape.Token>
       },
@@ -553,7 +669,7 @@ module Configs = {
     )
   }
 
-  let placeholder = (width, height) => {
+  let placeholder = (id, width, height) => {
     ReactD3Graph.Node.Config.create(
       ~renderLabel=false,
       ~size=size(width, height),
@@ -566,8 +682,7 @@ module Configs = {
           isIntensional={payload->Payload.dashed}
           selected={ReactD3Graph.Node.selected(node)}>
           <SchemaText.OneLine
-            text={payload->Payload.visible_name_and_suffix(width->pxToEm)}
-            hoverText={payload->Payload.full_name_and_suffix}
+            payload width={width} height={height} changeSig={(id, "Placeholder", "Description")}
           />
         </SchemaShape.Placeholder>
       },
@@ -575,7 +690,7 @@ module Configs = {
     )
   }
 
-  let create = payload => {
+  let create = (id, payload) => {
     let height = 50.
     let maxwidth = 500.
     let minwidth = 100.
@@ -595,11 +710,11 @@ module Configs = {
       ),
     )
     switch Payload.kind(payload) {
-    | Kind.Representation => representation(width, height)
-    | Kind.Scheme => scheme(width, height)
-    | Kind.Dimension => dimension(width, height)
-    | Kind.Token => token(width, height)
-    | Kind.Placeholder => placeholder(width, height)
+    | Kind.Representation => representation(id, width, height)
+    | Kind.Scheme => scheme(id, width, height)
+    | Kind.Dimension => dimension(id, width, height)
+    | Kind.Token => token(id, width, height)
+    | Kind.Placeholder => placeholder(id, width, height)
     }
   }
 }
@@ -626,7 +741,7 @@ let create = (~name, ~reference, ~x, ~y, kind, id) => {
       None
     },
   }
-  let config = Configs.create(payload)
+  let config = Configs.create(id, payload)
   createSchema(x, y, payload, config, id)
 }
 
@@ -640,7 +755,7 @@ let setPosition = (t, ~x, ~y) => t->ReactD3Graph.Node.setX(x)->ReactD3Graph.Node
 let updateConfig = (t, f) => t->ReactD3Graph.Node.updateConfig(f)
 let updatePayload = (t, f) => {
   let t' = t->ReactD3Graph.Node.updatePayload(n => n->Option.map(f))
-  t'->updateConfig(_ => Configs.create(t'->ReactD3Graph.Node.payload->Option.getExn))
+  t'->updateConfig(_ => Configs.create(t'->id, t'->ReactD3Graph.Node.payload->Option.getExn))
 }
 
 module Stable = {
@@ -673,7 +788,11 @@ module Stable = {
         )
 
         Or_error.both4((payload, x, y, id))->Or_error.map(((payload, x, y, id)) => {
-          let config = Configs.create(payload->Payload.Stable.V2.v1_to_v2)->Obj.magic // DANGEROUS!!!
+          let config =
+            Configs.create(
+              id->ReactD3Graph.Node.Id.toString->Gid.fromString,
+              payload->Payload.Stable.V2.v1_to_v2,
+            )->Obj.magic // DANGEROUS!!!
           ReactD3Graph.Node.create(~id, ~payload, ~config, ~x, ~y, ())
         })
       })
@@ -716,7 +835,10 @@ module Stable = {
             )
 
             Or_error.both4((payload, x, y, id))->Or_error.map(((payload, x, y, id)) => {
-              let config = Configs.create(payload)
+              let config = Configs.create(
+                id->ReactD3Graph.Node.Id.toString->Gid.fromString,
+                payload,
+              )
               ReactD3Graph.Node.create(~id, ~payload, ~config, ~x, ~y, ())
             })
           } else {

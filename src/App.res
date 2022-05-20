@@ -114,6 +114,53 @@ module App = {
 
     let dispatchM = e => focused->Option.iter(focused => dispatch(Event.Model(focused, e)))
 
+    // Node Inline Editing
+    ModelNodeEdit.setGlobal((id, schema, slot, value) => {
+      let e = switch schema {
+      | "Representation" =>
+        switch slot {
+        | "Domain" => Some(Event.Slots.Representation.Domain(value))
+        | "Display" => Some(Event.Slots.Representation.Display(value))
+        | _ => None
+        }->Option.map(e => Event.Slots.Representation(e))
+      | "Scheme" =>
+        switch slot {
+        | "Concept" => Some(Event.Slots.Scheme.Concept_structure(value))
+        | "Graphic" => Some(Event.Slots.Scheme.Graphic_structure(value))
+        | _ => None
+        }->Option.map(e => Event.Slots.Scheme(e))
+      | "Dimension" =>
+        switch slot {
+        | "Concept" => Some(Event.Slots.Dimension.Concept(value))
+        | "Graphic" => Some(Event.Slots.Dimension.Graphic(value))
+        | _ => None
+        }->Option.map(e => Event.Slots.Dimension(e))
+      | "Token" =>
+        switch slot {
+        | "Concept" => Some(Event.Slots.Token.Concept(value))
+        | "Graphic" => Some(Event.Slots.Token.Graphic(value))
+        | _ => None
+        }->Option.map(e => Event.Slots.Token(e))
+      | "Placeholder" =>
+        switch slot {
+        | "Description" => Some(Event.Slots.Placeholder(Event.Slots.Placeholder.Description(value)))
+
+        | _ => None
+        }
+
+      | _ => None
+      }
+      let e = e->Option.map(e => Event.Model.Slots(id, e))
+      switch e {
+      | Some(e) =>
+        switch Event.Model.graphEvent(e) {
+        | None => dispatchM(e)
+        | Some(e') => dispatchM(Event.Model.Seq([e, Event.Model.Graph(e')]))
+        }
+      | None => Js.Console.log((id, schema, slot, value))
+      }
+    })
+
     let canUndo =
       focused->Option.map(focused => state->State.canUndo(focused))->Option.getWithDefault(false)
     let canRedo =
@@ -131,8 +178,10 @@ module App = {
       dispatch(Event.File.DuplicateModel(id, newId)->Event.File)
     }
 
-    let selectionChange = (~oldSelection as _, ~newSelection) =>
+    let selectionChange = (~oldSelection as _, ~newSelection) => {
       dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
+      ModelNodeEdit.callLocal(newSelection)
+    }
     let addNodeAt = (kind, ~x, ~y) =>
       dispatchM({
         let oldSelection = selection
