@@ -177,7 +177,7 @@ let make = (
             if hidden {
               "10px"
             } else {
-              "230px"
+              "240px"
             }
           },
           ~fontSize="16px",
@@ -263,7 +263,10 @@ let make = (
           ReactEvent.Mouse.preventDefault(e)
           setDropTargetActive(_ => false)
           let files: array<File.t> = Obj.magic(e)["dataTransfer"]["files"] // Absolute hack
-          let (keep, reject) = files->Array.partition(f => File.name(f)->String.endsWith(".repn"))
+          let (keep, reject) = files->Array.partition(f => {
+            let fname = File.name(f)
+            fname->String.endsWith(".risn") || fname->String.endswith(".repn")
+          })
           if keep != [] {
             onImport(keep)
           }
@@ -272,7 +275,7 @@ let make = (
               "Could not upload files:\n" ++
               reject
               ->Array.map(f => "  " ++ File.name(f) ++ "\n")
-              ->Js.Array2.joinWith("") ++ "Not '.repn' files.",
+              ->Js.Array2.joinWith("") ++ "Not '.risn' files.",
             )
           }
         }}
@@ -332,7 +335,7 @@ let make = (
           name="import_models"
           id="import_models"
           type_="file"
-          accept=".repn"
+          accept=".risn,.repn"
           multiple={true}
           style={ReactDOM.Style.make(
             ~width="0.1px",

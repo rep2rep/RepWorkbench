@@ -350,7 +350,7 @@ module App = {
         let json = State.Model.Stable.V4.toJson(model)
         let content =
           "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
-        Downloader.download(name ++ ".repn", content)
+        Downloader.download(name ++ ".risn", content)
       })
     }
 
