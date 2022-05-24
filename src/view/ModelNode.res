@@ -465,7 +465,6 @@ module SchemaText = {
             autoFocus={true}
             onKeyUp={e => {
               ReactEvent.Keyboard.stopPropagation(e)
-              ReactEvent.Keyboard.preventDefault(e)
               if ReactEvent.Keyboard.key(e) == "Enter" || ReactEvent.Keyboard.key(e) == "Escape" {
                 ModelNodeEdit.clearLocal()
                 dispatch(FinishEdit)
@@ -474,9 +473,10 @@ module SchemaText = {
               }
             }}
             onChange={e => {
-              dispatch(MakeEdit(ReactEvent.Form.target(e)["value"]))
+              let newValue = ReactEvent.Form.target(e)["value"]
+              dispatch(MakeEdit(newValue))
               let (id, schema, slot) = state.changeSig
-              ModelNodeEdit.callGlobal(id, schema, slot, state.value)
+              ModelNodeEdit.callGlobal(id, schema, slot, newValue)
             }}
             onBlur={e => {
               ReactEvent.Focus.target(e)["focus"](.)
