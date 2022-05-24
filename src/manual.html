@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>RepNotation Workbench User Guide</title>
+    <title>RISN Editor User Guide</title>
     <style>
       * {
           box-sizing: border-box;
@@ -65,13 +65,13 @@
     </style>
   </head>
   <body>
-    <h1>RepNotation Workbench User Guide</h1>
+    <h1>RISN Editor User Guide</h1>
     <div class="version">V ##VERSION## </div>
     <p>
-      This document gives a brief overview of how to use the RepNotation Workbench.
-      The Workbench is under heavy development right now, so the features as described in this manual
+      This document gives a brief overview of how to use the RISN Editor.
+      The Editor is under heavy development right now, so the features as described in this manual
       might now behave differently, or no longer exist. Further, there may be features
-      that are present in the Workbench that are not described in this manual.
+      that are present in the Editor that are not described in this manual.
     </p>
 
     <h2 id="hotkeys">Hotkeys</h2>
@@ -104,7 +104,7 @@
 
     <h2 id="model-list">The Model List</h2>
     <p>
-      On the left of the Workbench you have the model list. This list contains all the
+      On the left of the Editor you have the model list. This list contains all the
       models you have built. Initially the list will be empty, but new models can be created
       by pressing the <button>New</button> button in the bottom left corner. All models are
       initially called 'Model'.
@@ -124,7 +124,7 @@
     <p>
       Models can be renamed by double-clicking on their existing name, and editing the name to be
       what you now want it to be. Several models can have the same name; this is perfectly fine
-      for the Workbench, but potentially confusing for you, so this is not recommended.
+      for the Editor, but potentially confusing for you, so this is not recommended.
     </p>
     <p>
       If the name of a Model is long, it will be truncated. The full name of the model is visible
@@ -143,10 +143,10 @@
     </p>
     <p>
       Below the <button>New</button> and <button>Duplicate</button> buttons, we have buttons for
-      importing and exporting Models. The <button>Export</button> button downloads a '.repn' file
+      importing and exporting Models. The <button>Export</button> button downloads a '.risn' file
       of the selected Model, with the name matching the Model's name. The <button>Import</button>
-      button allows you to select '.repn' files from your computer, and add the contained Models
-      to the RepNotation Workbench. Models may also be imported by dragging '.repn' files onto an
+      button allows you to select '.risn' files from your computer, and add the contained Models
+      to the RISN Editor. Models may also be imported by dragging '.risn' files onto an
       empty space in the Model list.
     </p>
     <p>
@@ -158,8 +158,8 @@
 
     <h2 id="toolbar">The Toolbar</h2>
     <p>
-      Across the top of most of the Workbench (outside the Model list) there is the toolbar.
-      All the core functionality of the Workbench can be accessed via buttons found here.
+      Across the top of most of the Editor (outside the Model list) there is the toolbar.
+      All the core functionality of the Editor can be accessed via buttons found here.
       We shall discuss each button in turn.
     </p>
     <p>
@@ -170,7 +170,7 @@
       <tr><td><p><input type="button" value="Undo" /><br><input type="button" value="Redo"></p></td><td>
           <p>
             The first two buttons in the toolbar should be familiar: undo, and redo. These buttons act
-            per Model, so each Model maintains a separate history. The history is lost when the Workbench
+            per Model, so each Model maintains a separate history. The history is lost when the Editor
             is reloaded, and can only maintain 50 "steps". Any history further back is discarded. You can
             also undo using <span class="key">Cmd</span> <span class="key">Z</span>, and redo using
             <span class="key">Cmd</span> <span class="key">Shift</span> <span class="key">Z</span> or
@@ -197,7 +197,7 @@
       <tr><td><p><input type="button" value="Connect" /><br><input type="button" value="Anchor" /><br><input type="button" value="Equivalence" /><br><input type="button" value="Overlap" /><br><input type="button" value="Disjoint" /></p></td><td>
           <p>
             These three buttons are used to connect schemas together. The first button creates a
-            Hierarchy connection (the 'typical' connection in RepNotation), the second button
+            Hierarchy connection (the 'typical' connection in RISN), the second button
             creates an 'anchored' connection, the third creates an 'equivalence' connection, the
             fourth creates a connection indicating the two schemas overlap, and the fifth creates
             a connection indicating that the two schemas are disjoint. When  clicking these buttons,
@@ -232,7 +232,7 @@
 
     <h2 id="model-editor">The Model Editor</h2>
     <p>
-      Most of the screen in the Workbench is dedicated to the Model editor. Here is where the effect
+      Most of the screen in the Editor is dedicated to the Model editor. Here is where the effect
       of clicking buttons in the <a href="#toolbar">Toolbar</a>, or pressing <a href="#hotkeys">Hotkeys</a>,
       will occur. Hotkeys are only active while your cursor is in the Model editor.
     </p>
@@ -262,8 +262,8 @@
     <h2 id="intelligence">Intelligence</h2>
     <p>
       Below the Model editor is the Intelligence panel. By default, this is a bar along the bottom of the
-      Model editor counting the number of errors and warnings it has detected. If RepWorkbench is still
-      working in the background, the icons will show a spinning ring. If RepWorkbench has finished working,
+      Model editor counting the number of errors and warnings it has detected. If the Editor is still
+      working in the background, the icons will show a spinning ring. If the Editor has finished working,
       the first icon will be a 'stop sign with a cross', with a count indicating how many errors were
       detected; the second icon will be a 'warning sign with an exclamation mark', indicating how many
       warnings were detected. Finally, there is a <button>Show</button> button.
