@@ -484,11 +484,12 @@ module SchemaText = {
             type_="text"
             value={state.value}
             style={ReactDOM.Style.make(
-              ~width={Float.toString(width -. 10.) ++ "px"},
+              ~width={Float.toString(width -. 20.) ++ "px"},
               ~marginTop={Float.toString(Float.fromString(y)->Option.getExn -. 15.) ++ "px"},
-              ~marginLeft="6px",
-              ~fontSize="1rem",
+              ~marginLeft="11px",
+              ~fontSize="0.84rem",
               ~textAlign="center",
+              ~fontFamily="sans-serif",
               (),
             )}
           />
