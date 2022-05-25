@@ -265,7 +265,7 @@ let make = (
           let files: array<File.t> = Obj.magic(e)["dataTransfer"]["files"] // Absolute hack
           let (keep, reject) = files->Array.partition(f => {
             let fname = File.name(f)
-            fname->String.endsWith(".risn") || fname->String.endswith(".repn")
+            fname->String.endsWith(".risn") || fname->String.endsWith(".repn")
           })
           if keep != [] {
             onImport(keep)
