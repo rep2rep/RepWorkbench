@@ -210,11 +210,24 @@ module App = {
     let linkNodes = kind => {
       let ids = selection->ModelSelection.nodes
       switch ids {
+      | [] => ()
       | [source, target] =>
         dispatchM(
           Event.Model.LinkNodes({linkId: Gid.create(), source: source, target: target, kind: kind}),
         )
-      | _ => ()
+      | many => {
+          let source = many[0]->Option.getExn
+          let targets = many->Js.Array2.sliceFrom(1)
+          targets
+          ->Array.map(target => Event.Model.LinkNodes({
+            linkId: Gid.create(),
+            source: source,
+            target: target,
+            kind: kind,
+          }))
+          ->Event.Model.Seq
+          ->dispatchM
+        }
       }
     }
     let connectNodes = _ => linkNodes(ModelLink.Kind.Hierarchy)
