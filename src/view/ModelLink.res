@@ -161,6 +161,11 @@ module Config = {
       let x1 = source["x"]
       let x2 = target["x"]
       let width = (source->ReactD3Graph.Core.readKeyExn("size"))["width"]
+      let payload: ModelNode.Payload.t = source->ReactD3Graph.Core.readKeyExn("payload")
+      let width = switch payload.kind {
+      | Representation | Scheme | Token | Placeholder => width
+      | Dimension => width -. 80.
+      }
       let dx = if x1 < x2 {
         // Come out of right hand edge
         width /. 20. -. 4.
