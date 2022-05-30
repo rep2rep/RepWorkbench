@@ -369,9 +369,9 @@ module App = {
 
     module K = GlobalKeybindings.KeyBinding
     GlobalKeybindings.set([
-      K.create("Cmd+z", undo),
-      K.create("Cmd+Shift+z", redo),
-      K.create("Cmd+y", redo),
+      K.create(K.cmdOrCtrl() ++ "+z", undo),
+      K.create(K.cmdOrCtrl() ++ "+Shift+z", redo),
+      K.create(K.cmdOrCtrl() ++ "+y", redo),
     ])
 
     let keybindings = Js.Dict.fromArray([
