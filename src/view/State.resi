@@ -43,6 +43,7 @@ let store: t => unit
 let load: unit => option<t>
 
 let empty: t
+let dagstuhl: t
 
 let models: t => array<(Gid.t, Model.t)>
 let focused: t => option<Gid.t>

@@ -43,7 +43,7 @@ module App = {
     state->State.setLastRequestedIntelligence(sentId)
   }
 
-  let init = State.load()->Option.getWithDefault(State.empty)
+  let init = State.load()->Option.getWithDefault(State.dagstuhl)
   let reducer = (state, action) => {
     let newState = Event.dispatch(state, action)
     State.store(newState)

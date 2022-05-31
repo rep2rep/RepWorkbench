@@ -482,3 +482,19 @@ let canUndo = (t, id) =>
   t.models->Gid.Map.get(id)->Option.map(UndoRedo.canUndo)->Option.getWithDefault(false)
 let canRedo = (t, id) =>
   t.models->Gid.Map.get(id)->Option.map(UndoRedo.canRedo)->Option.getWithDefault(false)
+
+let dagstuhl = {
+  let models =
+    Dagstuhl.models->Array.map(model => (
+      Gid.create(),
+      model->Js.Json.parseExn->Model.Stable.V4.fromJson->Or_error.okExn->UndoRedo.create,
+    ))
+  {
+    models: Gid.Map.fromArray(models),
+    positions: models->Array.map(((id, _)) => id),
+    currentModel: None,
+    latestIntelligence: None,
+    lastRequestedIntelligence: None,
+    focusedErrorOrWarning: None,
+  }
+}
