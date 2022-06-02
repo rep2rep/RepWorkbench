@@ -224,6 +224,8 @@ module SchemaOrLink: {
     | Schema(Schema.t)
     | Link(Link.t)
 
+  let duplicate: t => t
+
   module Stable: {
     module V1: {
       type t = t

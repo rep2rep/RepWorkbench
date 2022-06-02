@@ -357,7 +357,7 @@ module Model = {
           ->Array.reduce(state->State.Model.slots, (slots, (oldId, newId)) => {
             slots
             ->Gid.Map.get(oldId)
-            ->Option.map(s => slots->Gid.Map.set(newId, s))
+            ->Option.map(s => slots->Gid.Map.set(newId, InspectorState.SchemaOrLink.duplicate(s)))
             ->Option.getWithDefault(slots)
           })
         state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)

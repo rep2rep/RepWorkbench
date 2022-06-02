@@ -198,8 +198,9 @@ module App = {
             kind: ModelLink.Kind.Hierarchy,
           }))
         }
-        let eFinal = Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.ofNodes([id])))
-
+        let newSelection = ModelSelection.ofNodes([id])
+        let eFinal = Event.Model.Graph(Event.Graph.SetSelection(newSelection))
+        ModelNodeEdit.callLocal(newSelection)
         Event.Model.Seq(Array.concatMany([[e0], eLinks, [eFinal]]))
       })
     let addRepNodeAt = (_, ~x, ~y) => ModelNode.Kind.Representation->addNodeAt(~x, ~y)
@@ -241,6 +242,7 @@ module App = {
       let links = selection->ModelSelection.links->Array.map(id => Event.Model.DeleteLink(id))
       let clearSelection = Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.empty))
       dispatchM(Event.Model.Seq(Array.concatMany([nodes, links, [clearSelection]])))
+      ModelNodeEdit.callLocal(ModelSelection.empty)
     }
     let unlinkNodes = _ => {
       let edges =
@@ -307,6 +309,7 @@ module App = {
             Event.Model.Graph(Event.Graph.SetSelection(newSelection)),
           ]),
         )
+        ModelNodeEdit.callLocal(newSelection)
       }
     }
     let slotsChange = e => {
@@ -316,22 +319,20 @@ module App = {
       }
     }
     let clickError = (_, err) => {
+      let newSelection = ModelSelection.ofNodes(ModelError.nodes(err))
       dispatch(
         Event.Intelligence.Focus(ModelError.id(err)->Some)->Event.File.Intelligence->Event.File,
       )
-      dispatchM(
-        Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.ofNodes(ModelError.nodes(err)))),
-      )
+      dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
+      ModelNodeEdit.callLocal(newSelection)
     }
     let clickWarning = (_, warn) => {
+      let newSelection = ModelSelection.ofNodes(ModelWarning.nodes(warn))
       dispatch(
         Event.Intelligence.Focus(ModelWarning.id(warn)->Some)->Event.File.Intelligence->Event.File,
       )
-      dispatchM(
-        Event.Model.Graph(
-          Event.Graph.SetSelection(ModelSelection.ofNodes(ModelWarning.nodes(warn))),
-        ),
-      )
+      dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
+      ModelNodeEdit.callLocal(newSelection)
     }
     let deselectErrorOrWarning = _ => {
       dispatch(Event.Intelligence.Focus(None)->Event.File.Intelligence->Event.File)
