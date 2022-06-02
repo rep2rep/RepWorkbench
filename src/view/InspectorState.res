@@ -48,6 +48,12 @@ module Representation = {
     display: "#Ref#",
     notes: "",
   }
+
+  let duplicate = t => {
+    domain: t.domain,
+    display: t.display,
+    notes: t.notes,
+  }
 }
 
 module Scheme = {
@@ -226,6 +232,16 @@ module Scheme = {
     scope: None,
     organisation: "",
     notes: "",
+  }
+
+  let duplicate = t => {
+    concept_structure: t.concept_structure,
+    graphic_structure: t.graphic_structure,
+    function: t.function,
+    explicit: t.explicit,
+    scope: t.scope,
+    organisation: t.organisation,
+    notes: t.notes,
   }
 }
 
@@ -482,6 +498,20 @@ module Dimension = {
     organisation: "",
     notes: "",
   }
+
+  let duplicate = t => {
+    concept: t.concept,
+    concept_scale: t.concept_scale,
+    concept_attributes: t.concept_attributes->List.toArray->List.fromArray,
+    graphic: t.graphic,
+    graphic_scale: t.graphic_scale,
+    graphic_attributes: t.graphic_attributes->List.toArray->List.fromArray,
+    function: t.function,
+    scope: t.scope,
+    explicit: t.explicit,
+    organisation: t.organisation,
+    notes: t.notes,
+  }
 }
 
 module Token = {
@@ -632,6 +662,15 @@ module Token = {
     explicit: None,
     notes: "",
   }
+
+  let duplicate = t => {
+    concept: t.concept,
+    graphic: t.graphic,
+    is_class: t.is_class,
+    function: t.function,
+    explicit: t.explicit,
+    notes: t.notes,
+  }
 }
 
 module Placeholder = {
@@ -696,6 +735,12 @@ module Placeholder = {
     description: "#Placeholder#",
     isIntensional: None,
     notes: "",
+  }
+
+  let duplicate = t => {
+    description: t.description,
+    isIntensional: t.isIntensional,
+    notes: t.notes,
   }
 }
 
@@ -828,6 +873,15 @@ module Schema = {
     | ModelNode.Kind.Placeholder => Placeholder.empty->Placeholder
     }
 
+  let duplicate = t =>
+    switch t {
+    | Representation(r) => Representation(Representation.duplicate(r))
+    | Scheme(s) => Scheme(Scheme.duplicate(s))
+    | Dimension(d) => Dimension(Dimension.duplicate(d))
+    | Token(t) => Token(Token.duplicate(t))
+    | Placeholder(p) => Placeholder(Placeholder.duplicate(p))
+    }
+
   let name = t =>
     switch t {
     | Representation(r) => r.domain
@@ -851,6 +905,7 @@ module Hierarchy = {
   type t = {notes: string}
 
   let empty = {notes: ""}
+  let duplicate = t => {notes: t.notes}
 
   module Stable = {
     module V1 = {
@@ -893,6 +948,7 @@ module Anchor = {
   type t = {notes: string}
 
   let empty = {notes: ""}
+  let duplicate = t => {notes: t.notes}
 
   module Stable = {
     module V1 = {
@@ -933,6 +989,7 @@ module Relation = {
   type t = {notes: string}
 
   let empty = {notes: ""}
+  let duplicate = t => {notes: t.notes}
 
   module Stable = {
     module V1 = {
@@ -976,6 +1033,7 @@ module Overlap = {
   type t = {notes: string}
 
   let empty = {notes: ""}
+  let duplicate = t => {notes: t.notes}
 
   module Stable = {
     module V1 = {
@@ -1015,6 +1073,7 @@ module Disjoint = {
   type t = {notes: string}
 
   let empty = {notes: ""}
+  let duplicate = t => {notes: t.notes}
 
   module Stable = {
     module V1 = {
@@ -1058,6 +1117,7 @@ module Generic = {
   type t = {notes: string}
 
   let empty = {notes: ""}
+  let duplicate = t => {notes: t.notes}
 
   module Stable = {
     module V1 = {
@@ -1111,6 +1171,16 @@ module Link = {
     | ModelLink.Kind.Overlap => Overlap(Overlap.empty)
     | ModelLink.Kind.Disjoint => Disjoint(Disjoint.empty)
     | ModelLink.Kind.Generic => Generic(Generic.empty)
+    }
+
+  let duplicate = t =>
+    switch t {
+    | Hierarchy(v) => Hierarchy(Hierarchy.duplicate(v))
+    | Anchor(v) => Anchor(Anchor.duplicate(v))
+    | Relation(v) => Relation(Relation.duplicate(v))
+    | Overlap(v) => Overlap(Overlap.duplicate(v))
+    | Disjoint(v) => Disjoint(Disjoint.duplicate(v))
+    | Generic(v) => Generic(Generic.duplicate(v))
     }
 
   module Stable = {
@@ -1223,6 +1293,12 @@ module SchemaOrLink = {
   type t =
     | Schema(Schema.t)
     | Link(Link.t)
+
+  let duplicate = t =>
+    switch t {
+    | Schema(s) => Schema(Schema.duplicate(s))
+    | Link(l) => Link(Link.duplicate(l))
+    }
 
   module Stable = {
     module V1 = {

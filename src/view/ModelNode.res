@@ -428,12 +428,14 @@ module SchemaText = {
       | MakeEdit(string)
       | FinishEdit
 
-    let reducer = (state, event) =>
+    let reducer = (state, event) => {
+      Js.Console.log((state, event))
       switch event {
       | StartEdit(value) => {...state, value: value, editing: true}
       | MakeEdit(value) => {...state, value: value}
       | FinishEdit => {...state, editing: false}
       }
+    }
 
     @react.component
     let make = (
@@ -746,9 +748,6 @@ let create = (~name, ~reference, ~x, ~y, kind, id) => {
   createSchema(x, y, payload, config, id)
 }
 
-let dupWithNewId = (t, id) =>
-  ReactD3Graph.Node.setId(t, id->Gid.toString->ReactD3Graph.Node.Id.ofString)
-
 let id = t => t->ReactD3Graph.Node.id->ReactD3Graph.Node.Id.toString->Gid.fromString
 let kind = t => t->ReactD3Graph.Node.payload->Option.getExn->Payload.kind
 let position = t => (t->ReactD3Graph.Node.x, t->ReactD3Graph.Node.y)
@@ -758,6 +757,9 @@ let updatePayload = (t, f) => {
   let t' = t->ReactD3Graph.Node.updatePayload(n => n->Option.map(f))
   t'->updateConfig(_ => Configs.create(t'->id, t'->ReactD3Graph.Node.payload->Option.getExn))
 }
+
+let dupWithNewId = (t, id) =>
+  ReactD3Graph.Node.setId(t, id->Gid.toString->ReactD3Graph.Node.Id.ofString)->updatePayload(p => p)
 
 module Stable = {
   module V1 = {
