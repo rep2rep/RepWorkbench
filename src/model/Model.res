@@ -74,7 +74,10 @@ module Conv = {
 
   let toposort = (links, all_ids) => {
     let result = []
-    let links = links->Array.filter(((_, _, k)) => k !== ModelLink.Kind.Relation)
+    let links =
+      links->Array.filter(((_, _, k)) =>
+        k === ModelLink.Kind.Hierarchy || k == ModelLink.Kind.Anchor
+      )
     let roots =
       all_ids->Array.filter(id => links->Array.find(((_, id', _)) => id === id')->Option.isNone)
     let firstRoots = roots->Array.copy
