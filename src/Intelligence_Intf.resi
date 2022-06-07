@@ -11,6 +11,7 @@ module Response: {
     id: Gid.t,
     warnings: array<ModelWarning.t>,
     errors: array<ModelError.t>,
+    insights: array<ModelInsight.t>,
   }
 
   let empty: t

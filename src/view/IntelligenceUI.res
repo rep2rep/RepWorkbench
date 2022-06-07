@@ -16,7 +16,7 @@ module WarningOrError = (
     ~data,
     ~onClick as givenOnClick=?,
     ~selected=false,
-    ~kind: [#warning | #error],
+    ~kind: [#warning | #error | #insight],
     ~ignored=false,
     ~onIgnore=ignore,
   ) => {
@@ -126,6 +126,11 @@ module Error = {
   @react.component
   let make = (~data, ~onClick=?, ~selected=?) => <E data ?onClick ?selected kind={#error} />
 }
+module Insight = {
+  module I = WarningOrError(ModelInsight)
+  @react.component
+  let make = (~data, ~onClick=?, ~selected=?) => <I data ?onClick ?selected kind={#insight} />
+}
 
 module Indicator = {
   let warning =
@@ -168,6 +173,27 @@ module Indicator = {
       <path d="M 31,10 69,10 90,31 90,69 69,90 31,90 10,69 10,31 z" strokeWidth="10" />
       <path d="M 35,35 65,65" strokeWidth="12" />
       <path d="M 35,65 65,35" strokeWidth="12" />
+    </svg>
+
+  let insight =
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      version="1.1"
+      width="0.96em"
+      height="0.8em"
+      style={ReactDOM.Style.make(
+        ~position="relative",
+        ~top="0.05em",
+        ~fill="none",
+        ~stroke="currentColor",
+        ~strokeLinejoin="round",
+        ~strokeLinecap="round",
+        (),
+      )}
+      viewBox="0 0 120 100">
+      <circle cx="60" cy="45" r="20" strokeWidth="12" />
+      <path d="M10,50 Q60,-15 110,50" strokeWidth="10" />
+      <path d="M10,50 Q60,115 110,50" strokeWidth="10" />
     </svg>
 
   let spinner =
@@ -224,7 +250,7 @@ module Indicator = {
     />
 
   @react.component
-  let make = (~status: [#ready | #loading], ~errors, ~warnings, ~ignoredWarnings=0) => {
+  let make = (~status: [#ready | #loading], ~errors, ~warnings, ~ignoredWarnings=0, ~insights) => {
     let errorString = React.string(
       switch errors {
       | 1 => "1 error"
@@ -242,6 +268,12 @@ module Indicator = {
       | n => " (" ++ Int.toString(n) ++ " ignored warnings)"
       },
     )
+    let insightString = React.string(
+      switch insights {
+      | 1 => "1 insight"
+      | n => Int.toString(n) ++ " insights"
+      },
+    )
     if status === #loading {
       <>
         {spinner}
@@ -251,6 +283,10 @@ module Indicator = {
         {spinner}
         {spacer(~small=true)}
         {warningString}
+        {spacer(~small=false)}
+        {spinner}
+        {spacer(~small=true)}
+        {insightString}
       </>
     } else {
       <>
@@ -261,6 +297,10 @@ module Indicator = {
         {warning}
         {spacer(~small=true)}
         {warningString}
+        {spacer(~small=false)}
+        {insight}
+        {spacer(~small=true)}
+        {insightString}
       </>
     }
   }
@@ -270,8 +310,10 @@ module Indicator = {
 let make = (
   ~warnings,
   ~errors,
+  ~insights,
   ~onClickWarning=?,
   ~onClickError=?,
+  ~onClickInsight=?,
   ~onDeselect=?,
   ~isUpToDate,
   ~selected,
@@ -306,7 +348,10 @@ let make = (
     setIgnoredWarnings(_ => ignored)
   }
 
-  let (nErrors, nWarnings) = (Array.length(errors), Array.length(warnings))
+  let nErrors = Array.length(errors)
+  let nWarnings = Array.length(warnings)
+  let nInsights = Array.length(insights)
+
   let nIgnoredWarnings =
     warnings
     ->Array.map(ModelWarning.id)
@@ -314,7 +359,7 @@ let make = (
     ->Gid.Set.intersect(ignoredWarnings)
     ->Gid.Set.size
 
-  let visible = visible && nErrors + nWarnings > 0
+  let visible = visible && nErrors + nWarnings + nInsights > 0
 
   let commonStyle = ReactDOM.Style.make(
     ~background="white",
@@ -383,6 +428,7 @@ let make = (
         errors=nErrors
         warnings=nWarnings
         ignoredWarnings=nIgnoredWarnings
+        insights=nInsights
       />
       <span style={ReactDOM.Style.make(~display="inline-block", ~width="0.5em", ())} />
       <Button
@@ -451,6 +497,24 @@ let make = (
               } else {
                 showWarning(ModelWarning.id(w))
               }}
+          />
+        })
+        ->React.array}
+        {if insights != [] {
+          section("Insights")
+        } else {
+          React.null
+        }}
+        {insights
+        ->Array.map(w => {
+          let onClick = onClickInsight
+          <Insight
+            data=w
+            ?onClick
+            key={Gid.toString(ModelInsight.id(w))}
+            selected={selected
+            ->Option.map(id => id === ModelInsight.id(w))
+            ->Option.getWithDefault(false)}
           />
         })
         ->React.array}

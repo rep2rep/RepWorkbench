@@ -1,11 +1,36 @@
 module T = Intelligence_Intf.WorkerThread
 
+let removeSubsumed = (arr, subsumes) => {
+  let keep = ref([])
+  arr->Array.forEach(v => {
+    let subsumed = ref(false)
+    keep :=
+      keep.contents->Array.mapPartial(v' => {
+        let s = subsumes(v', v)
+        let s' = subsumes(v, v')
+        switch (s, s') {
+        | (true, true) | (true, false) => {
+            subsumed := true
+            Some(v')
+          }
+        | (false, true) => None
+        | (false, false) => Some(v')
+        }
+      })
+    if !subsumed.contents {
+      keep.contents->Js.Array2.push(v)->ignore
+    }
+  })
+  keep.contents
+}
+
 T.create(request => {
   let slots = request.slots
   let links = request.links
 
   let errors = []
   let warnings = []
+  let insights = []
 
   // let error = (~nodes, ~message, ~details, ~suggestion=?, ()) =>
   // errors->Js.Array2.push(ModelError.create(~nodes, ~message, ~details, ~suggestion?, ()))->ignore
@@ -43,10 +68,52 @@ T.create(request => {
     })
   )
 
+  let equiv_schemas = (slots, kind) => {
+    switch (slots, kind) {
+    | (InspectorState.Schema.Representation(_), ModelNode.Kind.Representation)
+    | (InspectorState.Schema.Scheme(_), ModelNode.Kind.Scheme)
+    | (InspectorState.Schema.Dimension(_), ModelNode.Kind.Dimension)
+    | (InspectorState.Schema.Token(_), ModelNode.Kind.Token)
+    | (InspectorState.Schema.Placeholder(_), ModelNode.Kind.Placeholder) => true
+    | _ => false
+    }
+  }
+  let equiv_links = (k1, k2) => k1 === k2
+
+  let sumDimensions = Array.range(2, 5)->Array.flatMap(nSub => {
+    let subDims = Idiom.sumDimension(nSub)
+    SubgraphIsomorphism.findIsomorphism(
+      ~whole=(slots, links),
+      ~find=subDims,
+      ~equiv_schemas,
+      ~equiv_links,
+    )
+  })
+
+  let sdInsights =
+    sumDimensions
+    ->Array.map(((schs, _)) => {
+      let nodes = Gid.Map.keys(schs)
+      nodes->Belt.SortArray.stableSortInPlaceBy(Gid.compare)
+      ModelInsight.create(
+        ~nodes,
+        ~message="Sum R-dimension idiom detected",
+        ~details="The Sum R-dimension idiom indicates that the parent R-dimension can be consider as being 'made up of' the children (sub) R-dimensions.",
+        (),
+      )
+    })
+    ->Array.map(ins => (ModelInsight.id(ins), ins))
+    ->Gid.Map.fromArray
+    ->Gid.Map.values
+    ->removeSubsumed(ModelInsight.subsumes)
+
+  insights->Js.Array2.pushMany(sdInsights)->ignore
+
   // Annoyingly, errors and warnings might get duplicated due to parallel connections.
   // We have to remove them, or else we will get problems!
   let errors = Array.dedup(errors)
   let warnings = Array.dedup(warnings)
+  let insights = Array.dedup(insights)
 
-  {id: request.id, errors: errors, warnings: warnings}
+  {id: request.id, errors: errors, warnings: warnings, insights: insights}
 })

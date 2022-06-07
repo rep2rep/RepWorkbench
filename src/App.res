@@ -334,6 +334,15 @@ module App = {
       dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
       ModelNodeEdit.callLocal(newSelection)
     }
+    let clickInsight = (_, ins) => {
+      let newSelection = ModelSelection.ofNodes(ModelInsight.nodes(ins))
+      dispatch(
+        Event.Intelligence.Focus(ModelInsight.id(ins)->Some)->Event.File.Intelligence->Event.File,
+      )
+      dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
+      ModelNodeEdit.callLocal(newSelection)
+    }
+
     let deselectErrorOrWarning = _ => {
       dispatch(Event.Intelligence.Focus(None)->Event.File.Intelligence->Event.File)
     }
@@ -560,10 +569,12 @@ module App = {
             <IntelligenceUI
               errors={intel.errors}
               warnings={intel.warnings}
+              insights={intel.insights}
               selected={State.focusedErrorOrWarning(state)}
               isUpToDate={State.intelligenceIsUpToDate(state)}
               onClickError={clickError}
               onClickWarning={clickWarning}
+              onClickInsight={clickInsight}
               onDeselect={deselectErrorOrWarning}
             />
           </div>

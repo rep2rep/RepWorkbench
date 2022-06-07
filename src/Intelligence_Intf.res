@@ -57,6 +57,7 @@ module Response = {
     id: Gid.t,
     warnings: array<ModelWarning.t>,
     errors: array<ModelError.t>,
+    insights: array<ModelInsight.t>,
   }
 
   let toJson = t =>
@@ -64,6 +65,7 @@ module Response = {
       ("id", t.id->Gid.toJson),
       ("warnings", t.warnings->Array.toJson(ModelWarning.toJson)),
       ("errors", t.errors->Array.toJson(ModelError.toJson)),
+      ("insights", t.insights->Array.toJson(ModelInsight.toJson)),
     })->Js.Json.object_
 
   let fromJson = json =>
@@ -79,11 +81,18 @@ module Response = {
       let id = getValue("id", Gid.fromJson)
       let warnings = getValue("warnings", Array.fromJson(_, ModelWarning.fromJson))
       let errors = getValue("errors", Array.fromJson(_, ModelError.fromJson))
+      let insights = getValue("insights", Array.fromJson(_, ModelInsight.fromJson))
 
-      Or_error.both3((id, warnings, errors))->Or_error.map(((id, warnings, errors)) => {
+      Or_error.both4((id, warnings, errors, insights))->Or_error.map(((
+        id,
+        warnings,
+        errors,
+        insights,
+      )) => {
         id: id,
         warnings: warnings,
         errors: errors,
+        insights: insights,
       })
     })
 
@@ -91,6 +100,7 @@ module Response = {
     id: Gid.create(),
     warnings: [],
     errors: [],
+    insights: [],
   }
 }
 
