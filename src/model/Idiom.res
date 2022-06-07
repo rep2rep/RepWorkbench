@@ -21,3 +21,16 @@ let sumDimension = nSubs => {
     links,
   )
 }
+
+let prodDimension = nProds => {
+  let parents = Array.range(1, nProds)->Array.map(_ => Gid.create())
+  let child = Gid.create()
+  let links = parents->Array.map(p => (p, child, ModelLink.Kind.Hierarchy))
+  (
+    Array.concatMany([
+      parents->Array.map(id => (id, ModelNode.Kind.Dimension)),
+      [(child, ModelNode.Kind.Dimension)],
+    ])->Gid.Map.fromArray,
+    links,
+  )
+}

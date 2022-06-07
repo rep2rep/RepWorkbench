@@ -10,7 +10,7 @@ type explicitCoorindateSystem
 type implicitCoordinateSystem
 
 let sumDimension: int => t<sumDimension>
-// let prodDimension: int => t<prodDimension>
+let prodDimension: int => t<prodDimension>
 
 // let pickCollection: int => t<pickCollection>
 // let filterCollection: int => t<filterCollection>

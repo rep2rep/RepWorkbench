@@ -68,6 +68,8 @@ T.create(request => {
     })
   )
 
+  // %raw(`((function (sleepDuration){var now = new Date().getTime(); while(new Date().getTime() < now + sleepDuration){/* Do nothing */}})(1000))`)
+
   let equiv_schemas = (slots, kind) => {
     switch (slots, kind) {
     | (InspectorState.Schema.Representation(_), ModelNode.Kind.Representation)
@@ -80,34 +82,45 @@ T.create(request => {
   }
   let equiv_links = (k1, k2) => k1 === k2
 
-  let sumDimensions = Array.range(2, 5)->Array.flatMap(nSub => {
-    let subDims = Idiom.sumDimension(nSub)
-    SubgraphIsomorphism.findIsomorphism(
-      ~whole=(slots, links),
-      ~find=subDims,
-      ~equiv_schemas,
-      ~equiv_links,
-    )
-  })
-
-  let sdInsights =
-    sumDimensions
+  let idiom = (values, idiom, insight) => {
+    values
+    ->Array.flatMap(v => {
+      SubgraphIsomorphism.findIsomorphism(
+        ~whole=(slots, links),
+        ~find=idiom(v),
+        ~equiv_schemas,
+        ~equiv_links,
+      )
+    })
     ->Array.map(((schs, _)) => {
       let nodes = Gid.Map.keys(schs)
       nodes->Belt.SortArray.stableSortInPlaceBy(Gid.compare)
-      ModelInsight.create(
-        ~nodes,
-        ~message="Sum R-dimension idiom detected",
-        ~details="The Sum R-dimension idiom indicates that the parent R-dimension can be consider as being 'made up of' the children (sub) R-dimensions.",
-        (),
-      )
+      insight(~nodes, ())
     })
     ->Array.map(ins => (ModelInsight.id(ins), ins))
     ->Gid.Map.fromArray
     ->Gid.Map.values
     ->removeSubsumed(ModelInsight.subsumes)
+  }
 
-  insights->Js.Array2.pushMany(sdInsights)->ignore
+  let sumDimensions = idiom([2, 3], Idiom.sumDimension, (~nodes, ()) =>
+    ModelInsight.create(
+      ~nodes,
+      ~message="Sum R-dimension idiom detected.",
+      ~details="The Sum R-dimension idiom indicates that the parent R-dimension can be considered as being 'made up of' the children (sub) R-dimensions.",
+      (),
+    )
+  )
+  insights->Js.Array2.pushMany(sumDimensions)->ignore
+  let prodDimensions = idiom([2, 3], Idiom.prodDimension, (~nodes, ()) =>
+    ModelInsight.create(
+      ~nodes,
+      ~message="Product R-dimension idiom detected.",
+      ~details="The Product R-dimension idiom indicates that the child R-dimension can be considered as being 'a combination of' the parent R-dimensions.",
+      (),
+    )
+  )
+  insights->Js.Array2.pushMany(prodDimensions)->ignore
 
   // Annoyingly, errors and warnings might get duplicated due to parallel connections.
   // We have to remove them, or else we will get problems!
