@@ -7,6 +7,8 @@ module Matrix: {
   let size: t => (int, int)
   let set: (t, int, int, int) => bool
   let check: (t, int, int, int) => bool
+  let dropColumns: (t, Belt.Set.Int.t) => t
+  let hasZeroRow: t => bool
 } = {
   type t = array<array<int>>
 
@@ -19,9 +21,24 @@ module Matrix: {
     t[m]->Option.map(row => row->Array.set(n, v))->Option.getWithDefault(false)
   let copy = t => t->Array.map(r => r->Array.copy)
   let check = (t, m, n, v) => t->get(m, n)->Option.map(v' => v === v')->Option.getWithDefault(false)
+
+  let dropColumns = (t, cols) =>
+    t->Array.map(row => row->Array.keepWithIndex((_, idx) => !(cols->Belt.Set.Int.has(idx))))
+  let hasZeroRow = t => t->Array.some(row => row->Array.every(v => v === 0))
 }
 
 type graph<'node, 'link> = (Gid.Map.t<'node>, array<(Gid.t, Gid.t, 'link)>)
+
+let zero_columns = mat => {
+  let (m, n) = Matrix.size(mat)
+  let bad_cols = []
+  Belt.Range.forEach(0, n - 1, col => {
+    if Belt.Range.every(0, m - 1, row => mat->Matrix.check(row, col, 0)) {
+      bad_cols->Js.Array2.push(col)->ignore
+    }
+  })
+  bad_cols->Belt.Set.Int.fromArray
+}
 
 // Convert the "isomorphism" into an actual subgraph we can use
 let convertIsomorphism = (
@@ -126,44 +143,55 @@ let findIsomorphism = (
       }
     })
   )
+  // We now remove all rows and columns that are "zeroed out" to reduce the search space.
+  let zero_cols = zero_columns(m)
+  let m = m->Matrix.dropColumns(zero_cols)
+  let n_schemas_source = n_schemas_source - Belt.Set.Int.size(zero_cols)
+  let order_schemas_source =
+    order_schemas_source->Array.keepWithIndex((_, idx) => !(zero_cols->Belt.Set.Int.has(idx)))
   // Now the matrix is filled with all possible isomorphic pairs.
-  // We need to make versions which contain just one 1 in each row and column
-
-  let result = []
-  // available-points, row-to-modify, used_columns
-  let used = Array.range(0, n_schemas_source - 1)->Array.map(_ => false)
-  let init = (m, 0, used)
-  let conv = iso =>
-    convertIsomorphism(
-      iso,
-      (source_schemas, source_links),
-      (target_schemas, target_links),
-      equiv_links,
-      order_schemas_source,
-      order_schemas_target,
-    )
-  let apply = ((m_sln, _, _)) => {
-    m_sln->conv->Option.iter(m => result->Js.Array2.push(m)->ignore)
+  // We need to make versions which contain at most one 1 in each column,
+  // and at exactly one 1 in each row.
+  // If there are any rows with all zeros, this is impossible.
+  if Matrix.hasZeroRow(m) {
+    []
+  } else {
+    let result = []
+    // available-points, row-to-modify, used_columns
+    let used = Array.range(0, n_schemas_source - 1)->Array.map(_ => false)
+    let init = (m, 0, used)
+    let conv = iso =>
+      convertIsomorphism(
+        iso,
+        (source_schemas, source_links),
+        (target_schemas, target_links),
+        equiv_links,
+        order_schemas_source,
+        order_schemas_target,
+      )
+    let apply = ((m_sln, _, _)) => {
+      m_sln->conv->Option.iter(m => result->Js.Array2.push(m)->ignore)
+    }
+    let isGoal = ((_, d, _)) => d === n_schemas_target
+    let next = ((m', d, used)) => {
+      let n = []
+      used->Array.forEachWithIndex((col, is_used) => {
+        // Check that we can still set this column...
+        if !is_used {
+          let m'' = Matrix.copy(m')
+          let used' = Array.copy(used)
+          Belt.Range.forEach(0, n_schemas_source - 1, col' => {
+            if col !== col' {
+              m''->Matrix.set(d, col', 0)->ignore
+            }
+          })
+          used'->Array.set(col, true)->ignore
+          n->Js.Array2.push((m'', d + 1, used'))->ignore
+        }
+      })
+      n
+    }
+    backtrack(~next, ~isGoal, ~apply, init)
+    result
   }
-  let isGoal = ((_, d, _)) => d === n_schemas_target
-  let next = ((m', d, used)) => {
-    let n = []
-    used->Array.forEachWithIndex((col, is_used) => {
-      // Check that we can still set this column...
-      if !is_used {
-        let m'' = Matrix.copy(m')
-        let used' = Array.copy(used)
-        Belt.Range.forEach(0, n_schemas_source - 1, col' => {
-          if col !== col' {
-            m''->Matrix.set(d, col', 0)->ignore
-          }
-        })
-        used'->Array.set(col, true)->ignore
-        n->Js.Array2.push((m'', d + 1, used'))->ignore
-      }
-    })
-    n
-  }
-  backtrack(~next, ~isGoal, ~apply, init)
-  result
 }
