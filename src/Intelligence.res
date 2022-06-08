@@ -68,8 +68,14 @@ T.listen(request => {
     })
   )
 
+  // Annoyingly, errors and warnings might get duplicated due to parallel connections.
+  // We have to remove them, or else we will get problems!
+  let errors = Array.dedup(errors)
+  let warnings = Array.dedup(warnings)
+
   T.respond({
     id: request.id,
+    model: request.model,
     errors: errors,
     errors_done: true,
     warnings: warnings,
@@ -107,6 +113,7 @@ T.listen(request => {
               insights->Js.Array2.push(ins)->ignore
               T.respond({
                 id: request.id,
+                model: request.model,
                 errors: errors,
                 errors_done: true,
                 warnings: warnings,
@@ -138,14 +145,11 @@ T.listen(request => {
     )
   )
 
-  // Annoyingly, errors and warnings might get duplicated due to parallel connections.
-  // We have to remove them, or else we will get problems!
-  let errors = Array.dedup(errors)
-  let warnings = Array.dedup(warnings)
   let insights = Array.dedup(insights)
 
   T.respond({
     id: request.id,
+    model: request.model,
     errors: errors,
     errors_done: true,
     warnings: warnings,

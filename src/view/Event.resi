@@ -2,7 +2,7 @@ module Intelligence: {
   type t =
     | Init
     | Response(Intelligence_Intf.Response.t)
-    | Focus(option<Gid.t>)
+    | Focus(Gid.t, option<Gid.t>) // Model, Intelligence
 }
 
 module File: {

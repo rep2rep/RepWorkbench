@@ -4,18 +4,12 @@ module App = {
   type state = State.t
   type action = Event.t
 
-  let intelligence = Intelligence_Intf.create("worker.js?v=##VERSION##")
+  let intelligence = IntelligencePool.create("worker.js?v=##VERSION##")
   let sendToIntelligence = state => {
-    let sentId = switch State.focused(state) {
-    | None => {
-        let id = Gid.create()
-        intelligence->Intelligence_Intf.post({id: id, slots: Gid.Map.empty(), links: []})
-        Some(id)
-      }
-    | Some(focused) =>
-      state
-      ->State.model(focused)
-      ->Option.map(model => {
+    state
+    ->State.focused
+    ->Option.map(focused =>
+      state->State.updateModel(focused, model => {
         let slots = State.Model.slots(model)
         let links =
           State.Model.graph(model)
@@ -27,8 +21,10 @@ module App = {
             ModelLink.kind(link),
           ))
         let id = Gid.create()
-        intelligence->Intelligence_Intf.post({
+
+        intelligence->IntelligencePool.post({
           id: id,
+          model: focused,
           slots: slots->Gid.Map.mapPartial((_, slot) =>
             switch slot {
             | InspectorState.SchemaOrLink.Schema(s) => Some(s)
@@ -37,10 +33,10 @@ module App = {
           ),
           links: links,
         })
-        id
+        model->State.Model.setRequestedIntelligence(Some(id))
       })
-    }
-    state->State.setLastRequestedIntelligence(sentId)
+    )
+    ->Option.getWithDefault(state)
   }
 
   let init = State.load()->Option.getWithDefault(State.empty)
@@ -94,7 +90,7 @@ module App = {
     }
 
     React.useEffect0(() => {
-      intelligence->Intelligence_Intf.listen(intelligenceListener)
+      intelligence->IntelligencePool.listen(intelligenceListener)
       dispatch(Event.File(Event.File.Intelligence(Event.Intelligence.Init)))
       None
     })
@@ -110,7 +106,11 @@ module App = {
       )
       ->Option.getWithDefault(ModelSelection.empty)
     let intel =
-      State.latestIntelligence(state)->Option.getWithDefault(Intelligence_Intf.Response.empty)
+      focused
+      ->Option.flatMap(focused =>
+        state->State.model(focused)->Option.flatMap(model => model->State.Model.intelligence)
+      )
+      ->Option.getWithDefault(Intelligence_Intf.Response.empty)
 
     let dispatchM = e => focused->Option.iter(focused => dispatch(Event.Model(focused, e)))
 
@@ -320,31 +320,45 @@ module App = {
     }
     let clickError = (_, err) => {
       let newSelection = ModelSelection.ofNodes(ModelError.nodes(err))
-      dispatch(
-        Event.Intelligence.Focus(ModelError.id(err)->Some)->Event.File.Intelligence->Event.File,
+      focused->Option.iter(m =>
+        dispatch(
+          Event.Intelligence.Focus(m, ModelError.id(err)->Some)
+          ->Event.File.Intelligence
+          ->Event.File,
+        )
       )
       dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
       ModelNodeEdit.callLocal(newSelection)
     }
     let clickWarning = (_, warn) => {
       let newSelection = ModelSelection.ofNodes(ModelWarning.nodes(warn))
-      dispatch(
-        Event.Intelligence.Focus(ModelWarning.id(warn)->Some)->Event.File.Intelligence->Event.File,
+      focused->Option.iter(m =>
+        dispatch(
+          Event.Intelligence.Focus(m, ModelWarning.id(warn)->Some)
+          ->Event.File.Intelligence
+          ->Event.File,
+        )
       )
       dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
       ModelNodeEdit.callLocal(newSelection)
     }
     let clickInsight = (_, ins) => {
       let newSelection = ModelSelection.ofNodes(ModelInsight.nodes(ins))
-      dispatch(
-        Event.Intelligence.Focus(ModelInsight.id(ins)->Some)->Event.File.Intelligence->Event.File,
+      focused->Option.iter(m =>
+        dispatch(
+          Event.Intelligence.Focus(m, ModelInsight.id(ins)->Some)
+          ->Event.File.Intelligence
+          ->Event.File,
+        )
       )
       dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
       ModelNodeEdit.callLocal(newSelection)
     }
 
     let deselectErrorOrWarning = _ => {
-      dispatch(Event.Intelligence.Focus(None)->Event.File.Intelligence->Event.File)
+      focused->Option.iter(m =>
+        dispatch(Event.Intelligence.Focus(m, None)->Event.File.Intelligence->Event.File)
+      )
     }
     let importModels = fs =>
       fs->Array.forEach(f => {
@@ -568,8 +582,12 @@ module App = {
             />
             <IntelligenceUI
               intelligence={intel}
-              lastRequestedIntelligence={State.lastRequestedIntelligence(state)}
-              selected={State.focusedErrorOrWarning(state)}
+              lastRequestedIntelligence={focused->Option.flatMap(focused =>
+                state->State.model(focused)->Option.flatMap(State.Model.requestedIntelligence)
+              )}
+              selected={focused->Option.flatMap(focused =>
+                state->State.model(focused)->Option.flatMap(State.Model.focusedIntelligence)
+              )}
               onClickError={clickError}
               onClickWarning={clickWarning}
               onClickInsight={clickInsight}

@@ -3,6 +3,9 @@ module Model = {
     info: InspectorState.Model.t,
     graph: ModelState.t,
     slots: Gid.Map.t<InspectorState.SchemaOrLink.t>,
+    intelligence: option<Intelligence_Intf.Response.t>,
+    requestedIntelligence: option<Gid.t>,
+    focusedIntelligence: option<Gid.t>,
   }
 
   module Stable = {
@@ -170,6 +173,9 @@ module Model = {
         info: InspectorState.Model.Stable.V1.t,
         graph: ModelState.Stable.V4.t,
         slots: Gid.Map.t<InspectorState.SchemaOrLink.Stable.V1.t>,
+        intelligence: option<Intelligence_Intf.Response.t>,
+        requestedIntelligence: option<Gid.t>,
+        focusedIntelligence: option<Gid.t>,
       }
 
       let v3_to_v4 = t => {
@@ -198,6 +204,9 @@ module Model = {
           info: t.V3.info,
           graph: graph,
           slots: slots,
+          intelligence: None,
+          requestedIntelligence: None,
+          focusedIntelligence: None,
         }
       }
 
@@ -247,6 +256,9 @@ module Model = {
                 info: info,
                 graph: graph,
                 slots: slots,
+                intelligence: None,
+                requestedIntelligence: None,
+                focusedIntelligence: None,
               })
             }
           | Or_error.Ok(v) =>
@@ -269,6 +281,14 @@ module Model = {
   let graph = t => t.graph
   let slots = t => t.slots
 
+  let intelligence = t => t.intelligence
+  let requestedIntelligence = t => t.requestedIntelligence
+  let focusedIntelligence = t => t.focusedIntelligence
+
+  let setIntelligence = (t, response) => {...t, intelligence: response}
+  let setRequestedIntelligence = (t, id) => {...t, requestedIntelligence: id}
+  let setFocusedIntelligence = (t, id) => {...t, focusedIntelligence: id}
+
   let slotsForSelection = (t, selection) => {
     let ids = Array.concat(ModelSelection.nodes(selection), ModelSelection.links(selection))
     ids->Array.mapPartial(id => t.slots->Gid.Map.get(id)->Option.map(slots => (id, slots)))
@@ -282,6 +302,9 @@ module Model = {
     info: InspectorState.Model.create(~name),
     graph: ModelState.empty,
     slots: Gid.Map.empty(),
+    intelligence: None,
+    requestedIntelligence: None,
+    focusedIntelligence: None,
   }
 
   let duplicate = (t, newName) => {
@@ -293,6 +316,9 @@ module Model = {
       ->Gid.Map.toArray
       ->Array.map(((id, slots)) => (newIdMap->Gid.Map.get(id)->Option.getExn, slots))
       ->Gid.Map.fromArray,
+      intelligence: None,
+      requestedIntelligence: None,
+      focusedIntelligence: None,
     }
   }
 }
@@ -301,9 +327,6 @@ type t = {
   models: Gid.Map.t<UndoRedo.t<Model.t>>,
   positions: array<Gid.t>,
   currentModel: option<Gid.t>,
-  latestIntelligence: option<Intelligence_Intf.Response.t>,
-  lastRequestedIntelligence: option<Gid.t>,
-  focusedErrorOrWarning: option<Gid.t>,
 }
 
 let store = t => {
@@ -353,9 +376,6 @@ let load = () => {
     models: models,
     positions: positions,
     currentModel: currentModel,
-    latestIntelligence: None,
-    lastRequestedIntelligence: None,
-    focusedErrorOrWarning: None,
   })
 }
 
@@ -363,9 +383,6 @@ let empty = {
   models: Gid.Map.empty(),
   positions: [],
   currentModel: None,
-  latestIntelligence: None,
-  lastRequestedIntelligence: None,
-  focusedErrorOrWarning: None,
 }
 
 let focused = t => t.currentModel
@@ -375,46 +392,31 @@ let models = t =>
 
 let model = (t, id) => t.models->Gid.Map.get(id)->Option.map(UndoRedo.state)
 
-let latestIntelligence = t => t.latestIntelligence
-
-let lastRequestedIntelligence = t => t.lastRequestedIntelligence
-
-let focusedErrorOrWarning = t => t.focusedErrorOrWarning
-
 let createModel = (t, id) => {
   models: t.models->Gid.Map.set(id, Model.create("Model")->UndoRedo.create),
   positions: t.positions->Array.concat([id]),
   currentModel: Some(id),
-  latestIntelligence: None,
-  lastRequestedIntelligence: None,
-  focusedErrorOrWarning: None,
 }
 
 let deleteModel = (t, id) => {
   LocalStorage.Raw.removeItem("RepNotation:Model:" ++ Gid.toString(id))
-  let (currentModel, latestIntelligence, lastRequestedIntelligence, focusedErrorOrWarning) = if (
+  let currentModel = if (
     t.currentModel->Option.map(current => current == id)->Option.getWithDefault(false)
   ) {
-    (None, None, None, None)
+    None
   } else {
-    (t.currentModel, t.latestIntelligence, t.lastRequestedIntelligence, t.focusedErrorOrWarning)
+    t.currentModel
   }
   {
     models: t.models->Gid.Map.remove(id),
     positions: t.positions->Array.filter(id' => id' !== id),
     currentModel: currentModel,
-    latestIntelligence: latestIntelligence,
-    lastRequestedIntelligence: lastRequestedIntelligence,
-    focusedErrorOrWarning: focusedErrorOrWarning,
   }
 }
 
 let focusModel = (t, id) => {
   ...t,
   currentModel: id,
-  latestIntelligence: None,
-  lastRequestedIntelligence: None,
-  focusedErrorOrWarning: None,
 }
 
 let duplicateModel = (t, ~existing, ~new_) => {
@@ -424,7 +426,6 @@ let duplicateModel = (t, ~existing, ~new_) => {
   let before = t.positions->Array.slice(~offset=0, ~len=dupIndex + 1)
   let after = t.positions->Array.sliceToEnd(dupIndex + 1)
   {
-    ...t,
     currentModel: Some(new_),
     positions: Array.concatMany([before, [new_], after]),
     models: t.models->Gid.Map.set(new_, newModel),
@@ -439,9 +440,6 @@ let importModel = (t, model) => {
     currentModel: Some(newId),
     positions: t.positions->Array.concat([newId]),
     models: t.models->Gid.Map.set(newId, model),
-    latestIntelligence: None,
-    lastRequestedIntelligence: None,
-    focusedErrorOrWarning: None,
   }
 }
 
@@ -450,16 +448,15 @@ let reorderModels = (t, newOrder) => {
   positions: newOrder,
 }
 
-let updateModel = (t, id, newModel) => {
+let updateModel = (t, id, f) => {
   ...t,
   models: t.models->Gid.Map.update(id, model =>
-    model->Option.map(model => model->UndoRedo.step(newModel))
+    model->Option.map(model => {
+      let newModel = model->UndoRedo.state->f
+      model->UndoRedo.step(newModel)
+    })
   ),
 }
-
-let setLatestIntelligence = (t, response) => {...t, latestIntelligence: response}
-let setLastRequestedIntelligence = (t, id) => {...t, lastRequestedIntelligence: id}
-let focusErrorOrWarning = (t, id) => {...t, focusedErrorOrWarning: id}
 
 let undo = (t, id) => {
   ...t,

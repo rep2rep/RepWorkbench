@@ -10,6 +10,14 @@ module Model: {
   let updateGraph: (t, ModelState.t) => t
   let updateSlots: (t, Gid.Map.t<InspectorState.SchemaOrLink.t>) => t
 
+  let intelligence: t => option<Intelligence_Intf.Response.t>
+  let requestedIntelligence: t => option<Gid.t>
+  let focusedIntelligence: t => option<Gid.t>
+
+  let setIntelligence: (t, option<Intelligence_Intf.Response.t>) => t
+  let setRequestedIntelligence: (t, option<Gid.t>) => t
+  let setFocusedIntelligence: (t, option<Gid.t>) => t
+
   module Stable: {
     module V1: {
       type t
@@ -47,9 +55,6 @@ let empty: t
 let models: t => array<(Gid.t, Model.t)>
 let focused: t => option<Gid.t>
 let model: (t, Gid.t) => option<Model.t>
-let latestIntelligence: t => option<Intelligence_Intf.Response.t>
-let lastRequestedIntelligence: t => option<Gid.t>
-let focusedErrorOrWarning: t => option<Gid.t>
 
 let createModel: (t, Gid.t) => t
 let deleteModel: (t, Gid.t) => t
@@ -57,11 +62,8 @@ let focusModel: (t, option<Gid.t>) => t
 let duplicateModel: (t, ~existing: Gid.t, ~new_: Gid.t) => t
 let importModel: (t, Model.t) => t
 let reorderModels: (t, array<Gid.t>) => t
-let setLatestIntelligence: (t, option<Intelligence_Intf.Response.t>) => t
-let setLastRequestedIntelligence: (t, option<Gid.t>) => t
-let focusErrorOrWarning: (t, option<Gid.t>) => t
 
-let updateModel: (t, Gid.t, Model.t) => t
+let updateModel: (t, Gid.t, Model.t => Model.t) => t
 let undo: (t, Gid.t) => t
 let redo: (t, Gid.t) => t
 let canUndo: (t, Gid.t) => bool

@@ -1,6 +1,7 @@
 module Request: {
   type t = {
     id: Gid.t,
+    model: Gid.t,
     slots: Gid.Map.t<InspectorState.Schema.t>,
     links: array<(Gid.t, Gid.t, ModelLink.Kind.t)>,
   }
@@ -9,6 +10,7 @@ module Request: {
 module Response: {
   type t = {
     id: Gid.t,
+    model: Gid.t,
     warnings: array<ModelWarning.t>,
     warnings_done: bool,
     errors: array<ModelError.t>,

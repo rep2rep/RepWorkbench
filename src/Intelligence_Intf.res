@@ -1,6 +1,7 @@
 module Request = {
   type t = {
     id: Gid.t,
+    model: Gid.t,
     slots: Gid.Map.t<InspectorState.Schema.t>,
     links: array<(Gid.t, Gid.t, ModelLink.Kind.t)>,
   }
@@ -16,6 +17,7 @@ module Request = {
   let toJson = t =>
     Js.Dict.fromList(list{
       ("id", t.id->Gid.toJson),
+      ("model", t.model->Gid.toJson),
       ("slots", t.slots->Gid.Map.toJson(InspectorState.Schema.Stable.V2.toJson)),
       (
         "links",
@@ -36,6 +38,7 @@ module Request = {
         ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
         ->Or_error.flatMap(reader)
       let id = getValue("id", Gid.fromJson)
+      let model = getValue("model", Gid.fromJson)
       let slots = getValue("slots", Gid.Map.fromJson(_, InspectorState.Schema.Stable.V2.fromJson))
       let links = getValue(
         "links",
@@ -44,8 +47,9 @@ module Request = {
           tuple3FromJson(Gid.fromJson, Gid.fromJson, ModelLink.Kind.Stable.V2.fromJson),
         ),
       )
-      Or_error.both3((id, slots, links))->Or_error.map(((id, slots, links)) => {
+      Or_error.both4((id, model, slots, links))->Or_error.map(((id, model, slots, links)) => {
         id: id,
+        model: model,
         slots: slots,
         links: links,
       })
@@ -55,6 +59,7 @@ module Request = {
 module Response = {
   type t = {
     id: Gid.t,
+    model: Gid.t,
     warnings: array<ModelWarning.t>,
     warnings_done: bool,
     errors: array<ModelError.t>,
@@ -66,6 +71,7 @@ module Response = {
   let toJson = t =>
     Js.Dict.fromList(list{
       ("id", t.id->Gid.toJson),
+      ("model", t.model->Gid.toJson),
       ("warnings", t.warnings->Array.toJson(ModelWarning.toJson)),
       ("warnings_done", t.warnings_done->Bool.toJson),
       ("errors", t.errors->Array.toJson(ModelError.toJson)),
@@ -85,6 +91,7 @@ module Response = {
         ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
         ->Or_error.flatMap(reader)
       let id = getValue("id", Gid.fromJson)
+      let model = getValue("model", Gid.fromJson)
       let warnings = getValue("warnings", Array.fromJson(_, ModelWarning.fromJson))
       let warnings_done = getValue("warnings_done", Bool.fromJson)
       let errors = getValue("errors", Array.fromJson(_, ModelError.fromJson))
@@ -92,8 +99,9 @@ module Response = {
       let insights = getValue("insights", Array.fromJson(_, ModelInsight.fromJson))
       let insights_done = getValue("insights_done", Bool.fromJson)
 
-      Or_error.both7((
+      Or_error.both8((
         id,
+        model,
         warnings,
         warnings_done,
         errors,
@@ -102,6 +110,7 @@ module Response = {
         insights_done,
       ))->Or_error.map(((
         id,
+        model,
         warnings,
         warnings_done,
         errors,
@@ -110,6 +119,7 @@ module Response = {
         insights_done,
       )) => {
         id: id,
+        model: model,
         warnings: warnings,
         warnings_done: warnings_done,
         errors: errors,
@@ -121,6 +131,7 @@ module Response = {
 
   let empty = {
     id: Gid.create(),
+    model: Gid.create(),
     warnings: [],
     warnings_done: true,
     errors: [],
