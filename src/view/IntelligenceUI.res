@@ -250,7 +250,15 @@ module Indicator = {
     />
 
   @react.component
-  let make = (~status: [#ready | #loading], ~errors, ~warnings, ~ignoredWarnings=0, ~insights) => {
+  let make = (
+    ~errors,
+    ~errorStatus: [#ready | #loading],
+    ~warnings,
+    ~warningStatus: [#ready | #loading],
+    ~ignoredWarnings=0,
+    ~insights,
+    ~insightStatus: [#ready | #loading],
+  ) => {
     let errorString = React.string(
       switch errors {
       | 1 => "1 error"
@@ -274,49 +282,43 @@ module Indicator = {
       | n => Int.toString(n) ++ " insights"
       },
     )
-    if status === #loading {
-      <>
-        {spinner}
-        {spacer(~small=true)}
-        {errorString}
-        {spacer(~small=false)}
-        {spinner}
-        {spacer(~small=true)}
-        {warningString}
-        {spacer(~small=false)}
-        {spinner}
-        {spacer(~small=true)}
-        {insightString}
-      </>
-    } else {
-      <>
-        {error}
-        {spacer(~small=true)}
-        {errorString}
-        {spacer(~small=false)}
-        {warning}
-        {spacer(~small=true)}
-        {warningString}
-        {spacer(~small=false)}
-        {insight}
-        {spacer(~small=true)}
-        {insightString}
-      </>
-    }
+    <>
+      {if errorStatus == #ready {
+        error
+      } else {
+        spinner
+      }}
+      {spacer(~small=true)}
+      {errorString}
+      {spacer(~small=false)}
+      {if warningStatus == #ready {
+        warning
+      } else {
+        spinner
+      }}
+      {spacer(~small=true)}
+      {warningString}
+      {spacer(~small=false)}
+      {if insightStatus == #ready {
+        insight
+      } else {
+        spinner
+      }}
+      {spacer(~small=true)}
+      {insightString}
+    </>
   }
 }
 
 @react.component
 let make = (
-  ~warnings,
-  ~errors,
-  ~insights,
+  ~intelligence: Intelligence_Intf.Response.t,
   ~onClickWarning=?,
   ~onClickError=?,
   ~onClickInsight=?,
   ~onDeselect=?,
-  ~isUpToDate,
   ~selected,
+  ~lastRequestedIntelligence,
   ~style as givenStyle=?,
 ) => {
   let (visible, setVisible) = React.useState(_ =>
@@ -347,6 +349,19 @@ let make = (
     GidSetStore.set("REPN_IGNORED_WARNINGS", ignored)
     setIgnoredWarnings(_ => ignored)
   }
+
+  let errors = intelligence.errors
+  let warnings = intelligence.warnings
+  let insights = intelligence.insights
+
+  let isUpToDate =
+    lastRequestedIntelligence->Option.map(id => id === intelligence.id)->Option.getWithDefault(true)
+  let status = done_ =>
+    if isUpToDate && done_ {
+      #ready
+    } else {
+      #loading
+    }
 
   let nErrors = Array.length(errors)
   let nWarnings = Array.length(warnings)
@@ -420,15 +435,13 @@ let make = (
         (),
       )}>
       <Indicator
-        status={if !isUpToDate {
-          #loading
-        } else {
-          #ready
-        }}
         errors=nErrors
+        errorStatus={status(intelligence.errors_done)}
         warnings=nWarnings
+        warningStatus={status(intelligence.warnings_done)}
         ignoredWarnings=nIgnoredWarnings
         insights=nInsights
+        insightStatus={status(intelligence.insights_done)}
       />
       <span style={ReactDOM.Style.make(~display="inline-block", ~width="0.5em", ())} />
       <Button
@@ -470,11 +483,6 @@ let make = (
           />
         })
         ->React.array}
-        {if nErrors > 0 && nWarnings > 0 {
-          <div style={ReactDOM.Style.make(~margin="0.5rem 0", ())} />
-        } else {
-          React.null
-        }}
         {if warnings != [] {
           section("Warnings")
         } else {

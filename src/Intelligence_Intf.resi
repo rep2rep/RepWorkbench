@@ -10,8 +10,11 @@ module Response: {
   type t = {
     id: Gid.t,
     warnings: array<ModelWarning.t>,
+    warnings_done: bool,
     errors: array<ModelError.t>,
+    errors_done: bool,
     insights: array<ModelInsight.t>,
+    insights_done: bool,
   }
 
   let empty: t

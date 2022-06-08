@@ -56,16 +56,22 @@ module Response = {
   type t = {
     id: Gid.t,
     warnings: array<ModelWarning.t>,
+    warnings_done: bool,
     errors: array<ModelError.t>,
+    errors_done: bool,
     insights: array<ModelInsight.t>,
+    insights_done: bool,
   }
 
   let toJson = t =>
     Js.Dict.fromList(list{
       ("id", t.id->Gid.toJson),
       ("warnings", t.warnings->Array.toJson(ModelWarning.toJson)),
+      ("warnings_done", t.warnings_done->Bool.toJson),
       ("errors", t.errors->Array.toJson(ModelError.toJson)),
+      ("errors_done", t.errors_done->Bool.toJson),
       ("insights", t.insights->Array.toJson(ModelInsight.toJson)),
+      ("insights_done", t.insights_done->Bool.toJson),
     })->Js.Json.object_
 
   let fromJson = json =>
@@ -80,27 +86,47 @@ module Response = {
         ->Or_error.flatMap(reader)
       let id = getValue("id", Gid.fromJson)
       let warnings = getValue("warnings", Array.fromJson(_, ModelWarning.fromJson))
+      let warnings_done = getValue("warnings_done", Bool.fromJson)
       let errors = getValue("errors", Array.fromJson(_, ModelError.fromJson))
+      let errors_done = getValue("errors_done", Bool.fromJson)
       let insights = getValue("insights", Array.fromJson(_, ModelInsight.fromJson))
+      let insights_done = getValue("insights_done", Bool.fromJson)
 
-      Or_error.both4((id, warnings, errors, insights))->Or_error.map(((
+      Or_error.both7((
         id,
         warnings,
+        warnings_done,
         errors,
+        errors_done,
         insights,
+        insights_done,
+      ))->Or_error.map(((
+        id,
+        warnings,
+        warnings_done,
+        errors,
+        errors_done,
+        insights,
+        insights_done,
       )) => {
         id: id,
         warnings: warnings,
+        warnings_done: warnings_done,
         errors: errors,
+        errors_done: errors_done,
         insights: insights,
+        insights_done: insights_done,
       })
     })
 
   let empty = {
     id: Gid.create(),
     warnings: [],
+    warnings_done: true,
     errors: [],
+    errors_done: true,
     insights: [],
+    insights_done: true,
   }
 }
 

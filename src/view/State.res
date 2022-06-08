@@ -381,13 +381,6 @@ let lastRequestedIntelligence = t => t.lastRequestedIntelligence
 
 let focusedErrorOrWarning = t => t.focusedErrorOrWarning
 
-let intelligenceIsUpToDate = t =>
-  switch (t.latestIntelligence, t.lastRequestedIntelligence) {
-  | (None, None) => true
-  | (Some(response), Some(id)) => response.id === id
-  | _ => false
-  }
-
 let createModel = (t, id) => {
   models: t.models->Gid.Map.set(id, Model.create("Model")->UndoRedo.create),
   positions: t.positions->Array.concat([id]),

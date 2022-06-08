@@ -49,7 +49,6 @@ let focused: t => option<Gid.t>
 let model: (t, Gid.t) => option<Model.t>
 let latestIntelligence: t => option<Intelligence_Intf.Response.t>
 let lastRequestedIntelligence: t => option<Gid.t>
-let intelligenceIsUpToDate: t => bool
 let focusedErrorOrWarning: t => option<Gid.t>
 
 let createModel: (t, Gid.t) => t

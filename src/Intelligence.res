@@ -24,7 +24,7 @@ let removeSubsumed = (arr, subsumes) => {
   keep.contents
 }
 
-T.create(request => {
+T.listen(request => {
   let slots = request.slots
   let links = request.links
 
@@ -68,7 +68,15 @@ T.create(request => {
     })
   )
 
-  // %raw(`((function (sleepDuration){var now = new Date().getTime(); while(new Date().getTime() < now + sleepDuration){/* Do nothing */}})(1000))`)
+  T.respond({
+    id: request.id,
+    errors: errors,
+    errors_done: true,
+    warnings: warnings,
+    warnings_done: true,
+    insights: [],
+    insights_done: false,
+  })
 
   let equiv_schemas = (slots, kind) => {
     switch (slots, kind) {
@@ -103,7 +111,7 @@ T.create(request => {
     ->removeSubsumed(ModelInsight.subsumes)
   }
 
-  let sumDimensions = idiom([2, 3], Idiom.sumDimension, (~nodes, ()) =>
+  let sumDimensions = idiom([3, 2], Idiom.sumDimension, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
       ~message="Sum R-dimension idiom detected.",
@@ -112,7 +120,7 @@ T.create(request => {
     )
   )
   insights->Js.Array2.pushMany(sumDimensions)->ignore
-  let prodDimensions = idiom([2, 3], Idiom.prodDimension, (~nodes, ()) =>
+  let prodDimensions = idiom([3, 2], Idiom.prodDimension, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
       ~message="Product R-dimension idiom detected.",
@@ -128,5 +136,13 @@ T.create(request => {
   let warnings = Array.dedup(warnings)
   let insights = Array.dedup(insights)
 
-  {id: request.id, errors: errors, warnings: warnings, insights: insights}
+  T.respond({
+    id: request.id,
+    errors: errors,
+    errors_done: true,
+    warnings: warnings,
+    warnings_done: true,
+    insights: insights,
+    insights_done: true,
+  })
 })

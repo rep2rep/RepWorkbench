@@ -567,11 +567,9 @@ module App = {
               style={ReactDOM.Style.make(~flexGrow="1", ())}
             />
             <IntelligenceUI
-              errors={intel.errors}
-              warnings={intel.warnings}
-              insights={intel.insights}
+              intelligence={intel}
+              lastRequestedIntelligence={State.lastRequestedIntelligence(state)}
               selected={State.focusedErrorOrWarning(state)}
-              isUpToDate={State.intelligenceIsUpToDate(state)}
               onClickError={clickError}
               onClickWarning={clickWarning}
               onClickInsight={clickInsight}
