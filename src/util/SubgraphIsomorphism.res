@@ -120,6 +120,7 @@ let findIsomorphism = (
   ~find as (target_schemas, target_links),
   ~equiv_schemas,
   ~equiv_links,
+  ~onFind,
 ) => {
   let n_schemas_source = Gid.Map.size(source_schemas)
   let n_schemas_target = Gid.Map.size(target_schemas)
@@ -153,10 +154,7 @@ let findIsomorphism = (
   // We need to make versions which contain at most one 1 in each column,
   // and at exactly one 1 in each row.
   // If there are any rows with all zeros, this is impossible.
-  if Matrix.hasZeroRow(m) {
-    []
-  } else {
-    let result = []
+  if !Matrix.hasZeroRow(m) {
     // available-points, row-to-modify, used_columns
     let used = Array.range(0, n_schemas_source - 1)->Array.map(_ => false)
     let init = (m, 0, used)
@@ -170,7 +168,7 @@ let findIsomorphism = (
         order_schemas_target,
       )
     let apply = ((m_sln, _, _)) => {
-      m_sln->conv->Option.iter(m => result->Js.Array2.push(m)->ignore)
+      m_sln->conv->Option.iter(onFind)
     }
     let isGoal = ((_, d, _)) => d === n_schemas_target
     let next = ((m', d, used)) => {
@@ -192,6 +190,5 @@ let findIsomorphism = (
       n
     }
     backtrack(~next, ~isGoal, ~apply, init)
-    result
   }
 }

@@ -8,4 +8,5 @@ let findIsomorphism: (
   ~find: graph<'t, 'm>,
   ~equiv_schemas: ('s, 't) => bool,
   ~equiv_links: ('l, 'm) => bool,
-) => array<graph<'s, 'l>>
+  ~onFind: graph<'s, 'l> => unit,
+) => unit
