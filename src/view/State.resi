@@ -63,7 +63,8 @@ let setLatestIntelligence: (t, option<Intelligence_Intf.Response.t>) => t
 let setLastRequestedIntelligence: (t, option<Gid.t>) => t
 let focusErrorOrWarning: (t, option<Gid.t>) => t
 
-let updateModel: (t, Gid.t, Model.t) => t
+let updateModel: (t, Gid.t, Model.t => Model.t) => t
+let updateModelBypassUndoRedo: (t, Gid.t, Model.t => Model.t) => t
 let undo: (t, Gid.t) => t
 let redo: (t, Gid.t) => t
 let canUndo: (t, Gid.t) => bool

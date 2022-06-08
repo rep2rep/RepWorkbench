@@ -464,6 +464,15 @@ let updateModel = (t, id, newModel) => {
   ),
 }
 
+let updateModelBypassUndoRedo = (t, id, f) => {
+  ...t,
+  models: t.models->Gid.Map.update(id, model =>
+    model->Option.map(model => {
+      let newModel = model->UndoRedo.state->f
+      model->UndoRedo.replace(newModel)
+    })
+  ),
+}
 let setLatestIntelligence = (t, response) => {...t, latestIntelligence: response}
 let setLastRequestedIntelligence = (t, id) => {...t, lastRequestedIntelligence: id}
 let focusErrorOrWarning = (t, id) => {...t, focusedErrorOrWarning: id}
