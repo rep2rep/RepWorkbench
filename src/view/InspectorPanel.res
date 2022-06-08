@@ -694,8 +694,8 @@ module SubInspector = {
       style={ReactDOM.Style.make(
         ~border="1px solid #888",
         ~borderRadius="5px",
-        ~margin="0.125rem 0.25rem",
-        ~padding="0.25rem",
+        ~margin="0.125rem 0.25rem 0.5rem 0.25rem",
+        ~padding="0.5rem 0",
         ~position="relative",
         (),
       )}>
