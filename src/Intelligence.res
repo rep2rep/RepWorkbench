@@ -128,7 +128,7 @@ T.listen(request => {
     })
   }
 
-  idiom([3, 2], Idiom.sumDimension, (~nodes, ()) =>
+  idiom([4, 3, 2], Idiom.sumDimension, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
       ~message="Sum R-dimension idiom detected.",
@@ -137,7 +137,7 @@ T.listen(request => {
     )
   )
 
-  idiom([3, 2], Idiom.prodDimension, (~nodes, ()) =>
+  idiom([4, 3, 2], Idiom.prodDimension, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
       ~message="Product R-dimension idiom detected.",
@@ -146,7 +146,7 @@ T.listen(request => {
     )
   )
 
-  idiom([(3, 2), (3, 1), (2, 2), (2, 1)], Idiom.explicitCoordinateSystem, (~nodes, ()) =>
+  idiom([(3, 3), (3, 2), (3, 1), (2, 2), (2, 1)], Idiom.explicitCoordinateSystem, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
       ~message="Explicit Coordinate System idiom detected.",
@@ -155,7 +155,7 @@ T.listen(request => {
     )
   )
 
-  idiom([4, 3, 2], Idiom.implicitCoordinateSystem, (~nodes, ()) =>
+  idiom([5, 4, 3, 2], Idiom.implicitCoordinateSystem, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
       ~message="Implicit Coordinate System idiom detected.",

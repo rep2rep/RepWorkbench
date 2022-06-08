@@ -155,10 +155,10 @@ let findIsomorphism = (
   // and at exactly one 1 in each row.
   // If there are any rows with all zeros, this is impossible.
   if !Matrix.hasZeroRow(m) {
-    // available-points, row-to-modify, used_columns
-    let used = Array.range(0, n_schemas_source - 1)->Array.map(_ => false)
-    let init = (m, 0, used)
-    let conv = iso =>
+    // available-points, row-to-modify, used-columns, columns-to-schemas, column-count
+    let used = Gid.Set.empty
+    let init = (m, 0, used, order_schemas_source, n_schemas_source)
+    let conv = (iso, order_schemas_source) =>
       convertIsomorphism(
         iso,
         (source_schemas, source_links),
@@ -167,24 +167,42 @@ let findIsomorphism = (
         order_schemas_source,
         order_schemas_target,
       )
-    let apply = ((m_sln, _, _)) => {
-      m_sln->conv->Option.iter(onFind)
+    let apply = ((m_sln, _, _, order_schemas_source, _)) => {
+      conv(m_sln, order_schemas_source)->Option.iter(onFind)
     }
-    let isGoal = ((_, d, _)) => d === n_schemas_target
-    let next = ((m', d, used)) => {
+    let isGoal = ((_, d, _, _, _)) => d === n_schemas_target
+    let next = ((m', d, used, order_schemas_source, n_schemas_source)) => {
       let n = []
-      used->Array.forEachWithIndex((col, is_used) => {
+      Belt.Range.forEach(0, n_schemas_source - 1, col => {
         // Check that we can still set this column...
+        let is_used =
+          order_schemas_source[col]
+          ->Option.map(col => used->Gid.Set.has(col))
+          ->Option.getWithDefault(true)
         if !is_used {
+          // If we can, leave it one and set all others to zero
           let m'' = Matrix.copy(m')
-          let used' = Array.copy(used)
           Belt.Range.forEach(0, n_schemas_source - 1, col' => {
             if col !== col' {
               m''->Matrix.set(d, col', 0)->ignore
             }
           })
-          used'->Array.set(col, true)->ignore
-          n->Js.Array2.push((m'', d + 1, used'))->ignore
+          let used' =
+            order_schemas_source[col]
+            ->Option.map(id => used->Gid.Set.add(id))
+            ->Option.getWithDefault(used)
+          // If the row was zero'd out, then we're done! Otherwise, continue the search
+          if !Matrix.hasZeroRow(m'') {
+            // Again, remove all rows and columns that are "zeroed out" to reduce the search space.
+            let zero_cols = zero_columns(m'')
+            let m'' = m''->Matrix.dropColumns(zero_cols)
+            let n_schemas_source = n_schemas_source - Belt.Set.Int.size(zero_cols)
+            let order_schemas_source =
+              order_schemas_source->Array.keepWithIndex((_, idx) =>
+                !(zero_cols->Belt.Set.Int.has(idx))
+              )
+            n->Js.Array2.push((m'', d + 1, used', order_schemas_source, n_schemas_source))->ignore
+          }
         }
       })
       n
