@@ -690,17 +690,45 @@ module Model = {
 module SubInspector = {
   @react.component
   let make = (~children) => {
-    <div
-      style={ReactDOM.Style.make(
-        ~border="1px solid #888",
-        ~borderRadius="5px",
-        ~margin="0.125rem 0.25rem 0.5rem 0.25rem",
-        ~padding="0.5rem 0",
-        ~position="relative",
-        (),
-      )}>
-      {children}
-    </div>
+    let (visible, setVisible) = React.useState(_ => true)
+    let style = ReactDOM.Style.make(
+      ~border="1px solid #888",
+      ~borderRadius="5px",
+      ~boxShadow="0px 1px 3px #bbb",
+      ~margin="0.125rem 0.25rem 0.5rem 0.25rem",
+      ~padding="0.5rem 0",
+      ~position="relative",
+      (),
+    )
+    let toggler =
+      <span
+        onClick={e => {
+          e->ReactEvent.Mouse.preventDefault
+          setVisible(Bool.not)
+        }}
+        style={ReactDOM.Style.make(
+          ~position="absolute",
+          ~top="3px",
+          ~right="5px",
+          ~cursor="default",
+          ~userSelect="none",
+          (),
+        )}>
+        {React.string(
+          if visible {
+            String.fromCodePoint(8722)
+          } else {
+            "+"
+          },
+        )}
+      </span>
+    if visible {
+      <div style> {toggler} {children} </div>
+    } else {
+      <div style={ReactDOM.Style.combine(style, ReactDOM.Style.make(~padding="0.75rem 0", ()))}>
+        {toggler}
+      </div>
+    }
   }
 }
 
