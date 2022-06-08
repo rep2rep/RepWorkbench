@@ -136,11 +136,30 @@ T.listen(request => {
       (),
     )
   )
+
   idiom([3, 2], Idiom.prodDimension, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
       ~message="Product R-dimension idiom detected.",
       ~details="The Product R-dimension idiom indicates that the child R-dimension can be considered as being 'a combination of' the parent R-dimensions.",
+      (),
+    )
+  )
+
+  idiom([(3, 2), (3, 1), (2, 2), (2, 1)], Idiom.explicitCoordinateSystem, (~nodes, ()) =>
+    ModelInsight.create(
+      ~nodes,
+      ~message="Explicit Coordinate System idiom detected.",
+      ~details="The Explicit Coordinate System idiom indicates the R-dimensions together form the coordinate system indicated by the upper R-scheme, with the 'data' R-dimensions attached to the upper R-Scheme, and the lower R-scheme combining the 'coordinate' R-dimensions.",
+      (),
+    )
+  )
+
+  idiom([4, 3, 2], Idiom.implicitCoordinateSystem, (~nodes, ()) =>
+    ModelInsight.create(
+      ~nodes,
+      ~message="Implicit Coordinate System idiom detected.",
+      ~details="The Implicit Coordinate System idiom indicates the R-dimensions together form the coordinate system indicated by the R-scheme, but there is no distinction between which are the 'data' and which are the 'coordinates'.",
       (),
     )
   )

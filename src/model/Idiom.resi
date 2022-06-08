@@ -6,7 +6,7 @@ type pickCollection
 type filterCollection
 type forEachCollection
 type reduceCollection
-type explicitCoorindateSystem
+type explicitCoordinateSystem
 type implicitCoordinateSystem
 
 let sumDimension: int => t<sumDimension>
@@ -17,5 +17,5 @@ let prodDimension: int => t<prodDimension>
 // let forEachCollection: t<forEachCollection>
 // let reduceCollection: t<reduceCollection>
 
-// let explicitCoordinateSystem: int => t<explicitCoordinateSystem>
-// let implicitCoordinateSystem: (int, int) => t<implicitCoordinateSystem>
+let implicitCoordinateSystem: int => t<implicitCoordinateSystem>
+let explicitCoordinateSystem: ((int, int)) => t<explicitCoordinateSystem>

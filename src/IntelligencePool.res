@@ -22,7 +22,6 @@ let rec mkWorker = (t, request: Intelligence_Intf.Request.t) => {
   let worker = Intelligence_Intf.create(t.script)
   t.running->Js.Array2.push(request)->ignore
   worker->Intelligence_Intf.listen((response: Intelligence_Intf.Response.t) => {
-    // T.respond(response)
     t.listeners->Array.forEach(f => f(response))
     if response.errors_done && response.warnings_done && response.insights_done {
       Intelligence_Intf.terminate(worker)
