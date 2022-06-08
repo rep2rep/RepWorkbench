@@ -458,6 +458,16 @@ let updateModel = (t, id, f) => {
   ),
 }
 
+let updateModelBypassUndoRedo = (t, id, f) => {
+  ...t,
+  models: t.models->Gid.Map.update(id, model =>
+    model->Option.map(model => {
+      let newModel = model->UndoRedo.state->f
+      model->UndoRedo.replace(newModel)
+    })
+  ),
+}
+
 let undo = (t, id) => {
   ...t,
   models: t.models->Gid.Map.update(id, model => model->Option.map(model => model->UndoRedo.undo)),

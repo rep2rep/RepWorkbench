@@ -8,9 +8,11 @@ module Intelligence = {
     switch t {
     | Init => state
     | Response(response) =>
-      state->State.updateModel(response.model, m => m->State.Model.setIntelligence(Some(response)))
+      state->State.updateModelBypassUndoRedo(response.model, m =>
+        m->State.Model.setIntelligence(Some(response))
+      )
     | Focus(model, id) =>
-      state->State.updateModel(model, m => m->State.Model.setFocusedIntelligence(id))
+      state->State.updateModelBypassUndoRedo(model, m => m->State.Model.setFocusedIntelligence(id))
     }
 }
 

@@ -9,7 +9,7 @@ module App = {
     state
     ->State.focused
     ->Option.map(focused =>
-      state->State.updateModel(focused, model => {
+      state->State.updateModelBypassUndoRedo(focused, model => {
         let slots = State.Model.slots(model)
         let links =
           State.Model.graph(model)
