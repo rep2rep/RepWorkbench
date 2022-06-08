@@ -177,7 +177,7 @@ let make = (
             if hidden {
               "10px"
             } else {
-              "240px"
+              "230px"
             }
           },
           ~fontSize="16px",
