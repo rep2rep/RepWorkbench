@@ -687,6 +687,61 @@ module Model = {
   }
 }
 
+module SubInspector = {
+  @react.component
+  let make = (~children) => {
+    <div
+      style={ReactDOM.Style.make(
+        ~border="1px solid #888",
+        ~borderRadius="5px",
+        ~margin="0.125rem 0.25rem",
+        ~padding="0.25rem",
+        ~position="relative",
+        (),
+      )}>
+      {children}
+    </div>
+  }
+}
+
+let showSchema = (nodeId, schema, onChange) =>
+  switch schema {
+  | InspectorState.Schema.Representation(slots) =>
+    <Representation
+      slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Representation(c)))}
+    />
+  | InspectorState.Schema.Scheme(slots) =>
+    <Scheme slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Scheme(c)))} />
+  | InspectorState.Schema.Dimension(slots) =>
+    <Dimension
+      slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Dimension(c)))}
+    />
+  | InspectorState.Schema.Token(slots) =>
+    <Token slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Token(c)))} />
+  | InspectorState.Schema.Placeholder(slots) =>
+    <Placeholder
+      slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Placeholder(c)))}
+    />
+  }
+
+let showLink = (linkId, link, onChange) =>
+  switch link {
+  | InspectorState.Link.Hierarchy(slots) =>
+    <Hierarchy
+      slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Hierarchy(c)))}
+    />
+  | InspectorState.Link.Anchor(slots) =>
+    <Anchor slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Anchor(c)))} />
+  | InspectorState.Link.Relation(slots) =>
+    <Relation slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Relation(c)))} />
+  | InspectorState.Link.Overlap(slots) =>
+    <Overlap slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Overlap(c)))} />
+  | InspectorState.Link.Disjoint(slots) =>
+    <Disjoint slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Disjoint(c)))} />
+  | InspectorState.Link.Generic(slots) =>
+    <Generic slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Generic(c)))} />
+  }
+
 @react.component
 let make = (~id, ~data, ~onChange=?) => {
   let onChange = onChange->Option.getWithDefault(_ => ())
@@ -719,85 +774,51 @@ let make = (~id, ~data, ~onChange=?) => {
       </div>}
     style={ReactDOM.Style.make(
       ~order="2",
-      ~padding="0.5rem 0",
       ~width="350px",
       ~display="flex",
       ~flexDirection="column",
       ~borderLeft="1px solid black",
+      ~overflow="hidden",
       (),
     )}>
-    {switch data {
-    | InspectorState.Empty =>
-      <span
-        style={ReactDOM.Style.make(
-          ~display="block",
-          ~marginTop="50%",
-          ~color="grey",
-          ~fontSize="small",
-          ~textAlign="center",
-          (),
-        )}
-        className="inspector-panel-empty-message">
-        {React.string("Select a model")}
-      </span>
-    | InspectorState.Global(slots) => <Model slots onChange />
-    | InspectorState.Multiple(_) =>
-      <span
-        style={ReactDOM.Style.make(
-          ~display="block",
-          ~marginTop="50%",
-          ~color="grey",
-          ~fontSize="small",
-          ~textAlign="center",
-          (),
-        )}
-        className="inspector-panel-multiple-message">
-        {React.string("Multiple schema and/or links selected")}
-      </span>
-    | InspectorState.Schema(nodeId, schema) =>
-      switch schema {
-      | InspectorState.Schema.Representation(slots) =>
-        <Representation
-          slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Representation(c)))}
-        />
-      | InspectorState.Schema.Scheme(slots) =>
-        <Scheme slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Scheme(c)))} />
-      | InspectorState.Schema.Dimension(slots) =>
-        <Dimension
-          slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Dimension(c)))}
-        />
-      | InspectorState.Schema.Token(slots) =>
-        <Token slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Token(c)))} />
-      | InspectorState.Schema.Placeholder(slots) =>
-        <Placeholder
-          slots onChange={c => onChange(Event.Model.Slots(nodeId, Event.Slots.Placeholder(c)))}
-        />
-      }
-    | InspectorState.Link(linkId, link) =>
-      switch link {
-      | InspectorState.Link.Hierarchy(slots) =>
-        <Hierarchy
-          slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Hierarchy(c)))}
-        />
-      | InspectorState.Link.Anchor(slots) =>
-        <Anchor slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Anchor(c)))} />
-      | InspectorState.Link.Relation(slots) =>
-        <Relation
-          slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Relation(c)))}
-        />
-      | InspectorState.Link.Overlap(slots) =>
-        <Overlap
-          slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Overlap(c)))}
-        />
-      | InspectorState.Link.Disjoint(slots) =>
-        <Disjoint
-          slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Disjoint(c)))}
-        />
-      | InspectorState.Link.Generic(slots) =>
-        <Generic
-          slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Generic(c)))}
-        />
-      }
-    }}
+    <div
+      style={ReactDOM.Style.make(
+        ~display="flex",
+        ~flexGrow="1",
+        ~flexDirection="column",
+        ~overflowY="auto",
+        ~padding="0.5rem 0",
+        (),
+      )}>
+      {switch data {
+      | InspectorState.Empty =>
+        <span
+          style={ReactDOM.Style.make(
+            ~display="block",
+            ~marginTop="50%",
+            ~color="grey",
+            ~fontSize="small",
+            ~textAlign="center",
+            (),
+          )}
+          className="inspector-panel-empty-message">
+          {React.string("Select a model")}
+        </span>
+      | InspectorState.Global(slots) => <Model slots onChange />
+      | InspectorState.Multiple(allSlots) =>
+        allSlots
+        ->Array.map(((id, slots)) =>
+          <SubInspector key={Gid.toString(id)}>
+            {switch slots {
+            | InspectorState.SchemaOrLink.Schema(schema) => showSchema(id, schema, onChange)
+            | InspectorState.SchemaOrLink.Link(link) => showLink(id, link, onChange)
+            }}
+          </SubInspector>
+        )
+        ->React.array
+      | InspectorState.Schema(nodeId, schema) => showSchema(nodeId, schema, onChange)
+      | InspectorState.Link(linkId, link) => showLink(linkId, link, onChange)
+      }}
+    </div>
   </HideablePanel2>
 }
