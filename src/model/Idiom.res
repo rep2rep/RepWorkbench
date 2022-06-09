@@ -138,6 +138,59 @@ let prodDimension = {
   {base: base, expand: expand}
 }
 
+let pickCollection = {
+  let nPicks = 1
+  let parent = Gid.create()
+  let classChild = Gid.create()
+  let children = Array.range(1, nPicks)->Array.map(_ => Gid.create())
+  let links = Array.concat(
+    [(parent, classChild, Link.Hierarchy)],
+    children->Array.map(child => (parent, child, Link.Hierarchy)),
+  )
+  let base = (
+    Array.concat(
+      [(parent, Node.Dimension), (classChild, Node.Token({is_class: true}))],
+      children->Array.map(id => (id, Node.Token({is_class: false}))),
+    )->Gid.Map.fromArray,
+    links,
+  )
+  let expand = ((gnodes, glinks), mapping) => {
+    let parentIso = mapping->Gid.Map.get(parent)->Option.getExn
+    let classChildIso = mapping->Gid.Map.get(classChild)->Option.getExn
+    let allLinks = glinks->Array.mapPartial(lnk => {
+      let (src, tgt, kind) = lnk
+      if (
+        kind === ModelLink.Kind.Hierarchy &&
+        src === parentIso &&
+        (tgt === classChildIso ||
+          gnodes
+          ->Gid.Map.get(tgt)
+          ->Option.map(schema =>
+            switch schema {
+            | InspectorState.Schema.Token(t) => !(t.is_class->Option.getWithDefault(false))
+            | _ => false
+            }
+          )
+          ->Option.getWithDefault(false))
+      ) {
+        Some(lnk)
+      } else {
+        None
+      }
+    })
+    let childrenIso =
+      allLinks->Array.map(((_, child, _)) => (child, gnodes->Gid.Map.get(child)->Option.getExn))
+    (
+      Array.concat(
+        [(parentIso, gnodes->Gid.Map.get(parentIso)->Option.getExn)],
+        childrenIso,
+      )->Gid.Map.fromArray,
+      allLinks,
+    )
+  }
+  {base: base, expand: expand}
+}
+
 let implicitCoordinateSystem = {
   let nDims = 2
   let parent = Gid.create()

@@ -39,8 +39,8 @@ let matchMaximal: (t<'a>, graph, Gid.Map.t<Gid.t>) => graph
 let sumDimension: t<sumDimension>
 let prodDimension: t<prodDimension>
 
-// let pickCollection: int => t<pickCollection>
-// let filterCollection: int => t<filterCollection>
+let pickCollection: t<pickCollection>
+// let filterCollection: t<filterCollection>
 // let forEachCollection: t<forEachCollection>
 // let reduceCollection: t<reduceCollection>
 

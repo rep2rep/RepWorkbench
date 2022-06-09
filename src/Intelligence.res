@@ -155,6 +155,15 @@ T.listen(request => {
     )
   )
 
+  idiom(Idiom.pickCollection, (~nodes, ()) =>
+    ModelInsight.create(
+      ~nodes,
+      ~message="Collection Pick idiom detected.",
+      ~details="The Collection Pick idiom selects one or more particular tokens out from a class token, because they are worth identifying in some way.",
+      (),
+    )
+  )
+
   idiom(Idiom.explicitCoordinateSystem, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
