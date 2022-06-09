@@ -44,7 +44,7 @@ let prodDimension: t<prodDimension>
 let pickCollection: t<pickCollection>
 let filterCollection: t<filterCollection>
 let forEachCollection: t<forEachCollection>
-// let reduceCollection: t<reduceCollection>
+let reduceCollection: t<reduceCollection>
 
 let implicitCoordinateSystem: t<implicitCoordinateSystem>
 let explicitCoordinateSystem: t<explicitCoordinateSystem>

@@ -166,6 +166,15 @@ T.listen(request => {
     )
   )
 
+  idiom(Idiom.reduceCollection, (~nodes, ()) =>
+    ModelInsight.create(
+      ~nodes,
+      ~message="Collection Reduce idiom detected.",
+      ~details="The Collection Reduce idiom abstracts a collection up to a single R-Symbol standing for the entire collection at once.",
+      (),
+    )
+  )
+
   idiom(Idiom.sumDimension, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,

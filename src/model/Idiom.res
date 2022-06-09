@@ -301,6 +301,36 @@ let forEachCollection = {
   {base: base, expand: expand}
 }
 
+let reduceCollection = {
+  let root = Gid.create()
+  let intermediate = Gid.create()
+  let child = Gid.create()
+  let base = (
+    [
+      (root, Node.Token({is_class: false})),
+      (intermediate, Node.Dimension),
+      (child, Node.Token({is_class: true})),
+    ]->Gid.Map.fromArray,
+    [(root, intermediate, Link.Anchor), (intermediate, child, Link.Hierarchy)],
+  )
+  let expand = ((gnodes, glinks), mapping) => {
+    let rootIso = mapping->Gid.Map.get(root)->Option.getExn
+    let intermediateIso = mapping->Gid.Map.get(intermediate)->Option.getExn
+    let allLinks =
+      glinks->Array.keep(((src, tgt, kind)) =>
+        kind === ModelLink.Kind.Anchor && src === rootIso && tgt === intermediateIso
+      )
+    (
+      [
+        (rootIso, gnodes->Gid.Map.get(rootIso)->Option.getExn),
+        (intermediateIso, gnodes->Gid.Map.get(intermediateIso)->Option.getExn),
+      ]->Gid.Map.fromArray,
+      allLinks,
+    )
+  }
+  {base: base, expand: expand}
+}
+
 let implicitCoordinateSystem = {
   let nDims = 2
   let parent = Gid.create()
