@@ -263,28 +263,27 @@
     <h2 id="intelligence">Intelligence</h2>
     <p>
       Below the Model editor is the Intelligence panel. By default, this is a bar along the bottom of the
-      Model editor counting the number of errors and warnings it has detected. If the Editor is still
+      Model editor counting the number of errors, warnings, and insights it has detected. If the Editor is still
       working in the background, the icons will show a spinning ring. If the Editor has finished working,
       the first icon will be a 'stop sign with a cross', with a count indicating how many errors were
       detected; the second icon will be a 'warning sign with an exclamation mark', indicating how many
-      warnings were detected. Finally, there is a <button>Show</button> button.
+      warnings were detected; the third icon will be an 'eye', indicating how many insights it has found.
     </p>
     <p>
-      When there are errors or warnings, you can click the <button>Show</button> button to reveal the whole
-      inspector panel. Here you will find a scrollable list of errors then warnings. The errors, if there are
-      any, are listed first, followed by the errors. To hide this panel again, click the <button>Hide</button>
-      button, which is in the place of the <button>Show</button> button.
+      The label acts as a filter. Clicking on the label will show the inspector panel populated with
+      the warnings, errors, or insights, depending on which filters are 'active'. A filter is active
+      if it has a grey background. Errors are listed first, followed by warnings, followed by insights.
+      If no filters are active, the panel is hidden.
     </p>
     <p>
-      An error or warning will display as a line of text: this is a high-level summary of the problem that
-      the Intelligence engine has found. You can click on the summary to select the relevant schemas, and
-      then attempt to correct the problem. When the problem has been resolved, the error or warning will
-      go away.
+      An error, warning, or insight will display as a line of text: this is a high-level summary of what
+      the Intelligence engine has found. You can click on the summary to select the relevant schemas. When
+      the model no longer has the feature causing the error, warning, or insight, the message will go away.
     </p>
     <p>
-      On the left of the message is a small triangle: clicking this will reveal more details about the problem.
-      Sometimes, this will include a suggestion on how to fix the problem. Click the triangle again to hide the
-      details.
+      On the left of the message is a small triangle: clicking this will reveal more details. Sometimes, for
+      errors and warnings, this will include a suggestion on how to fix the problem. Click the triangle again
+      to hide the details.
     </p>
     <p>
       Warnings can be <em>ignored</em>. When viewing the details of the warning, following the detailed
