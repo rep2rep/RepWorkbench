@@ -437,9 +437,9 @@ let make = (
 
   let visible = visible->Array.keep(v =>
     switch v {
-    | "errors" => nErrors > 0
-    | "warnings" => nWarnings > 0
-    | "insights" => nInsights > 0
+    | "errors"
+    | "warnings"
+    | "insights" => true
     | _ => false
     }
   )
@@ -525,7 +525,7 @@ let make = (
           ~overflowY="scroll",
           (),
         )}>
-        {if errors != [] && visible->Array.includes("errors") {
+        {if visible->Array.includes("errors") {
           <>
             {section("Errors")}
             {errors
@@ -545,7 +545,7 @@ let make = (
         } else {
           React.null
         }}
-        {if warnings != [] && visible->Array.includes("warnings") {
+        {if visible->Array.includes("warnings") {
           <>
             {section("Warnings")}
             {warnings
@@ -572,7 +572,7 @@ let make = (
         } else {
           React.null
         }}
-        {if insights != [] && visible->Array.includes("insights") {
+        {if visible->Array.includes("insights") {
           <>
             {section("Insights")}
             {insights
