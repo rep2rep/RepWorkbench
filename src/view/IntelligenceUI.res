@@ -1,4 +1,4 @@
-module BoolStore = LocalStorage.MakeJsonable(Bool)
+module StringStore = LocalStorage.MakeJsonable(String)
 module GidSetStore = LocalStorage.MakeJsonable(Gid.Set)
 
 module WarningOrError = (
@@ -223,8 +223,61 @@ module Indicator = {
       )}
     />
 
+  module Filter = {
+    @react.component
+    let make = (~active, ~onClick, ~children) => {
+      let (hovering, setHovering) = React.useState(_ => false)
+      let onMouseOver = _ => setHovering(_ => true)
+      let onMouseOut = _ => setHovering(_ => false)
+      let hoverStyle = ReactDOM.Style.make(
+        ~background="#ccc",
+        ~borderRadius="1000px",
+        ~padding="0.125rem 0.5rem 0.125rem 0.4rem",
+        ~marginRight="0.25rem",
+        ~cursor="default",
+        (),
+      )
+      let activeStyle = ReactDOM.Style.make(
+        ~background="#ddd",
+        ~borderRadius="1000px",
+        ~padding="0.125rem 0.5rem 0.125rem 0.4rem",
+        ~marginRight="0.25rem",
+        ~cursor="default",
+        (),
+      )
+      let defaultStyle = ReactDOM.Style.make(
+        ~borderRadius="1000px",
+        ~padding="0.125rem 0.5rem 0.125rem 0.4rem",
+        ~marginRight="0.25rem",
+        ~cursor="default",
+        (),
+      )
+      <span
+        onClick
+        onMouseOver
+        onMouseOut
+        style={if hovering {
+          hoverStyle
+        } else if active {
+          activeStyle
+        } else {
+          defaultStyle
+        }}>
+        {children}
+      </span>
+    }
+  }
+
   @react.component
-  let make = (~status: [#ready | #loading], ~errors, ~warnings, ~ignoredWarnings=0) => {
+  let make = (
+    ~errors,
+    ~errorStatus: [#ready | #loading],
+    ~warnings,
+    ~warningStatus: [#ready | #loading],
+    ~ignoredWarnings=0,
+    ~focusedTabs,
+    ~onClickTab,
+  ) => {
     let errorString = React.string(
       switch errors {
       | 1 => "1 error"
@@ -242,27 +295,27 @@ module Indicator = {
       | n => " (" ++ Int.toString(n) ++ " ignored warnings)"
       },
     )
-    if status === #loading {
-      <>
-        {spinner}
+    <>
+      <Filter active={focusedTabs->Array.includes("errors")} onClick={_ => onClickTab("errors")}>
+        {if errorStatus == #ready {
+          error
+        } else {
+          spinner
+        }}
         {spacer(~small=true)}
         {errorString}
-        {spacer(~small=false)}
-        {spinner}
+      </Filter>
+      <Filter
+        active={focusedTabs->Array.includes("warnings")} onClick={_ => onClickTab("warnings")}>
+        {if warningStatus == #ready {
+          warning
+        } else {
+          spinner
+        }}
         {spacer(~small=true)}
         {warningString}
-      </>
-    } else {
-      <>
-        {error}
-        {spacer(~small=true)}
-        {errorString}
-        {spacer(~small=false)}
-        {warning}
-        {spacer(~small=true)}
-        {warningString}
-      </>
-    }
+      </Filter>
+    </>
   }
 }
 
@@ -278,21 +331,29 @@ let make = (
   ~style as givenStyle=?,
 ) => {
   let (visible, setVisible) = React.useState(_ =>
-    BoolStore.get("ERROR_PANEL_VISIBLE")->Or_error.getWithDefault(false)
+    StringStore.get("ERROR_PANEL_VISIBLE")
+    ->Or_error.getWithDefault("")
+    ->String.split(",")
+    ->Array.keep(v => v !== "")
   )
   let (ignoredWarnings, setIgnoredWarnings) = React.useState(_ =>
     GidSetStore.get("REPN_IGNORED_WARNINGS")->Or_error.getWithDefault(Gid.Set.empty)
   )
 
-  let toggle = _ => {
-    BoolStore.set("ERROR_PANEL_VISIBLE", !visible)
-    if visible {
+  let toggleTab = tab => {
+    let newVisible = if visible->Array.includes(tab) {
+      visible->Array.keep(v => v !== tab)
+    } else {
+      Array.concat(visible, [tab])
+    }
+    StringStore.set("ERROR_PANEL_VISIBLE", newVisible->Js.Array2.joinWith(","))
+    if newVisible->Array.length === 0 {
       switch onDeselect {
       | None => ()
       | Some(f) => f()
       }
     }
-    setVisible(s => !s)
+    setVisible(_ => newVisible)
   }
 
   let ignoreWarning = id => {
@@ -314,7 +375,13 @@ let make = (
     ->Gid.Set.intersect(ignoredWarnings)
     ->Gid.Set.size
 
-  let visible = visible && nErrors + nWarnings > 0
+  let visible = visible->Array.keep(v =>
+    switch v {
+    | "errors" => nErrors > 0
+    | "warnings" => nWarnings > 0
+    | _ => false
+    }
+  )
 
   let commonStyle = ReactDOM.Style.make(
     ~background="white",
@@ -330,10 +397,10 @@ let make = (
   )
   let hiddenStyle = commonStyle->ReactDOM.Style.combine(ReactDOM.Style.make(~height="30px", ()))
   let visibleStyle = commonStyle->ReactDOM.Style.combine(ReactDOM.Style.make(~height="200px", ()))
-  let defaultStyle = if visible {
-    visibleStyle
-  } else {
+  let defaultStyle = if visible->Array.length === 0 {
     hiddenStyle
+  } else {
+    visibleStyle
   }
   let style =
     givenStyle
@@ -366,10 +433,10 @@ let make = (
         ~padding="0 0.5rem",
         ~fontSize="0.9rem",
         ~color={
-          if visible {
-            "black"
-          } else {
+          if visible->Array.length === 0 {
             "#333"
+          } else {
+            "black"
           }
         },
         (),
@@ -383,19 +450,11 @@ let make = (
         errors=nErrors
         warnings=nWarnings
         ignoredWarnings=nIgnoredWarnings
-      />
-      <span style={ReactDOM.Style.make(~display="inline-block", ~width="0.5em", ())} />
-      <Button
-        value={if visible {
-          "Hide"
-        } else {
-          "Show"
-        }}
-        enabled={nErrors + nWarnings > 0}
-        onClick=toggle
+        focusedTabs={visible}
+        onClickTab={toggleTab}
       />
     </div>
-    {if visible {
+    {if visible->Array.length !== 0 {
       <div
         style={ReactDOM.Style.make(
           ~width="calc(100% - 1rem)",
@@ -406,54 +465,53 @@ let make = (
           ~overflowY="scroll",
           (),
         )}>
-        {if errors != [] {
-          section("Errors")
+        {if errors != [] && visible->Array.includes("errors") {
+          <>
+            {section("Errors")}
+            {errors
+            ->Array.map(w => {
+              let onClick = onClickError
+              <Error
+                data=w
+                ?onClick
+                key={Gid.toString(ModelError.id(w))}
+                selected={selected
+                ->Option.map(id => id === ModelError.id(w))
+                ->Option.getWithDefault(false)}
+              />
+            })
+            ->React.array}
+          </>
         } else {
           React.null
         }}
-        {errors
-        ->Array.map(w => {
-          let onClick = onClickError
-          <Error
-            data=w
-            ?onClick
-            key={Gid.toString(ModelError.id(w))}
-            selected={selected
-            ->Option.map(id => id === ModelError.id(w))
-            ->Option.getWithDefault(false)}
-          />
-        })
-        ->React.array}
-        {if nErrors > 0 && nWarnings > 0 {
-          <div style={ReactDOM.Style.make(~margin="0.5rem 0", ())} />
+        {if warnings != [] && visible->Array.includes("warnings") {
+          <>
+            {section("Warnings")}
+            {warnings
+            ->Array.map(w => {
+              let onClick = onClickWarning
+              <Warning
+                data=w
+                ?onClick
+                key={Gid.toString(ModelWarning.id(w))}
+                selected={selected
+                ->Option.map(id => id === ModelWarning.id(w))
+                ->Option.getWithDefault(false)}
+                ignored={ignoredWarnings->Gid.Set.has(ModelWarning.id(w))}
+                onIgnore={isIgnored =>
+                  if isIgnored {
+                    ignoreWarning(ModelWarning.id(w))
+                  } else {
+                    showWarning(ModelWarning.id(w))
+                  }}
+              />
+            })
+            ->React.array}
+          </>
         } else {
           React.null
         }}
-        {if warnings != [] {
-          section("Warnings")
-        } else {
-          React.null
-        }}
-        {warnings
-        ->Array.map(w => {
-          let onClick = onClickWarning
-          <Warning
-            data=w
-            ?onClick
-            key={Gid.toString(ModelWarning.id(w))}
-            selected={selected
-            ->Option.map(id => id === ModelWarning.id(w))
-            ->Option.getWithDefault(false)}
-            ignored={ignoredWarnings->Gid.Set.has(ModelWarning.id(w))}
-            onIgnore={isIgnored =>
-              if isIgnored {
-                ignoreWarning(ModelWarning.id(w))
-              } else {
-                showWarning(ModelWarning.id(w))
-              }}
-          />
-        })
-        ->React.array}
       </div>
     } else {
       React.null
