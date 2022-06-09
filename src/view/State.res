@@ -285,7 +285,23 @@ module Model = {
   let requestedIntelligence = t => t.requestedIntelligence
   let focusedIntelligence = t => t.focusedIntelligence
 
-  let setIntelligence = (t, response) => {...t, intelligence: response}
+  let setIntelligence = (t, response) => {
+    let seen_requested =
+      (t.intelligence, t.requestedIntelligence)
+      ->Option.both
+      ->Option.map(((resp, req)) => resp.id === req)
+      ->Option.getWithDefault(false)
+    let matches_requested =
+      (response, t.requestedIntelligence)
+      ->Option.both
+      ->Option.map(((resp, req)) => resp.Intelligence_Intf.Response.id === req)
+      ->Option.getWithDefault(true)
+    if seen_requested && !matches_requested {
+      t
+    } else {
+      {...t, intelligence: response}
+    }
+  }
   let setRequestedIntelligence = (t, id) => {...t, requestedIntelligence: id}
   let setFocusedIntelligence = (t, id) => {...t, focusedIntelligence: id}
 
