@@ -17,6 +17,7 @@ module Response: {
     errors_done: bool,
     insights: array<ModelInsight.t>,
     insights_done: bool,
+    killed: bool,
   }
 
   let empty: t

@@ -82,6 +82,7 @@ T.listen(request => {
     warnings_done: true,
     insights: [],
     insights_done: false,
+    killed: false,
   })
 
   let equiv_schemas = (slots, kind) => {
@@ -120,6 +121,7 @@ T.listen(request => {
                 warnings_done: true,
                 insights: insights,
                 insights_done: false,
+                killed: false,
               })
             }
           }
@@ -175,5 +177,6 @@ T.listen(request => {
     warnings_done: true,
     insights: insights,
     insights_done: true,
+    killed: false,
   })
 })

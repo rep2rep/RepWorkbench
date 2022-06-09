@@ -66,6 +66,7 @@ module Response = {
     errors_done: bool,
     insights: array<ModelInsight.t>,
     insights_done: bool,
+    killed: bool,
   }
 
   let toJson = t =>
@@ -78,6 +79,7 @@ module Response = {
       ("errors_done", t.errors_done->Bool.toJson),
       ("insights", t.insights->Array.toJson(ModelInsight.toJson)),
       ("insights_done", t.insights_done->Bool.toJson),
+      ("killed", t.killed->Bool.toJson),
     })->Js.Json.object_
 
   let fromJson = json =>
@@ -98,8 +100,9 @@ module Response = {
       let errors_done = getValue("errors_done", Bool.fromJson)
       let insights = getValue("insights", Array.fromJson(_, ModelInsight.fromJson))
       let insights_done = getValue("insights_done", Bool.fromJson)
+      let killed = getValue("killed", Bool.fromJson)
 
-      Or_error.both8((
+      Or_error.both9((
         id,
         model,
         warnings,
@@ -108,6 +111,7 @@ module Response = {
         errors_done,
         insights,
         insights_done,
+        killed,
       ))->Or_error.map(((
         id,
         model,
@@ -117,6 +121,7 @@ module Response = {
         errors_done,
         insights,
         insights_done,
+        killed,
       )) => {
         id: id,
         model: model,
@@ -126,6 +131,7 @@ module Response = {
         errors_done: errors_done,
         insights: insights,
         insights_done: insights_done,
+        killed: killed,
       })
     })
 
@@ -138,6 +144,7 @@ module Response = {
     errors_done: true,
     insights: [],
     insights_done: true,
+    killed: false,
   }
 }
 

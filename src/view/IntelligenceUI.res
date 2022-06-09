@@ -133,7 +133,9 @@ module Insight = {
 }
 
 module Indicator = {
-  let warning =
+  let killedColor = "#800"
+
+  let warning = (~killed) =>
     <svg
       xmlns="http://www.w3.org/2000/svg"
       version="1.1"
@@ -143,7 +145,13 @@ module Indicator = {
         ~position="relative",
         ~top="0.05em",
         ~fill="none",
-        ~stroke="currentColor",
+        ~stroke={
+          if killed {
+            killedColor
+          } else {
+            "currentColor"
+          }
+        },
         ~strokeLinejoin="round",
         ~strokeLinecap="round",
         (),
@@ -154,7 +162,7 @@ module Indicator = {
       <path d="M 55,75 55,75" strokeWidth="12" />
     </svg>
 
-  let error =
+  let error = (~killed) =>
     <svg
       xmlns="http://www.w3.org/2000/svg"
       version="1.1"
@@ -164,7 +172,13 @@ module Indicator = {
         ~position="relative",
         ~top="0.05em",
         ~fill="none",
-        ~stroke="currentColor",
+        ~stroke={
+          if killed {
+            killedColor
+          } else {
+            "currentColor"
+          }
+        },
         ~strokeLinejoin="round",
         ~strokeLinecap="round",
         (),
@@ -175,7 +189,7 @@ module Indicator = {
       <path d="M 35,65 65,35" strokeWidth="12" />
     </svg>
 
-  let insight =
+  let insight = (~killed) =>
     <svg
       xmlns="http://www.w3.org/2000/svg"
       version="1.1"
@@ -185,7 +199,13 @@ module Indicator = {
         ~position="relative",
         ~top="0.05em",
         ~fill="none",
-        ~stroke="currentColor",
+        ~stroke={
+          if killed {
+            killedColor
+          } else {
+            "currentColor"
+          }
+        },
         ~strokeLinejoin="round",
         ~strokeLinecap="round",
         (),
@@ -305,6 +325,7 @@ module Indicator = {
     ~insightStatus: [#ready | #loading],
     ~focusedTabs,
     ~onClickTab,
+    ~killed,
   ) => {
     let errorString = React.string(
       switch errors {
@@ -332,7 +353,9 @@ module Indicator = {
     <>
       <Filter active={focusedTabs->Array.includes("errors")} onClick={_ => onClickTab("errors")}>
         {if errorStatus == #ready {
-          error
+          error(~killed=false)
+        } else if killed {
+          error(~killed=true)
         } else {
           spinner
         }}
@@ -342,7 +365,9 @@ module Indicator = {
       <Filter
         active={focusedTabs->Array.includes("warnings")} onClick={_ => onClickTab("warnings")}>
         {if warningStatus == #ready {
-          warning
+          warning(~killed=false)
+        } else if killed {
+          warning(~killed=true)
         } else {
           spinner
         }}
@@ -352,7 +377,9 @@ module Indicator = {
       <Filter
         active={focusedTabs->Array.includes("insights")} onClick={_ => onClickTab("insights")}>
         {if insightStatus == #ready {
-          insight
+          insight(~killed=false)
+        } else if killed {
+          insight(~killed=true)
         } else {
           spinner
         }}
@@ -512,6 +539,7 @@ let make = (
         insightStatus={status(intelligence.insights_done)}
         focusedTabs={visible}
         onClickTab={toggleTab}
+        killed={intelligence.killed}
       />
     </div>
     {if visible->Array.length !== 0 {
