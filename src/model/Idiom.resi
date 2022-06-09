@@ -1,5 +1,6 @@
 module Node: {
   type t =
+    | Any
     | Representation
     | Scheme
     | Dimension
@@ -9,6 +10,7 @@ module Node: {
 
 module Link: {
   type t =
+    | Any
     | Hierarchy
     | Anchor
     | Relation
@@ -40,7 +42,7 @@ let sumDimension: t<sumDimension>
 let prodDimension: t<prodDimension>
 
 let pickCollection: t<pickCollection>
-// let filterCollection: t<filterCollection>
+let filterCollection: t<filterCollection>
 // let forEachCollection: t<forEachCollection>
 // let reduceCollection: t<reduceCollection>
 

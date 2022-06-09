@@ -93,6 +93,7 @@ T.listen(request => {
     | (InspectorState.Schema.Placeholder(_), Idiom.Node.Placeholder) => true
     | (InspectorState.Schema.Token(t), Idiom.Node.Token(t')) =>
       t.is_class->Option.getWithDefault(false) === t'.is_class
+    | (_, Idiom.Node.Any) => true
     | _ => false
     }
   }
@@ -104,6 +105,7 @@ T.listen(request => {
     | (ModelLink.Kind.Overlap, Idiom.Link.Overlap)
     | (ModelLink.Kind.Disjoint, Idiom.Link.Disjoint)
     | (ModelLink.Kind.Generic, Idiom.Link.Generic) => true
+    | (_, Idiom.Link.Any) => true
     | _ => false
     }
   let isSubsumed = ins => insights->Array.some(i => ModelInsight.subsumes(i, ins))
@@ -137,6 +139,24 @@ T.listen(request => {
       },
     )
 
+  idiom(Idiom.pickCollection, (~nodes, ()) =>
+    ModelInsight.create(
+      ~nodes,
+      ~message="Collection Pick idiom detected.",
+      ~details="The Collection Pick idiom selects one or more particular tokens out from a class token, because they are worth identifying in some way.",
+      (),
+    )
+  )
+
+  idiom(Idiom.filterCollection, (~nodes, ()) =>
+    ModelInsight.create(
+      ~nodes,
+      ~message="Collection Filter idiom detected.",
+      ~details="The Collection Filter idiom refines a collection from everything, down to just the part of the collection begin interpreted.",
+      (),
+    )
+  )
+
   idiom(Idiom.sumDimension, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
@@ -151,15 +171,6 @@ T.listen(request => {
       ~nodes,
       ~message="Product R-dimension idiom detected.",
       ~details="The Product R-dimension idiom indicates that the child R-dimension can be considered as being 'a combination of' the parent R-dimensions.",
-      (),
-    )
-  )
-
-  idiom(Idiom.pickCollection, (~nodes, ()) =>
-    ModelInsight.create(
-      ~nodes,
-      ~message="Collection Pick idiom detected.",
-      ~details="The Collection Pick idiom selects one or more particular tokens out from a class token, because they are worth identifying in some way.",
       (),
     )
   )

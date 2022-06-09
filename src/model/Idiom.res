@@ -1,5 +1,6 @@
 module Node = {
   type t =
+    | Any
     | Representation
     | Scheme
     | Dimension
@@ -9,6 +10,7 @@ module Node = {
 
 module Link = {
   type t =
+    | Any
     | Hierarchy
     | Anchor
     | Relation
@@ -184,6 +186,75 @@ let pickCollection = {
       Array.concat(
         [(parentIso, gnodes->Gid.Map.get(parentIso)->Option.getExn)],
         childrenIso,
+      )->Gid.Map.fromArray,
+      allLinks,
+    )
+  }
+  {base: base, expand: expand}
+}
+
+let filterCollection = {
+  let nFilters = 1
+  let parent = Gid.create()
+  let children = Array.range(1, nFilters)->Array.map(_ => (Gid.create(), Gid.create()))
+  let links =
+    children->Array.flatMap(((src, tgt)) => [
+      (parent, src, Link.Hierarchy),
+      (src, tgt, Link.Hierarchy),
+    ])
+  let base = (
+    Array.concat(
+      [(parent, Node.Dimension)],
+      children->Array.flatMap(((src, tgt)) => [
+        (src, Node.Dimension),
+        (tgt, Node.Token({is_class: true})),
+      ]),
+    )->Gid.Map.fromArray,
+    links,
+  )
+  let expand = ((gnodes, glinks), mapping) => {
+    let parentIso = mapping->Gid.Map.get(parent)->Option.getExn
+    let allLinks = glinks->Array.mapPartial(lnk => {
+      let (src, tgt, kind) = lnk
+      if (
+        kind === ModelLink.Kind.Hierarchy &&
+        src === parentIso &&
+        gnodes
+        ->Gid.Map.get(tgt)
+        ->Option.map(schema =>
+          switch schema {
+          | InspectorState.Schema.Dimension(_) =>
+            glinks->Array.some(lnk' => {
+              // Need to make sure that the subDimension is also a collection! So look for class token
+              let (src', tgt', kind') = lnk'
+              kind' === ModelLink.Kind.Hierarchy &&
+              src' === tgt &&
+              gnodes
+              ->Gid.Map.get(tgt')
+              ->Option.map(schema =>
+                switch schema {
+                | InspectorState.Schema.Token(t) => t.is_class->Option.getWithDefault(false)
+                | _ => false
+                }
+              )
+              ->Option.getWithDefault(false)
+            })
+          | _ => false
+          }
+        )
+        ->Option.getWithDefault(false)
+      ) {
+        Some(lnk)
+      } else {
+        None
+      }
+    })
+    let children =
+      allLinks->Array.map(((_, child, _)) => (child, gnodes->Gid.Map.get(child)->Option.getExn))
+    (
+      Array.concat(
+        [(parentIso, gnodes->Gid.Map.get(parentIso)->Option.getExn)],
+        children,
       )->Gid.Map.fromArray,
       allLinks,
     )
