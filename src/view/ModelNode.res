@@ -429,7 +429,6 @@ module SchemaText = {
       | FinishEdit
 
     let reducer = (state, event) => {
-      Js.Console.log((state, event))
       switch event {
       | StartEdit(value) => {...state, value: value, editing: true}
       | MakeEdit(value) => {...state, value: value}
@@ -446,6 +445,8 @@ module SchemaText = {
       ~height: float,
       ~y,
       ~changeSig: (Gid.t, string, string),
+      ~onTab=?,
+      ~startEditing=?,
     ) => {
       React.useEffect0(() => {
         Some(() => ModelNodeEdit.clearLocal())
@@ -454,6 +455,10 @@ module SchemaText = {
         reducer,
         {value: editText, editing: false, changeSig: changeSig},
       )
+      if startEditing->Option.getWithDefault(false) && !state.editing {
+        ModelNodeEdit.callLocal(ModelSelection.empty)
+        dispatch(StartEdit(editText))
+      }
       if state.editing {
         let (id, _, _) = changeSig
         ModelNodeEdit.setLocal(selection =>
@@ -467,11 +472,15 @@ module SchemaText = {
             autoFocus={true}
             onKeyUp={e => {
               ReactEvent.Keyboard.stopPropagation(e)
-              if ReactEvent.Keyboard.key(e) == "Enter" || ReactEvent.Keyboard.key(e) == "Escape" {
+              let key = ReactEvent.Keyboard.key(e)
+              if key === "Enter" || key === "Escape" || key === "Tab" {
                 ModelNodeEdit.clearLocal()
                 dispatch(FinishEdit)
                 let (id, schema, slot) = state.changeSig
                 ModelNodeEdit.callGlobal(id, schema, slot, state.value)
+                if key === "Tab" {
+                  onTab->Option.iter(f => f(e))
+                }
               }
             }}
             onChange={e => {
@@ -544,6 +553,10 @@ module SchemaText = {
     ~changeSigTop: (Gid.t, string, string),
     ~changeSigBottom: (Gid.t, string, string),
   ) => {
+    let (startEditing, setStartEditing) = React.useState(_ => 0)
+    if startEditing == 1 || startEditing == 2 {
+      Js.Global.setTimeout(() => setStartEditing(_ => 0), 50)->ignore
+    }
     let topText = payload->Payload.visible_name_and_suffix(width->pxToEm)
     let bottomText = payload->Payload.visible_reference_and_suffix(width->pxToEm)
     let hoverTopText = payload->Payload.full_name_and_suffix
@@ -564,6 +577,13 @@ module SchemaText = {
         width
         height
         changeSig=changeSigTop
+        onTab={e =>
+          if !ReactEvent.Keyboard.shiftKey(e) {
+            setStartEditing(_ => 2)
+          } else {
+            setStartEditing(_ => 0)
+          }}
+        startEditing={startEditing == 1}
       />
       <EditableText
         y={Float.toString(height -. 8.)}
@@ -573,6 +593,13 @@ module SchemaText = {
         width
         height
         changeSig=changeSigBottom
+        onTab={e =>
+          if ReactEvent.Keyboard.shiftKey(e) {
+            setStartEditing(_ => 1)
+          } else {
+            setStartEditing(_ => 0)
+          }}
+        startEditing={startEditing == 2}
       />
     </g>
   }
