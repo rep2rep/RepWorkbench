@@ -157,6 +157,15 @@ T.listen(request => {
     )
   )
 
+  idiom(Idiom.forEachCollection, (~nodes, ()) =>
+    ModelInsight.create(
+      ~nodes,
+      ~message="Collection For-each idiom detected.",
+      ~details="The Collection For-each idiom describes an interpretation that is true for every element in the collection.",
+      (),
+    )
+  )
+
   idiom(Idiom.sumDimension, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,

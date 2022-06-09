@@ -262,6 +262,45 @@ let filterCollection = {
   {base: base, expand: expand}
 }
 
+let forEachCollection = {
+  let root = Gid.create()
+  let intermediate = Gid.create()
+  let child = Gid.create()
+  let base = (
+    [
+      (root, Node.Dimension),
+      (intermediate, Node.Token({is_class: true})),
+      (child, Node.Any),
+    ]->Gid.Map.fromArray,
+    [(root, intermediate, Link.Hierarchy), (intermediate, child, Link.Anchor)],
+  )
+  let expand = ((gnodes, glinks), mapping) => {
+    let rootIso = mapping->Gid.Map.get(root)->Option.getExn
+    let intermediateIso = mapping->Gid.Map.get(intermediate)->Option.getExn
+    let allLinks = glinks->Array.mapPartial(lnk => {
+      let (src, _, kind) = lnk
+      if kind === ModelLink.Kind.Anchor && src === intermediateIso {
+        Some(lnk)
+      } else {
+        None
+      }
+    })
+    let childrenIso =
+      allLinks->Array.map(((_, child, _)) => (child, gnodes->Gid.Map.get(child)->Option.getExn))
+    (
+      Array.concat(
+        [
+          (rootIso, gnodes->Gid.Map.get(rootIso)->Option.getExn),
+          (intermediateIso, gnodes->Gid.Map.get(intermediateIso)->Option.getExn),
+        ],
+        childrenIso,
+      )->Gid.Map.fromArray,
+      allLinks,
+    )
+  }
+  {base: base, expand: expand}
+}
+
 let implicitCoordinateSystem = {
   let nDims = 2
   let parent = Gid.create()
