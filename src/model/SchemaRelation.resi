@@ -1,4 +1,5 @@
 module Kind: {
+  // TODO: Update this to use Equivalent, Overlap, Disjoint?
   type t =
     | Identical
     | Equivalent
