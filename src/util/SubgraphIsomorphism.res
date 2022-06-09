@@ -27,7 +27,7 @@ module Matrix: {
   let hasZeroRow = t => t->Array.some(row => row->Array.every(v => v === 0))
 }
 
-type graph<'node, 'link> = (Gid.Map.t<'node>, array<(Gid.t, Gid.t, 'link)>)
+type graph = (Gid.Map.t<InspectorState.Schema.t>, array<(Gid.t, Gid.t, ModelLink.Kind.t)>)
 
 let zero_columns = mat => {
   let (m, n) = Matrix.size(mat)
@@ -60,8 +60,8 @@ let convertIsomorphism = (
       }
     })
   )
-  let (whole_schemas, whole_links) = whole
-  let (_, find_links) = find
+  let (_, whole_links) = whole
+  let find_links = find->Idiom.links
   // Determine if the schemas are compatible
   // Schemas are OK by construction! Now check the links
   let mapping' = Gid.Map.fromArray(mapping)
@@ -81,26 +81,7 @@ let convertIsomorphism = (
   if links_ok {
     // Hooray! We have an isomorphism!
     // Let's build the actual sub-model that matches it.
-    let schemas =
-      mapping
-      ->Array.mapPartial(((_, sch_id)) =>
-        whole_schemas->Gid.Map.get(sch_id)->Option.map(sch => (sch_id, sch))
-      )
-      ->Gid.Map.fromArray
-    let links = find_links->Array.mapPartial(((find_src, find_tgt, find_kind)) => {
-      whole_links->Array.find(((whole_src, whole_tgt, whole_kind)) =>
-        equiv_links(whole_kind, find_kind) &&
-        mapping'
-        ->Gid.Map.get(find_src)
-        ->Option.map(id => id === whole_src)
-        ->Option.getWithDefault(false) &&
-        mapping'
-        ->Gid.Map.get(find_tgt)
-        ->Option.map(id => id === whole_tgt)
-        ->Option.getWithDefault(false)
-      )
-    })
-    Some((schemas, links))
+    find->Idiom.matchMaximal(whole, mapping')->Some
   } else {
     None
   }
@@ -117,11 +98,12 @@ let rec backtrack = (~next, ~isGoal, ~apply, state) => {
 
 let findIsomorphism = (
   ~whole as (source_schemas, source_links),
-  ~find as (target_schemas, target_links),
+  ~find,
   ~equiv_schemas,
   ~equiv_links,
   ~onFind,
 ) => {
+  let target_schemas = find->Idiom.nodes
   let n_schemas_source = Gid.Map.size(source_schemas)
   let n_schemas_target = Gid.Map.size(target_schemas)
   let order_schemas_source = Gid.Map.keys(source_schemas) // Mapping from [0, n_schemas_source) => Gids
@@ -162,7 +144,7 @@ let findIsomorphism = (
       convertIsomorphism(
         iso,
         (source_schemas, source_links),
-        (target_schemas, target_links),
+        find,
         equiv_links,
         order_schemas_source,
         order_schemas_target,

@@ -87,50 +87,57 @@ T.listen(request => {
 
   let equiv_schemas = (slots, kind) => {
     switch (slots, kind) {
-    | (InspectorState.Schema.Representation(_), ModelNode.Kind.Representation)
-    | (InspectorState.Schema.Scheme(_), ModelNode.Kind.Scheme)
-    | (InspectorState.Schema.Dimension(_), ModelNode.Kind.Dimension)
-    | (InspectorState.Schema.Token(_), ModelNode.Kind.Token)
-    | (InspectorState.Schema.Placeholder(_), ModelNode.Kind.Placeholder) => true
+    | (InspectorState.Schema.Representation(_), Idiom.Node.Representation)
+    | (InspectorState.Schema.Scheme(_), Idiom.Node.Scheme)
+    | (InspectorState.Schema.Dimension(_), Idiom.Node.Dimension)
+    | (InspectorState.Schema.Placeholder(_), Idiom.Node.Placeholder) => true
+    | (InspectorState.Schema.Token(t), Idiom.Node.Token(t')) =>
+      t.is_class->Option.getWithDefault(false) === t'.is_class
     | _ => false
     }
   }
-  let equiv_links = (k1, k2) => k1 === k2
+  let equiv_links = (k1, k2) =>
+    switch (k1, k2) {
+    | (ModelLink.Kind.Hierarchy, Idiom.Link.Hierarchy)
+    | (ModelLink.Kind.Anchor, Idiom.Link.Anchor)
+    | (ModelLink.Kind.Relation, Idiom.Link.Relation)
+    | (ModelLink.Kind.Overlap, Idiom.Link.Overlap)
+    | (ModelLink.Kind.Disjoint, Idiom.Link.Disjoint)
+    | (ModelLink.Kind.Generic, Idiom.Link.Generic) => true
+    | _ => false
+    }
   let isSubsumed = ins => insights->Array.some(i => ModelInsight.subsumes(i, ins))
 
-  let idiom = (values, idiom, insight) => {
-    values->Array.forEach(v => {
-      SubgraphIsomorphism.findIsomorphism(
-        ~whole=(slots, links),
-        ~find=idiom(v),
-        ~equiv_schemas,
-        ~equiv_links,
-        ~onFind={
-          ((schs, _)) => {
-            let nodes = Gid.Map.keys(schs)
-            nodes->Belt.SortArray.stableSortInPlaceBy(Gid.compare)
-            let ins = insight(~nodes, ())
-            if !isSubsumed(ins) {
-              insights->Js.Array2.push(ins)->ignore
-              T.respond({
-                id: request.id,
-                model: request.model,
-                errors: errors,
-                errors_done: true,
-                warnings: warnings,
-                warnings_done: true,
-                insights: insights,
-                insights_done: false,
-                killed: false,
-              })
-            }
+  let idiom = (idiom, insight) =>
+    SubgraphIsomorphism.findIsomorphism(
+      ~whole=(slots, links),
+      ~find=idiom,
+      ~equiv_schemas,
+      ~equiv_links,
+      ~onFind={
+        ((schs, _)) => {
+          let nodes = Gid.Map.keys(schs)
+          nodes->Belt.SortArray.stableSortInPlaceBy(Gid.compare)
+          let ins = insight(~nodes, ())
+          if !isSubsumed(ins) {
+            insights->Js.Array2.push(ins)->ignore
+            T.respond({
+              id: request.id,
+              model: request.model,
+              errors: errors,
+              errors_done: true,
+              warnings: warnings,
+              warnings_done: true,
+              insights: insights,
+              insights_done: false,
+              killed: false,
+            })
           }
-        },
-      )
-    })
-  }
+        }
+      },
+    )
 
-  idiom([4, 3, 2], Idiom.sumDimension, (~nodes, ()) =>
+  idiom(Idiom.sumDimension, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
       ~message="Sum R-dimension idiom detected.",
@@ -139,7 +146,7 @@ T.listen(request => {
     )
   )
 
-  idiom([4, 3, 2], Idiom.prodDimension, (~nodes, ()) =>
+  idiom(Idiom.prodDimension, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
       ~message="Product R-dimension idiom detected.",
@@ -148,7 +155,7 @@ T.listen(request => {
     )
   )
 
-  idiom([(3, 3), (3, 2), (3, 1), (2, 2), (2, 1)], Idiom.explicitCoordinateSystem, (~nodes, ()) =>
+  idiom(Idiom.explicitCoordinateSystem, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
       ~message="Explicit Coordinate System idiom detected.",
@@ -157,7 +164,7 @@ T.listen(request => {
     )
   )
 
-  idiom([5, 4, 3, 2], Idiom.implicitCoordinateSystem, (~nodes, ()) =>
+  idiom(Idiom.implicitCoordinateSystem, (~nodes, ()) =>
     ModelInsight.create(
       ~nodes,
       ~message="Implicit Coordinate System idiom detected.",

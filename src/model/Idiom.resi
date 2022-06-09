@@ -1,4 +1,24 @@
-type t<'kind> = (Gid.Map.t<ModelNode.Kind.t>, array<(Gid.t, Gid.t, ModelLink.Kind.t)>)
+module Node: {
+  type t =
+    | Representation
+    | Scheme
+    | Dimension
+    | Token({is_class: bool})
+    | Placeholder
+}
+
+module Link: {
+  type t =
+    | Hierarchy
+    | Anchor
+    | Relation
+    | Overlap
+    | Disjoint
+    | Generic
+}
+
+type t<'kind>
+type graph = (Gid.Map.t<InspectorState.Schema.t>, array<(Gid.t, Gid.t, ModelLink.Kind.t)>)
 
 type sumDimension
 type prodDimension
@@ -9,13 +29,20 @@ type reduceCollection
 type explicitCoordinateSystem
 type implicitCoordinateSystem
 
-let sumDimension: int => t<sumDimension>
-let prodDimension: int => t<prodDimension>
+let nodes: t<'a> => Gid.Map.t<Node.t>
+let links: t<'a> => array<(Gid.t, Gid.t, Link.t)>
+
+// Given an isomorphism between the idiom and graph,
+// extract the largest idiom-matching subgraph of the graph
+let matchMaximal: (t<'a>, graph, Gid.Map.t<Gid.t>) => graph
+
+let sumDimension: t<sumDimension>
+let prodDimension: t<prodDimension>
 
 // let pickCollection: int => t<pickCollection>
 // let filterCollection: int => t<filterCollection>
 // let forEachCollection: t<forEachCollection>
 // let reduceCollection: t<reduceCollection>
 
-let implicitCoordinateSystem: int => t<implicitCoordinateSystem>
-let explicitCoordinateSystem: ((int, int)) => t<explicitCoordinateSystem>
+let implicitCoordinateSystem: t<implicitCoordinateSystem>
+let explicitCoordinateSystem: t<explicitCoordinateSystem>
