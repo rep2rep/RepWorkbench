@@ -429,7 +429,7 @@ module App = {
       <FilePanel
         id="file-panel"
         models={State.models(state)}
-        active={State.focused(state)}
+        active={focused}
         onCreate={newModel}
         onDelete={deleteModel}
         onSelect={focusModel}
