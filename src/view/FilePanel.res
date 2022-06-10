@@ -371,3 +371,14 @@ let make = (
     </div>
   </HideablePanel2>
 }
+
+let make = React.memoCustomCompareProps(make, (old_, new_) => {
+  old_["id"] === new_["id"] &&
+  old_["active"] === new_["active"] &&
+  Array.length(old_["models"]) === Array.length(new_["models"]) &&
+  Array.zip(old_["models"], new_["models"])->Array.every((((i, im), (j, jm))) =>
+    i === j &&
+      im->State.Model.info->InspectorState.Model.name ===
+        jm->State.Model.info->InspectorState.Model.name
+  )
+})
