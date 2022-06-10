@@ -34,7 +34,6 @@ module FileLabel = {
       <div> {React.string(Js.String2.fromCharCode(8942))} </div>,
       handleProps,
     )
-    let clickTimer = ref(None)
     <span
       style={ReactDOM.Style.make(
         ~display="block",
@@ -60,10 +59,9 @@ module FileLabel = {
       }}
       onClick={e => {
         ReactEvent.Mouse.stopPropagation(e)
-        if !state.editing {
-          clickTimer.contents->Option.iter(Js.Global.clearTimeout)
-          // Any value greater than 0 seems to work???
-          clickTimer := Js.Global.setTimeout(onSelect, 50)->Some
+        ReactEvent.Mouse.preventDefault(e)
+        if !active {
+          onSelect()
         }
       }}>
       <div
@@ -109,8 +107,8 @@ module FileLabel = {
           className={"inner-name-focus inner-name-not-editing"}
           title={state.currName}
           onDoubleClick={e => {
-            clickTimer.contents->Option.iter(Js.Global.clearTimeout)
-            clickTimer := None
+            ReactEvent.Mouse.preventDefault(e)
+            ReactEvent.Mouse.stopPropagation(e)
             dispatch(StartEdit)
           }}>
           {React.string(state.currName)}
