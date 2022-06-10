@@ -463,7 +463,7 @@ let dispatch = (state, t) =>
   | File(ev) => File.dispatch(state, ev)
   }
 
-let shouldTriggerIntelligence = e =>
+let rec shouldTriggerIntelligence = e =>
   switch e {
   | File(File.Intelligence(Intelligence.Init)) => true // MUST be true
   | Model(_, Model.Graph(Graph.SetSelection(_)))
@@ -476,5 +476,7 @@ let shouldTriggerIntelligence = e =>
   | Model(_, Model.Slots(_, Slots.Token(Slots.Token.Notes(_))))
   | Model(_, Model.Slots(_, Slots.Placeholder(Slots.Placeholder.Notes(_))))
   | File(File.Intelligence(_)) => false
+  | Model(id, Model.Seq(vs)) =>
+    vs->Array.map(v => Model(id, v))->Array.some(shouldTriggerIntelligence)
   | _ => true
   }
