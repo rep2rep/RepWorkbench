@@ -541,10 +541,15 @@ module App = {
           <label htmlFor="gridToggle"> {React.string("Grid")} </label>
           <input
             type_="checkbox"
-            label="gridToggle"
+            id="gridToggle"
             onChange={toggleGrid}
             checked={showGrid}
-            style={ReactDOM.Style.make(~marginLeft="0.5em", ())}
+            style={ReactDOM.Style.make(
+              ~marginLeft="0.5em",
+              ~minWidth="12px",
+              ~minHeight="12px",
+              (),
+            )}
           />
           <Button.Separator />
           <a href="manual.html" target="_blank"> {React.string("Manual")} </a>
