@@ -475,6 +475,7 @@ let rec shouldTriggerIntelligence = e =>
   | Model(_, Model.Slots(_, Slots.Dimension(Slots.Dimension.Notes(_))))
   | Model(_, Model.Slots(_, Slots.Token(Slots.Token.Notes(_))))
   | Model(_, Model.Slots(_, Slots.Placeholder(Slots.Placeholder.Notes(_))))
+  | File(File.ReorderModels(_))
   | File(File.Intelligence(_)) => false
   | Model(id, Model.Seq(vs)) =>
     vs->Array.map(v => Model(id, v))->Array.some(shouldTriggerIntelligence)
