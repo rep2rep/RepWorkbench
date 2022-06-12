@@ -190,7 +190,8 @@ let make = (
     ref_={ReactDOM.Ref.domRef(container)}
     style={ReactDOM.Style.make(
       ~order="1",
-      ~width="230px",
+      ~minWidth="230px",
+      ~maxWidth="230px",
       ~display="flex",
       ~flexDirection="column",
       ~borderRight="1px solid black",
@@ -352,21 +353,7 @@ let make = (
             }
           }}
         />
-        <label
-          htmlFor="import_models"
-          style={ReactDOM.Style.make(
-            ~appearance="push-button",
-            ~fontSize="small",
-            ~cursor="default",
-            (),
-          )->ReactDOM.Style.unsafeAddStyle({
-            "WebkitAppearance": "push-button",
-            "MozAppearance": "push-button",
-            "MsAppearance": "push-button",
-            "OAppearance": "push-button",
-          })}>
-          {React.string("Import")}
-        </label>
+        <label htmlFor="import_models"> <Button value="Import" onClick={_ => ()} /> </label>
       </div>
     </div>
   </HideablePanel2>
