@@ -353,7 +353,15 @@ let make = (
             }
           }}
         />
-        <label htmlFor="import_models"> <Button value="Import" onClick={_ => ()} /> </label>
+        <label htmlFor="import_models">
+          <Button
+            value="Import"
+            onClick={e => {
+              let label = ReactEvent.Mouse.target(e)["parentNode"]
+              label["click"](.)
+            }}
+          />
+        </label>
       </div>
     </div>
   </HideablePanel2>
