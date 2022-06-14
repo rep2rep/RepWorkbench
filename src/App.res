@@ -381,7 +381,14 @@ module App = {
           | _ => Or_error.error_s("fail")
           }
           switch model->Or_error.match {
-          | Or_error.Ok(model) => dispatch(Event.File.ImportModel(model)->Event.File)
+          | Or_error.Ok(model) => {
+              let model =
+                model->State.Model.addToplevelNote(
+                  "\n*** Imported " ++ Js.Date.make()->Js.Date.toString ++ " ***",
+                )
+
+              dispatch(Event.File.ImportModel(model)->Event.File)
+            }
           | Or_error.Err(e) => {
               Js.Console.log(e)
               Dialog.alert("Failed to import '" ++ File.name(f) ++ "'.")
@@ -395,6 +402,10 @@ module App = {
       state
       ->State.model(id)
       ->Option.iter(model => {
+        let model =
+          model->State.Model.addToplevelNote(
+            "\n=== Exported " ++ Js.Date.make()->Js.Date.toString ++ " ===",
+          )
         let name = State.Model.info(model).name
         let json = State.Model.Stable.V4.toJson(model)
         let content =

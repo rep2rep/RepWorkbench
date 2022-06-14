@@ -337,6 +337,8 @@ module Model = {
   let graph = t => t.graph
   let slots = t => t.slots
 
+  let addToplevelNote = (t, note) => {...t, info: {...t.info, notes: t.info.notes ++ note}}
+
   let intelligence = t => t.intelligence
   let requestedIntelligence = t => t.requestedIntelligence
   let focusedIntelligence = t => t.focusedIntelligence
