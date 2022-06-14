@@ -380,7 +380,6 @@ module App = {
           let model = try text->Js.Json.parseExn->State.Model.Stable.V4.fromJson catch {
           | _ => Or_error.error_s("fail")
           }
-          Js.Console.log(model)
           switch model->Or_error.match {
           | Or_error.Ok(model) => dispatch(Event.File.ImportModel(model)->Event.File)
           | Or_error.Err(e) => {
