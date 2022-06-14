@@ -1,3 +1,5 @@
+let db = SetOnce.create()
+
 module Model = {
   type t = {
     info: InspectorState.Model.t,
@@ -260,10 +262,64 @@ module Model = {
     }
   }
 
-  module Storage = LocalStorage.MakeJsonable(Stable.V4)
+  module StorageMkr = (J: LocalStorage.Jsonable) => {
+    module OldStorage = LocalStorage.MakeJsonable(J)
+    let set = (key, value) => {
+      let str = J.toJson(value)->Js.Json.stringify
+      switch db->SetOnce.get {
+      | None => Dialog.alert("Failed to save! Couldn't connect to database")
+      | Some((db, store)) =>
+        db
+        ->IndexedDB.put(~store, ~key, str)
+        ->Promise.catch(_ => {
+          Dialog.alert("Failed to save! Couldn't write data")
+          Promise.resolve(str)
+        })
+        ->ignore
+      }
+    }
 
-  let store = (t, id) => Storage.set("RepNotation:Model:" ++ Gid.toString(id), t)
-  let load = id => Storage.get("RepNotation:Model:" ++ Gid.toString(id))
+    let get = key => {
+      switch db->SetOnce.get {
+      | None =>
+        Or_error.error_s("Failed to read model - could not connect to database!")->Promise.resolve
+      | Some((db, store)) =>
+        db
+        ->IndexedDB.get(~store, ~key)
+        ->Promise.thenResolve(s => s->Js.Json.parseExn->J.fromJson)
+        ->Promise.catch(_ => {
+          Js.Console.log("Failed to load model " ++ key ++ ", checking LocalStorage.")
+          let extant = OldStorage.get(key)
+          if Or_error.isOk(extant) {
+            Js.Console.log("Loaded " ++ key ++ " from LocalStorage. Removing old version.")
+            OldStorage.delete(key)
+          }
+          Promise.resolve(extant)
+        })
+      }
+    }
+
+    let delete = key => {
+      switch db->SetOnce.get {
+      | None => Dialog.alert("Failed to delete model - could not connect to database!")
+      | Some((db, store)) =>
+        db
+        ->IndexedDB.delete(~store, ~key)
+        ->Promise.catch(e => {
+          Js.Console.log(e)
+          Dialog.alert("Failed to delete model!")
+          Promise.resolve()
+        })
+        ->ignore
+      }
+    }
+  }
+  module Storage = StorageMkr(Stable.V4)
+
+  let prefix = "RepNotation:Model:"
+  let store = (t, id) => Storage.set(prefix ++ Gid.toString(id), t)
+  let load = id => Storage.get(prefix ++ Gid.toString(id))
+  let delete = id => Storage.delete(prefix ++ Gid.toString(id))
 
   let info = t => t.info
   let graph = t => t.graph
@@ -296,6 +352,8 @@ module Model = {
     }
   }
 }
+
+let setDB = (newDB, store) => db->SetOnce.set((newDB, store))
 
 type t = {
   models: Gid.Map.t<UndoRedo.t<Model.t>>,
@@ -331,31 +389,42 @@ let load = () => {
     }
     json->Or_error.flatMap(json => json->Array.fromJson(Gid.fromJson))->Or_error.toOption
   })
-  let models = positions->Option.flatMap(positions => {
+  let models =
     positions
-    ->Array.keepMap(id =>
-      switch Model.load(id)->Or_error.match {
-      | Or_error.Ok(m) => (id, UndoRedo.create(m))->Some
-      | Or_error.Err(e) => {
-          Dialog.alert("Error loading model: " ++ Error.messages(e)->Js.Array2.joinWith(";"))
-          None
-        }
-      }
-    )
-    ->Gid.Map.fromArray
-    ->Some
-  })
-  Option.both3((currentModel, positions, models))->Option.map(((
-    currentModel,
-    positions,
-    models,
-  )) => {
-    models: models,
-    positions: positions,
-    currentModel: currentModel,
-    latestIntelligence: None,
-    lastRequestedIntelligence: None,
-    focusedErrorOrWarning: None,
+    ->Option.map(positions => {
+      positions
+      ->Array.map(id => Model.load(id)->Promise.thenResolve(m => (id, m)))
+      ->Promise.all
+      ->Promise.thenResolve(arr =>
+        arr
+        ->Array.keepMap(((id, model)) =>
+          switch model->Or_error.match {
+          | Or_error.Ok(m) => (id, UndoRedo.create(m))->Some
+          | Or_error.Err(e) => {
+              Dialog.alert("Error loading model: " ++ Error.messages(e)->Js.Array2.joinWith(";"))
+              None
+            }
+          }
+        )
+        ->Gid.Map.fromArray
+        ->Some
+      )
+    })
+    ->Option.getWithDefault(Promise.resolve(None))
+
+  models->Promise.thenResolve(models => {
+    Option.both3((currentModel, positions, models))->Option.map(((
+      currentModel,
+      positions,
+      models,
+    )) => {
+      models: models,
+      positions: positions,
+      currentModel: currentModel,
+      latestIntelligence: None,
+      lastRequestedIntelligence: None,
+      focusedErrorOrWarning: None,
+    })
   })
 }
 
@@ -398,7 +467,7 @@ let createModel = (t, id) => {
 }
 
 let deleteModel = (t, id) => {
-  LocalStorage.Raw.removeItem("RepNotation:Model:" ++ Gid.toString(id))
+  Model.delete(id)
   let (currentModel, latestIntelligence, lastRequestedIntelligence, focusedErrorOrWarning) = if (
     t.currentModel->Option.map(current => current == id)->Option.getWithDefault(false)
   ) {
