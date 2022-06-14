@@ -22,6 +22,7 @@
   },
   "bs-dependencies": [
     "@rescript/react",
+    "@ryyppy/rescript-promise",
     "RepWeb",
     "rescript-react-d3-graph",
     "rescript-react-draggable-list"

@@ -47,8 +47,10 @@ module Model: {
 
 type t
 
+let setDB: (IndexedDB.t, string) => unit
+
 let store: t => unit
-let load: unit => option<t>
+let load: unit => Promise.t<option<t>>
 
 let empty: t
 
