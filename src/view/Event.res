@@ -7,12 +7,8 @@ module Intelligence = {
   let dispatch = (state, t) =>
     switch t {
     | Init => state
-    | Response(response) =>
-      state->State.updateModelBypassUndoRedo(response.model, m =>
-        m->State.Model.setIntelligence(Some(response))
-      )
-    | Focus(model, id) =>
-      state->State.updateModelBypassUndoRedo(model, m => m->State.Model.setFocusedIntelligence(id))
+    | Response(response) => state->State.setLatestIntelligence(Some(response))
+    | Focus(id) => state->State.focusErrorOrWarning(id)
     }
 }
 
@@ -459,11 +455,7 @@ type t =
 
 let dispatch = (state, t) =>
   switch t {
-  | Model(id, ev) =>
-    state
-    ->State.model(id)
-    ->Option.map(model => state->State.updateModel(id, Model.dispatch(model, ev)))
-    ->Option.getWithDefault(state)
+  | Model(id, ev) => state->State.updateModel(id, model => Model.dispatch(model, ev))
   | File(ev) => File.dispatch(state, ev)
   }
 

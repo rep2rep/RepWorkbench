@@ -442,7 +442,12 @@ let make = (
         (),
       )}>
       <Indicator
-        status={if !isUpToDate {
+        errorStatus={if !isUpToDate {
+          #loading
+        } else {
+          #ready
+        }}
+        warningStatus={if !isUpToDate {
           #loading
         } else {
           #ready

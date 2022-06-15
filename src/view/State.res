@@ -457,10 +457,13 @@ let reorderModels = (t, newOrder) => {
   positions: newOrder,
 }
 
-let updateModel = (t, id, newModel) => {
+let updateModel = (t, id, f) => {
   ...t,
   models: t.models->Gid.Map.update(id, model =>
-    model->Option.map(model => model->UndoRedo.step(newModel))
+    model->Option.map(model => {
+      let newModel = model->UndoRedo.state->f
+      model->UndoRedo.step(newModel)
+    })
   ),
 }
 
