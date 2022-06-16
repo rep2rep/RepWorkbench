@@ -5,7 +5,7 @@ BASE=`dirname '$ROOT'`
 
 STATICS="index.html manual.html"
 # VERSION="$(date '+%Y.%m.%d')"
-VERSION="2022.DAGSTUHL"
+VERSION="2022.06.DAGSTUHL"
 
 rm -rf "$BASE/dist"
 "$ROOT/rescript/rescript" build -with-deps
