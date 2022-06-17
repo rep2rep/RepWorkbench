@@ -1,4 +1,11 @@
-module FileLabel = {
+module GIDArrayStore = LocalStorage.MakeJsonable({
+  type t = array<Gid.t>
+
+  let toJson = t => t->Array.toJson(Gid.toJson)
+  let fromJson = json => json->Array.fromJson(Gid.fromJson)
+})
+
+module EditableLabel = {
   type state = {
     savedName: string,
     currName: string,
@@ -18,8 +25,53 @@ module FileLabel = {
     }
 
   @react.component
-  let make = (~id, ~name, ~active, ~onSelect, ~onChanged, ~dragHandleProps) => {
-    let (state, dispatch) = React.useReducer(reducer, init(name))
+  let make = (~value, ~onChanged, ~adjust) => {
+    let (state, dispatch) = React.useReducer(reducer, init(value))
+    if state.editing {
+      <input
+        style={ReactDOM.Style.make(
+          ~fontSize="1rem",
+          ~padding="0",
+          ~margin="0",
+          ~borderWidth="0",
+          ~width="calc(100%" ++ adjust ++ ")",
+          (),
+        )}
+        autoFocus={true}
+        value={state.currName}
+        onChange={e => dispatch(MidEdit(ReactEvent.Form.target(e)["value"]))}
+        onKeyPress={e =>
+          if ReactEvent.Keyboard.key(e) == "Enter" {
+            let newName = ReactEvent.Keyboard.target(e)["value"]
+            dispatch(EndEdit(newName))
+            onChanged(newName)
+          } else {
+            ()
+          }}
+        onBlur={e => {
+          let newName = ReactEvent.Focus.target(e)["value"]
+          dispatch(EndEdit(newName))
+          onChanged(newName)
+        }}
+      />
+    } else {
+      <span
+        className={"inner-name-focus inner-name-not-editing"}
+        title={state.currName}
+        onDoubleClick={e => {
+          ReactEvent.Mouse.preventDefault(e)
+          ReactEvent.Mouse.stopPropagation(e)
+          dispatch(StartEdit)
+        }}>
+        {React.string(state.currName)}
+      </span>
+    }
+  }
+}
+
+module DragHandle = {
+  @react.component
+  let make = (~dragHandleProps) => {
     let handleProps = {
       "style": ReactDOM.Style.make(
         ~color="rgba(100, 100, 100)",
@@ -29,15 +81,22 @@ module FileLabel = {
         (),
       ),
     }->Js.Obj.assign(dragHandleProps)
-    let handle = React.cloneElement(
+    React.cloneElement(
       // Vertical ellipsis
       <div> {React.string(Js.String2.fromCharCode(8942))} </div>,
       handleProps,
     )
+  }
+}
+
+module FileLabel = {
+  @react.component
+  let make = (~id, ~name, ~indent, ~active, ~onSelect, ~onChanged, ~dragHandleProps) => {
     <span
       style={ReactDOM.Style.make(
         ~display="block",
         ~padding="0.5rem",
+        ~paddingLeft={Float.toString(0.75 *. Int.toFloat(indent) +. 0.5) ++ "rem"},
         ~overflow="hidden",
         ~textOverflow="ellipsis",
         ~whiteSpace="nowrap",
@@ -73,57 +132,137 @@ module FileLabel = {
           ~marginTop="-0.5ex",
           (),
         )}>
-        {handle}
+        <DragHandle dragHandleProps />
       </div>
-      {if state.editing {
-        <input
-          style={ReactDOM.Style.make(
-            ~fontSize="1rem",
-            ~padding="0",
-            ~margin="0",
-            ~borderWidth="0",
-            ~width="calc(100% - 20px)",
-            (),
-          )}
-          autoFocus={true}
-          value={state.currName}
-          onChange={e => dispatch(MidEdit(ReactEvent.Form.target(e)["value"]))}
-          onKeyPress={e =>
-            if ReactEvent.Keyboard.key(e) == "Enter" {
-              let newName = ReactEvent.Keyboard.target(e)["value"]
-              dispatch(EndEdit(newName))
-              onChanged(newName)
-            } else {
-              ()
-            }}
-          onBlur={e => {
-            let newName = ReactEvent.Focus.target(e)["value"]
-            dispatch(EndEdit(newName))
-            onChanged(newName)
-          }}
-        />
-      } else {
-        <span
-          className={"inner-name-focus inner-name-not-editing"}
-          title={state.currName}
-          onDoubleClick={e => {
-            ReactEvent.Mouse.preventDefault(e)
-            ReactEvent.Mouse.stopPropagation(e)
-            dispatch(StartEdit)
-          }}>
-          {React.string(state.currName)}
-        </span>
-      }}
+      <EditableLabel value={name} onChanged adjust=" - 20px" />
     </span>
+  }
+}
+
+module FolderLabel = {
+  module DisclosureButton = {
+    @react.component
+    let make = (~isClosed, ~onToggleShow) => {
+      let style = ReactDOM.Style.make(
+        ~fontSize="0.7rem",
+        ~opacity="0.7",
+        ~cursor="default",
+        ~display="inline-block",
+        ~width="1.5em",
+        ~overflow="hidden",
+        ~position="relative",
+        ~top="0.05rem",
+        (),
+      )
+      let style = if isClosed {
+        style
+      } else {
+        ReactDOM.Style.combine(style, ReactDOM.Style.make(~top="0.15rem", ()))
+      }
+      <span
+        style
+        onClick={e => {
+          ReactEvent.Mouse.stopPropagation(e)
+          onToggleShow()
+        }}>
+        {if isClosed {
+          // Right triangle
+          React.string(Js.String2.fromCharCode(9654))
+        } else {
+          // Down Triangle
+          React.string(Js.String2.fromCharCode(9660))
+        }}
+      </span>
+    }
+  }
+
+  @react.component
+  let make = (
+    ~id,
+    ~name,
+    ~indent,
+    ~active,
+    ~isClosed,
+    ~onSelect,
+    ~onChanged,
+    ~dragHandleProps,
+    ~onToggleShow,
+  ) => {
+    <span
+      style={ReactDOM.Style.make(
+        ~display="block",
+        ~padding="0.5rem",
+        ~paddingLeft={Float.toString(0.75 *. Int.toFloat(indent) +. 0.5) ++ "rem"},
+        ~overflow="hidden",
+        ~textOverflow="ellipsis",
+        ~whiteSpace="nowrap",
+        ~background={
+          if active {
+            "lightgrey"
+          } else {
+            "white"
+          }
+        },
+        (),
+      )}
+      id={"file-label-" ++ Gid.toString(id)}
+      key={Gid.toString(id)}
+      className={if active {
+        "file-active"
+      } else {
+        "file-inactive"
+      }}
+      onClick={e => {
+        ReactEvent.Mouse.stopPropagation(e)
+        ReactEvent.Mouse.preventDefault(e)
+        if !active {
+          onSelect()
+        }
+      }}>
+      <div
+        style={ReactDOM.Style.make(
+          ~width="6px",
+          ~height="12px",
+          ~display="inline-block",
+          ~marginRight="0.5rem",
+          ~marginTop="-0.5ex",
+          (),
+        )}>
+        <DragHandle dragHandleProps />
+      </div>
+      <DisclosureButton onToggleShow isClosed />
+      <EditableLabel value={name} onChanged adjust=" - 40px" />
+    </span>
+  }
+}
+
+module FolderEnd = {
+  @react.component
+  let make = (~id, ~indent, ~currentlyDragging) => {
+    <div
+      style={if currentlyDragging > 0.00000001 {
+        ReactDOM.Style.make(
+          ~height="2px",
+          ~background="#ddd",
+          ~marginLeft={Float.toString(0.75 *. Int.toFloat(indent) +. 0.5) ++ "rem"},
+          ~opacity={Float.toString(currentlyDragging)},
+          (),
+        )
+      } else {
+        ReactDOM.Style.make(~height="2px", ())
+      }}
+      key={Gid.toString(id) ++ "_end"}
+      id={"file-label-" ++ Gid.toString(id) ++ "_end"}
+    />
   }
 }
 
 module Template = {
   @react.component
   let make = (
-    ~item as (id, model),
+    ~item as (path, fileOrFolder),
     ~itemSelected as _,
-    ~anySelected as _,
+    ~anySelected,
     ~dragHandleProps,
     ~commonProps=?,
   ) => {
@@ -131,36 +270,191 @@ module Template = {
     let active = commonProps["active"]
     let onSelect = commonProps["onSelect"]
     let onChangedName = commonProps["onChangedName"]
-    let props = {
-      "id": id,
-      "name": {model->State.Model.info->InspectorState.Model.name},
-      "active": {
-        active->Option.map(active => id == active)->Option.getWithDefault(false)
-      },
-      "onSelect": {() => onSelect(Some(id))},
-      "onChanged": {name => onChangedName(id, name)},
-      "dragHandleProps": dragHandleProps,
+    let onChangedFolderName = commonProps["onChangedFolderName"]
+    let onToggleShow = commonProps["onToggleShow"]
+    let closedFolders = commonProps["closedFolders"]
+    if path->Array.some(v => closedFolders->Array.includes(v)) {
+      // Hide this, but need some "dummies" to keep the indexing straight.
+      let key = switch fileOrFolder {
+      | FileTree.FileOrFolder.File((id, _)) => id->Gid.toString
+      | FileTree.FileOrFolder.Folder(_, id) => id->Gid.toString
+      | FileTree.FileOrFolder.EndFolder(_, id) => id->Gid.toString ++ "_end"
+      }
+      <span key id={"file-label-" ++ key} />
+    } else {
+      switch fileOrFolder {
+      | FileTree.FileOrFolder.File((id, model)) => {
+          let name = model->State.Model.info->InspectorState.Model.name
+          let props = {
+            "id": id,
+            "indent": Array.length(path),
+            "name": name,
+            "active": {
+              active->Option.map(active => id == active)->Option.getWithDefault(false)
+            },
+            "onSelect": {() => onSelect(Some(id))},
+            "onChanged": {name => onChangedName(id, name)},
+            "dragHandleProps": dragHandleProps,
+          }
+          React.createElement(FileLabel.make, props)
+        }
+      | FileTree.FileOrFolder.Folder(name, id) => {
+          let props = {
+            "id": id,
+            "indent": Array.length(path),
+            "name": name,
+            "active": {
+              active->Option.map(active => id == active)->Option.getWithDefault(false)
+            },
+            "onSelect": {() => onSelect(Some(id))},
+            "onChanged": {name => onChangedFolderName(id, name)},
+            "dragHandleProps": dragHandleProps,
+            "onToggleShow": {() => onToggleShow(id)},
+            "isClosed": closedFolders->Array.includes(id),
+          }
+          React.createElement(FolderLabel.make, props)
+        }
+      | FileTree.FileOrFolder.EndFolder(_, id) => {
+          let props = {
+            "id": id,
+            "indent": Array.length(path) + 1,
+            "currentlyDragging": anySelected,
+          }
+          React.createElement(FolderEnd.make, props)
+        }
+      }
     }
-    React.createElement(FileLabel.make, props)
+  }
+}
+
+let findEndFolder = (paths, id) =>
+  paths->Array.getIndexBy(f =>
+    switch f {
+    | FileTree.FileOrFolder.EndFolder(id', _) => id === id'
+    | _ => false
+    }
+  )
+
+let move = (paths, ~oldIndex, ~newIndex) => {
+  let movedItem = paths[oldIndex]->Option.getExn
+  switch movedItem {
+  | FileTree.FileOrFolder.File(_) => {
+      let before = paths->Array.slice(~offset=0, ~len=oldIndex)
+      let after = paths->Array.sliceToEnd(oldIndex + 1)
+      let paths' = Array.concat(before, after)
+      let before' = paths'->Array.slice(~offset=0, ~len=newIndex)
+      let after' = paths'->Array.sliceToEnd(newIndex)
+      Array.concatMany([before', [movedItem], after'])
+    }
+  | FileTree.FileOrFolder.Folder(id, _) =>
+    findEndFolder(paths, id)
+    ->Option.map(endIndex =>
+      if newIndex > oldIndex && endIndex >= newIndex {
+        paths
+      } else if newIndex === oldIndex {
+        paths
+      } else {
+        let movedChunk = paths->Array.slice(~offset=oldIndex, ~len=endIndex - oldIndex + 1)
+        let before = paths->Array.slice(~offset=0, ~len=oldIndex)
+        let after = paths->Array.sliceToEnd(endIndex + 1)
+        let paths' = Array.concat(before, after)
+        // The 'newIndex' assumed one thing moved, but actually many things have moved.
+        // If we're moving earlier, no worries, all works. But if we're moving later, big problems.
+        // To account for this, we assume that the newIndex is wrong by however long the movedChunk is, less 1.
+        let newIndex = if newIndex < oldIndex {
+          newIndex
+        } else {
+          newIndex - Array.length(movedChunk) + 1
+        }
+        let before' = paths'->Array.slice(~offset=0, ~len=newIndex)
+        let after' = paths'->Array.sliceToEnd(newIndex)
+        Array.concatMany([before', movedChunk, after'])
+      }
+    )
+    ->Option.getWithDefault(paths)
+  | _ => paths // Really shouldn't happen!
   }
 }
 
 @react.component
 let make = (
   ~id,
-  ~models: array<(Gid.t, State.Model.t)>,
+  ~models: FileTree.t<(Gid.t, State.Model.t)>,
   ~active,
   ~onCreate,
+  ~onCreateFolder,
   ~onDelete,
+  ~onDeleteFolder,
   ~onSelect,
   ~onDuplicate,
   ~onChangedName,
+  ~onChangedFolderName,
   ~onReorder,
   ~onImport,
   ~onExport,
 ) => {
+  let isModel =
+    active
+    ->Option.map(active =>
+      models->FileTree.getFolderPathAndPosition(active)->Option.isSome->Bool.not
+    )
+    ->Option.getWithDefault(false)
+  let selectedPath =
+    active
+    ->Option.flatMap(id =>
+      if isModel {
+        models->FileTree.getFilePathAndPosition(((id', _)) => id === id')->Option.map(fst)
+      } else {
+        models
+        ->FileTree.getFolderPathAndPosition(id)
+        ->Option.map(fst)
+        ->Option.map(arr => Array.concat(arr, [id]))
+      }
+    )
+    ->Option.getWithDefault([])
+  Js.Console.log(selectedPath)
   let container = React.useRef(Js.Nullable.null)
   let (dropTargetActive, setDropTargetActive) = React.useState(() => false)
+  let (closedFolders, setClosedFolders') = React.useState(() =>
+    GIDArrayStore.get("REPN_CLOSED_FOLDERS")->Or_error.getWithDefault([])
+  )
+  let setClosedFolders = v => {
+    GIDArrayStore.set("REPN_CLOSED_FOLDERS", v)
+    setClosedFolders'(_ => v)
+  }
+  let onToggleShow = id =>
+    if closedFolders->Array.includes(id) {
+      closedFolders->Array.filter(v => v !== id)->setClosedFolders
+    } else {
+      closedFolders->Array.concat([id])->setClosedFolders
+    }
+  let path = []
+  let paths =
+    models
+    ->FileTree.asPaths
+    ->Array.map(f =>
+      switch f {
+      | FileTree.FileOrFolder.File((_, _)) => (Array.copy(path), f)
+      | FileTree.FileOrFolder.Folder(_, id) => {
+          let d = Array.copy(path)
+          path->Js.Array2.push(id)->ignore
+          (d, f)
+        }
+      | FileTree.FileOrFolder.EndFolder(_, _) => {
+          path->Js.Array2.pop->ignore
+          let d = Array.copy(path)
+          (d, f)
+        }
+      }
+    )
+  let commonProps = {
+    "active": active,
+    "closedFolders": closedFolders,
+    "onSelect": onSelect,
+    "onChangedName": onChangedName,
+    "onChangedFolderName": onChangedFolderName,
+    "onToggleShow": onToggleShow,
+  }
   <HideablePanel2
     id
     toggle={(~hidden) =>
@@ -218,19 +512,25 @@ let make = (
       )}
       onClick={_ => onSelect(None)}>
       <ReactDraggableList.DraggableList
-        items={models}
-        itemKey={((id, _)) => id->Gid.toString}
+        items={paths}
+        itemKey={((_, f)) =>
+          switch f {
+          | FileTree.FileOrFolder.File((id, _)) => id->Gid.toString
+          | FileTree.FileOrFolder.Folder(_, id) => id->Gid.toString
+          | FileTree.FileOrFolder.EndFolder(_, id) => id->Gid.toString ++ "_end"
+          }}
         template={Template.make}
-        onMoveEnd={(~newList, ~movedItem as _, ~oldIndex as _, ~newIndex as _) =>
-          onReorder(newList->Array.map(((id, _)) => id))}
+        onMoveEnd={(~newList as _, ~movedItem as _, ~oldIndex, ~newIndex) =>
+          paths
+          ->Array.map(snd)
+          ->move(~oldIndex, ~newIndex)
+          ->FileTree.fromPaths
+          ->FileTree.map(((id, _)) => id)
+          ->onReorder}
         container={() => container.current}
         constrainDrag={true}
         padding={0}
-        commonProps={
-          "active": active,
-          "onSelect": onSelect,
-          "onChangedName": onChangedName,
-        }
+        commonProps
       />
       <div
         style={ReactDOM.Style.make(
@@ -300,25 +600,12 @@ let make = (
           ~width="100%",
           (),
         )}>
-        <Button onClick={_ => onCreate()} value="New" />
-        <Button onClick={_ => active->Option.iter(onDuplicate)} value="Duplicate" />
-        <Button.Separator />
+        // TODO: onCreate and onCreateFolder determine where it should actually go
+        <Button onClick={_ => onCreate(selectedPath)} value="New" />
         <Button
-          onClick={_ =>
-            active->Option.iter(active => {
-              let name =
-                models
-                ->Array.find(((id, _)) => id === active)
-                ->Option.getExn
-                ->(((_, model)) => model)
-                ->State.Model.info
-                ->InspectorState.Model.name
-              if Dialog.confirm("Definitely delete model '" ++ name ++ "'?") {
-                onDelete(active)
-              }
-            })}
-          value="Delete"
+          onClick={_ => active->Option.iter(onDuplicate)} enabled={isModel} value="Duplicate"
         />
+        <Button onClick={_ => onCreateFolder(selectedPath)} value="Folder" />
       </div>
       <div
         style={ReactDOM.Style.make(
@@ -329,7 +616,7 @@ let make = (
           ~width="100%",
           (),
         )}>
-        <Button onClick={_ => active->Option.iter(onExport)} value="Export" />
+        <Button onClick={_ => active->Option.iter(onExport)} enabled={isModel} value="Export" />
         <input
           name="import_models"
           id="import_models"
@@ -362,18 +649,65 @@ let make = (
             }}
           />
         </label>
+        <Button.Separator />
+        <Button
+          onClick={_ =>
+            active->Option.iter(active => {
+              paths->Array.forEach(((_, f)) => {
+                switch f {
+                | FileTree.FileOrFolder.File((id, model)) =>
+                  if id === active {
+                    let name = model->State.Model.info->InspectorState.Model.name
+                    if Dialog.confirm("Definitely delete model '" ++ name ++ "'?") {
+                      onDelete(id)
+                    }
+                  }
+                | FileTree.FileOrFolder.Folder(name, id) =>
+                  if id === active {
+                    let contents = models->FileTree.folderContents(id)
+                    if contents->Option.map(FileTree.isEmpty)->Option.getWithDefault(false) {
+                      onDeleteFolder(id)
+                      closedFolders->Array.filter(v => v !== id)->setClosedFolders
+                    } else if (
+                      Dialog.confirm(
+                        "Delete the folder '" ++ name ++ "', along with all the models inside it?",
+                      )
+                    ) {
+                      contents->Option.iter(c =>
+                        c->FileTree.flatten->Array.forEach(((id, _)) => onDelete(id))
+                      )
+                      onDeleteFolder(id)
+                      closedFolders->Array.filter(v => v !== id)->setClosedFolders
+                    }
+                  }
+                | FileTree.FileOrFolder.EndFolder(_, _) => ()
+                }
+              })
+            })}
+          enabled={Option.isSome(active)}
+          value="Delete"
+        />
       </div>
     </div>
   </HideablePanel2>
 }
 
 let make = React.memoCustomCompareProps(make, (old_, new_) => {
+  let old_models = FileTree.asPaths(old_["models"])
+  let new_models = FileTree.asPaths(new_["models"])
   old_["id"] === new_["id"] &&
   old_["active"] === new_["active"] &&
-  Array.length(old_["models"]) === Array.length(new_["models"]) &&
-  Array.zip(old_["models"], new_["models"])->Array.every((((i, im), (j, jm))) =>
-    i === j &&
-      im->State.Model.info->InspectorState.Model.name ===
-        jm->State.Model.info->InspectorState.Model.name
+  Array.length(old_models) === Array.length(new_models) &&
+  Array.zip(old_models, new_models)->Array.every(((i, j)) =>
+    switch (i, j) {
+    | (FileTree.FileOrFolder.File((i, im)), FileTree.FileOrFolder.File((j, jm))) =>
+      i === j &&
+        im->State.Model.info->InspectorState.Model.name ===
+          jm->State.Model.info->InspectorState.Model.name
+    | (FileTree.FileOrFolder.Folder(i, id), FileTree.FileOrFolder.Folder(j, jd))
+    | (FileTree.FileOrFolder.EndFolder(i, id), FileTree.FileOrFolder.EndFolder(j, jd)) =>
+      i === j && id === jd
+    | _ => false
+    }
   )
 })

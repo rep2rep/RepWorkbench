@@ -18,24 +18,30 @@ module Intelligence = {
 
 module File = {
   type t =
-    | NewModel(Gid.t)
+    | NewModel(Gid.t, array<Gid.t>)
+    | NewFolder(Gid.t, array<Gid.t>)
     | DeleteModel(Gid.t)
+    | DeleteFolder(Gid.t)
     | FocusModel(option<Gid.t>)
     | DuplicateModel(Gid.t, Gid.t)
     | ImportModel(State.Model.t)
-    | ReorderModels(array<Gid.t>)
+    | ReorderModels(FileTree.t<Gid.t>)
+    | RenameFolder(Gid.t, string)
     | Undo(Gid.t)
     | Redo(Gid.t)
     | Intelligence(Intelligence.t)
 
   let dispatch = (state, t) =>
     switch t {
-    | NewModel(id) => state->State.createModel(id)
+    | NewModel(id, path) => state->State.createModel(id, path)
+    | NewFolder(id, path) => state->State.createFolder(id, path)
     | DeleteModel(id) => state->State.deleteModel(id)
+    | DeleteFolder(id) => state->State.deleteFolder(id)
     | FocusModel(id) => state->State.focusModel(id)
     | DuplicateModel(existing, new_) => state->State.duplicateModel(~existing, ~new_)
     | ImportModel(model) => state->State.importModel(model)
     | ReorderModels(order) => state->State.reorderModels(order)
+    | RenameFolder(id, name) => state->State.renameFolder(id, name)
     | Undo(id) => state->State.undo(id)
     | Redo(id) => state->State.redo(id)
     | Intelligence(i) => state->Intelligence.dispatch(i)
@@ -476,6 +482,9 @@ let rec shouldTriggerIntelligence = e =>
   | Model(_, Model.Slots(_, Slots.Token(Slots.Token.Notes(_))))
   | Model(_, Model.Slots(_, Slots.Placeholder(Slots.Placeholder.Notes(_))))
   | File(File.ReorderModels(_))
+  | File(File.NewFolder(_))
+  | File(File.DeleteFolder(_))
+  | File(File.RenameFolder(_, _))
   | File(File.Intelligence(_)) => false
   | Model(id, Model.Seq(vs)) =>
     vs->Array.map(v => Model(id, v))->Array.some(shouldTriggerIntelligence)

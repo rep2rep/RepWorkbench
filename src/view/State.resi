@@ -55,16 +55,19 @@ let load: unit => Promise.t<option<t>>
 
 let empty: t
 
-let models: t => array<(Gid.t, Model.t)>
+let models: t => FileTree.t<(Gid.t, Model.t)>
 let focused: t => option<Gid.t>
 let model: (t, Gid.t) => option<Model.t>
 
-let createModel: (t, Gid.t) => t
+let createModel: (t, Gid.t, array<Gid.t>) => t
+let createFolder: (t, Gid.t, array<Gid.t>) => t
 let deleteModel: (t, Gid.t) => t
+let deleteFolder: (t, Gid.t) => t
 let focusModel: (t, option<Gid.t>) => t
 let duplicateModel: (t, ~existing: Gid.t, ~new_: Gid.t) => t
 let importModel: (t, Model.t) => t
-let reorderModels: (t, array<Gid.t>) => t
+let reorderModels: (t, FileTree.t<Gid.t>) => t
+let renameFolder: (t, Gid.t, string) => t
 
 let updateModel: (t, Gid.t, Model.t => Model.t) => t
 let updateModelBypassUndoRedo: (t, Gid.t, Model.t => Model.t) => t

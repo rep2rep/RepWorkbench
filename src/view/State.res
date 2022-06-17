@@ -401,7 +401,7 @@ let setDB = (newDB, store) => db->SetOnce.set((newDB, store))
 
 type t = {
   models: Gid.Map.t<UndoRedo.t<Model.t>>,
-  positions: array<Gid.t>,
+  positions: FileTree.t<Gid.t>,
   currentModel: option<Gid.t>,
 }
 
@@ -412,7 +412,7 @@ let store = t => {
   )
   LocalStorage.Raw.setItem(
     "RepNotation:AllModels",
-    t.positions->Array.toJson(Gid.toJson)->Js.Json.stringify,
+    t.positions->FileTree.Stable.V2.toJson(Gid.toJson)->Js.Json.stringify,
   )
   t.models->Gid.Map.forEach((id, model) => Model.store(model->UndoRedo.state, id))
 }
@@ -428,12 +428,15 @@ let load = () => {
     let json = try Or_error.create(Js.Json.parseExn(s)) catch {
     | _ => Or_error.error_s("Badly stored allModels")
     }
-    json->Or_error.flatMap(json => json->Array.fromJson(Gid.fromJson))->Or_error.toOption
+    json
+    ->Or_error.flatMap(json => json->FileTree.Stable.V2.fromJson(Gid.fromJson))
+    ->Or_error.toOption
   })
   let models =
     positions
     ->Option.map(positions => {
       positions
+      ->FileTree.flatten
       ->Array.map(id => Model.load(id)->Promise.thenResolve(m => (id, m)))
       ->Promise.all
       ->Promise.thenResolve(arr =>
@@ -468,20 +471,20 @@ let load = () => {
 
 let empty = {
   models: Gid.Map.empty(),
-  positions: [],
+  positions: FileTree.empty(),
   currentModel: None,
 }
 
 let focused = t => t.currentModel
 
 let models = t =>
-  t.positions->Array.map(id => (id, t.models->Gid.Map.get(id)->Option.getExn->UndoRedo.state))
+  t.positions->FileTree.map(id => (id, t.models->Gid.Map.get(id)->Option.getExn->UndoRedo.state))
 
 let model = (t, id) => t.models->Gid.Map.get(id)->Option.map(UndoRedo.state)
 
-let createModel = (t, id) => {
+let createModel = (t, id, path) => {
   models: t.models->Gid.Map.set(id, Model.create("Model")->UndoRedo.create),
-  positions: t.positions->Array.concat([id]),
+  positions: t.positions->FileTree.insertFile(~path, ~position=-1, id)->Option.getExn,
   currentModel: Some(id),
 }
 
@@ -496,25 +499,54 @@ let deleteModel = (t, id) => {
   }
   {
     models: t.models->Gid.Map.remove(id),
-    positions: t.positions->Array.filter(id' => id' !== id),
+    positions: t.positions->FileTree.removeFile(id' => id' === id),
     currentModel: currentModel,
   }
 }
 
+let createFolder = (t, id, path) => {
+  {
+    ...t,
+    currentModel: Some(id),
+    positions: t.positions
+    ->FileTree.newFolder(~path, ~position=-1, ~name="Folder", ~id)
+    ->Option.getExn,
+  }
+}
+
+let deleteFolder = (t, id) => {
+  let (positions, removed) = t.positions->FileTree.removeFolderAndContents(id)
+  let currentModel = if (
+    t.currentModel
+    ->Option.map(current => removed->Array.includes(current))
+    ->Option.getWithDefault(false)
+  ) {
+    None
+  } else {
+    t.currentModel
+  }
+  {
+    models: removed->Array.reduce(t.models, (models, rem) => {
+      Model.delete(rem)
+      models->Gid.Map.remove(rem)
+    }),
+    currentModel: currentModel,
+    positions: positions,
+  }
+}
 let focusModel = (t, id) => {
   ...t,
   currentModel: id,
 }
 
 let duplicateModel = (t, ~existing, ~new_) => {
-  let dupIndex = t.positions->Array.getIndexBy(id => id === existing)->Option.getExn
+  let (path, position) =
+    t.positions->FileTree.getFilePathAndPosition(id => id === existing)->Option.getExn
   let oldModel = t.models->Gid.Map.get(existing)->Option.getExn->UndoRedo.state
   let newModel = oldModel->Model.duplicate(oldModel.info.name ++ " (Copy)")->UndoRedo.create
-  let before = t.positions->Array.slice(~offset=0, ~len=dupIndex + 1)
-  let after = t.positions->Array.sliceToEnd(dupIndex + 1)
   {
     currentModel: Some(new_),
-    positions: Array.concatMany([before, [new_], after]),
+    positions: t.positions->FileTree.insertFile(~path, ~position=position + 1, new_)->Option.getExn,
     models: t.models->Gid.Map.set(new_, newModel),
   }
 }
@@ -525,7 +557,7 @@ let importModel = (t, model) => {
   let model = Model.duplicate(model, model.info.name)->UndoRedo.create
   {
     currentModel: Some(newId),
-    positions: t.positions->Array.concat([newId]),
+    positions: t.positions->FileTree.insertFile(~path=[], ~position=-1, newId)->Option.getExn,
     models: t.models->Gid.Map.set(newId, model),
   }
 }
@@ -533,6 +565,11 @@ let importModel = (t, model) => {
 let reorderModels = (t, newOrder) => {
   ...t,
   positions: newOrder,
+}
+
+let renameFolder = (t, id, name) => {
+  ...t,
+  positions: t.positions->FileTree.renameFolder(id, name),
 }
 
 let updateModel = (t, id, f) => {

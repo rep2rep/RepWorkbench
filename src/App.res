@@ -108,7 +108,11 @@ module App = {
       None
     })
 
-    let focused = state->State.focused
+    let focused =
+      state
+      ->State.focused
+      ->Option.flatMap(id => state->State.model(id))
+      ->Option.flatMap(_ => state->State.focused)
     let toolbarActive = focused->Option.isSome
     let selection =
       focused
@@ -181,11 +185,14 @@ module App = {
     let undo = _ => focused->Option.iter(focused => dispatch(Event.File.Undo(focused)->Event.File))
     let redo = _ => focused->Option.iter(focused => dispatch(Event.File.Redo(focused)->Event.File))
 
-    let newModel = () => dispatch(Event.File.NewModel(Gid.create())->Event.File)
+    let newModel = path => dispatch(Event.File.NewModel(Gid.create(), path)->Event.File)
+    let newFolder = path => dispatch(Event.File.NewFolder(Gid.create(), path)->Event.File)
     let deleteModel = id => dispatch(Event.File.DeleteModel(id)->Event.File)
+    let deleteFolder = id => dispatch(Event.File.DeleteFolder(id)->Event.File)
     let focusModel = id => dispatch(Event.File.FocusModel(id)->Event.File)
     let reorder = newOrder => dispatch(Event.File.ReorderModels(newOrder)->Event.File)
     let renameModel = (id, name) => dispatch(Event.Model(id, Event.Model.Rename(name)))
+    let renameFolder = (id, name) => dispatch(Event.File.RenameFolder(id, name)->Event.File)
     let duplicateModel = id => {
       let newId = Gid.create()
       dispatch(Event.File.DuplicateModel(id, newId)->Event.File)
@@ -475,12 +482,15 @@ module App = {
       <FilePanel
         id="file-panel"
         models={State.models(state)}
-        active={focused}
+        active={State.focused(state)} // Focused is always a model, so this is done separately.
         onCreate={newModel}
+        onCreateFolder={newFolder}
         onDelete={deleteModel}
+        onDeleteFolder={deleteFolder}
         onSelect={focusModel}
         onDuplicate={duplicateModel}
         onChangedName={renameModel}
+        onChangedFolderName={renameFolder}
         onReorder={reorder}
         onImport={importModels}
         onExport={exportModel}
