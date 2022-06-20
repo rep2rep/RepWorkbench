@@ -18,8 +18,8 @@ module Intelligence = {
 
 module File = {
   type t =
-    | NewModel(Gid.t, array<Gid.t>)
-    | NewFolder(Gid.t, array<Gid.t>)
+    | NewModel(Gid.t, FileTree.Path.t)
+    | NewFolder(Gid.t, FileTree.Path.t)
     | DeleteModel(Gid.t)
     | DeleteFolder(Gid.t)
     | FocusModel(option<Gid.t>)

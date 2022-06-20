@@ -7,13 +7,13 @@ module Intelligence: {
 
 module File: {
   type t =
-    | NewModel(Gid.t, array<Gid.t>)
-    | NewFolder(Gid.t, array<Gid.t>)
+    | NewModel(Gid.t, FileTree.Path.t)
+    | NewFolder(Gid.t, FileTree.Path.t)
     | DeleteModel(Gid.t)
     | DeleteFolder(Gid.t)
     | FocusModel(option<Gid.t>)
     | DuplicateModel(Gid.t, Gid.t)
-    | ImportModel(State.Model.t)
+    | ImportModel(State.Model.t, FileTree.Path.t)
     | ReorderModels(FileTree.t<Gid.t>)
     | RenameFolder(Gid.t, string)
     | Undo(Gid.t)

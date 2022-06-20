@@ -408,11 +408,10 @@ let make = (
         models
         ->FileTree.getFolderPathAndPosition(id)
         ->Option.map(fst)
-        ->Option.map(arr => Array.concat(arr, [id]))
+        ->Option.map(path => path->FileTree.Path.extend(id))
       }
     )
-    ->Option.getWithDefault([])
-  Js.Console.log(selectedPath)
+    ->Option.getWithDefault(FileTree.Path.root)
   let container = React.useRef(Js.Nullable.null)
   let (dropTargetActive, setDropTargetActive) = React.useState(() => false)
   let (closedFolders, setClosedFolders') = React.useState(() =>
@@ -431,7 +430,7 @@ let make = (
   let path = []
   let paths =
     models
-    ->FileTree.asPaths
+    ->FileTree.asFlat
     ->Array.map(f =>
       switch f {
       | FileTree.FileOrFolder.File((_, _)) => (Array.copy(path), f)
@@ -524,7 +523,7 @@ let make = (
           paths
           ->Array.map(snd)
           ->move(~oldIndex, ~newIndex)
-          ->FileTree.fromPaths
+          ->FileTree.fromFlat
           ->FileTree.map(((id, _)) => id)
           ->onReorder}
         container={() => container.current}
@@ -693,8 +692,8 @@ let make = (
 }
 
 let make = React.memoCustomCompareProps(make, (old_, new_) => {
-  let old_models = FileTree.asPaths(old_["models"])
-  let new_models = FileTree.asPaths(new_["models"])
+  let old_models = FileTree.asFlat(old_["models"])
+  let new_models = FileTree.asFlat(new_["models"])
   old_["id"] === new_["id"] &&
   old_["active"] === new_["active"] &&
   Array.length(old_models) === Array.length(new_models) &&

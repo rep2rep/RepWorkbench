@@ -59,8 +59,8 @@ let models: t => FileTree.t<(Gid.t, Model.t)>
 let focused: t => option<Gid.t>
 let model: (t, Gid.t) => option<Model.t>
 
-let createModel: (t, Gid.t, array<Gid.t>) => t
-let createFolder: (t, Gid.t, array<Gid.t>) => t
+let createModel: (t, Gid.t, FileTree.Path.t) => t
+let createFolder: (t, Gid.t, FileTree.Path.t) => t
 let deleteModel: (t, Gid.t) => t
 let deleteFolder: (t, Gid.t) => t
 let focusModel: (t, option<Gid.t>) => t
