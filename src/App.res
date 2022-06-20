@@ -380,7 +380,7 @@ module App = {
         dispatch(Event.Intelligence.Focus(m, None)->Event.File.Intelligence->Event.File)
       )
     }
-    let importModels = fs =>
+    let importModels = (fs, path) =>
       fs->Array.forEach(f => {
         File.text(f)
         |> Js.Promise.then_(text => {
@@ -394,7 +394,7 @@ module App = {
                   "\n*** Imported " ++ Js.Date.make()->Js.Date.toString ++ " ***",
                 )
 
-              dispatch(Event.File.ImportModel(model)->Event.File)
+              dispatch(Event.File.ImportModel(model, path)->Event.File)
             }
           | Or_error.Err(e) => {
               Js.Console.log(e)

@@ -12,6 +12,6 @@ let make: (
   ~onChangedName: (Gid.t, string) => unit,
   ~onChangedFolderName: (Gid.t, string) => unit,
   ~onReorder: FileTree.t<Gid.t> => unit,
-  ~onImport: array<File.t> => unit,
+  ~onImport: (array<File.t>, FileTree.Path.t) => unit,
   ~onExport: Gid.t => unit,
 ) => React.element

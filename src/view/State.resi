@@ -65,7 +65,7 @@ let deleteModel: (t, Gid.t) => t
 let deleteFolder: (t, Gid.t) => t
 let focusModel: (t, option<Gid.t>) => t
 let duplicateModel: (t, ~existing: Gid.t, ~new_: Gid.t) => t
-let importModel: (t, Model.t) => t
+let importModel: (t, Model.t, FileTree.Path.t) => t
 let reorderModels: (t, FileTree.t<Gid.t>) => t
 let renameFolder: (t, Gid.t, string) => t
 

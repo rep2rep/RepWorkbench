@@ -566,7 +566,7 @@ let make = (
             fname->String.endsWith(".risn") || fname->String.endsWith(".repn")
           })
           if keep != [] {
-            onImport(keep)
+            onImport(keep, FileTree.Path.root)
           }
           if reject != [] {
             Dialog.alert(
@@ -635,7 +635,7 @@ let make = (
             let files = e->ReactEvent.Form.currentTarget->(t => t["files"])
             switch files {
             | [] => ()
-            | fs => onImport(fs)
+            | fs => onImport(fs, selectedPath)
             }
           }}
         />

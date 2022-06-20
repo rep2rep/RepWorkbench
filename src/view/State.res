@@ -551,13 +551,13 @@ let duplicateModel = (t, ~existing, ~new_) => {
   }
 }
 
-let importModel = (t, model) => {
+let importModel = (t, model, path) => {
   // Duplicate the model to ensure fresh ids
   let newId = Gid.create()
   let model = Model.duplicate(model, model.info.name)->UndoRedo.create
   {
     currentModel: Some(newId),
-    positions: t.positions->FileTree.insertFile(~path=[], ~position=-1, newId)->Option.getExn,
+    positions: t.positions->FileTree.insertFile(~path, ~position=-1, newId)->Option.getExn,
     models: t.models->Gid.Map.set(newId, model),
   }
 }
