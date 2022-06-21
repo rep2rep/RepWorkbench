@@ -773,7 +773,7 @@ let showLink = (linkId, link, onChange) =>
 @react.component
 let make = (~id, ~data, ~onChange=?) => {
   let onChange = onChange->Option.getWithDefault(_ => ())
-  <HideablePanel2
+  <HideablePanel
     id
     className="inspector-panel"
     toggle={(~hidden) =>
@@ -848,5 +848,5 @@ let make = (~id, ~data, ~onChange=?) => {
       | InspectorState.Link(linkId, link) => showLink(linkId, link, onChange)
       }}
     </div>
-  </HideablePanel2>
+  </HideablePanel>
 }

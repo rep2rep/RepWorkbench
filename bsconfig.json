@@ -24,8 +24,7 @@
     "@rescript/react",
     "@ryyppy/rescript-promise",
     "RepWeb",
-    "rescript-react-d3-graph",
-    "rescript-react-draggable-list"
+    "rescript-react-d3-graph"
   ],
   "bsc-flags": [
     "-open RepWeb"
