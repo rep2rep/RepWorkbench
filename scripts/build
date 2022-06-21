@@ -4,13 +4,23 @@ ROOT="$(npm root)"
 BASE=`dirname '$ROOT'`
 
 STATICS="index.html manual.html"
-# VERSION="$(git rev-parse --short HEAD)"
-VERSION="$(date '+%Y-%m-%d')"
+VERSION_BASE="$(date '+%Y-%m-%d')"
+if [[ "${NODE_ENV}" == "production" ]]; then
+    VERSION="${VERSION_BASE}"
+else
+    VERSION="${VERSION_BASE}-DEV"
+fi
 
 rm -rf "$BASE/dist"
 "$ROOT/rescript/rescript" build -with-deps
 mkdir -p "$BASE/dist"
-node "$BASE/bundle.js"
+
+node "$BASE/bundle.js" "bundle"
+ls "$BASE/dist" | grep -E "\.js$" | xargs -t -I % sed -i '.bak' '1s/^/var React = require("react");\nvar ReactDOM = require("react-dom");\nvar exports = {};\n/' "$BASE/dist/%"
+
+node "$BASE/bundle.js" "minify"
+rm $BASE/dist/*.bak
+
 echo "$STATICS" | xargs -t -n 1 -I % sh -c "cp '$BASE/src/%' '$BASE/dist/%'"
 ls "$BASE/dist" | xargs -t -I % sed -i '.bak' "s/##VERSION##/$VERSION/g" "$BASE/dist/%"
 rm $BASE/dist/*.bak
