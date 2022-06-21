@@ -599,7 +599,6 @@ let make = (
           ~width="100%",
           (),
         )}>
-        // TODO: onCreate and onCreateFolder determine where it should actually go
         <Button onClick={_ => onCreate(selectedPath)} value="New" />
         <Button
           onClick={_ => active->Option.iter(onDuplicate)} enabled={isModel} value="Duplicate"
