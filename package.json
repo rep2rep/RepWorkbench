@@ -7,7 +7,7 @@
   "scripts": {
     "test": "./scripts/run-tests",
     "build": "./scripts/build",
-    "release": "NODE_ENV=\"production\" ./scripts/build",
+    "release": "NODE_ENV='production' ./scripts/build",
     "clean": "./node_modules/rescript/rescript clean; rm -rf ./dist",
     "format": "./scripts/format-rescript; ./scripts/format-json",
     "watch": "./scripts/watch"
