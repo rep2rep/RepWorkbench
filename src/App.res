@@ -486,11 +486,11 @@ module App = {
       )}>
       <FP
         id="file-panel"
-    title="RISN Editor"
-    version="##VERSION##"
+        title="RISN Editor"
+        version="##VERSION##"
         data={State.models(state)}
         active={State.focused(state)} // Focused is always a model, so this is done separately.
-    importExtensions={[".risn", ".repn"]}
+        importExtensions={[".risn", ".repn"]}
         onCreate={newModel}
         onCreateFolder={newFolder}
         onDelete={deleteModel}
