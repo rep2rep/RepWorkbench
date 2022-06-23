@@ -403,6 +403,7 @@ type t = {
   models: Gid.Map.t<UndoRedo.t<Model.t>>,
   positions: FileTree.t<Gid.t>,
   currentModel: option<Gid.t>,
+  viewTransforms: Gid.Map.t<ReactD3Graph.Graph.ViewTransform.t>,
 }
 
 let store = t => {
@@ -465,6 +466,7 @@ let load = () => {
       models: models,
       positions: positions,
       currentModel: currentModel,
+      viewTransforms: Gid.Map.empty(),
     })
   })
 }
@@ -473,6 +475,7 @@ let empty = {
   models: Gid.Map.empty(),
   positions: FileTree.empty(),
   currentModel: None,
+  viewTransforms: Gid.Map.empty(),
 }
 
 let focused = t => t.currentModel
@@ -483,6 +486,7 @@ let models = t =>
 let model = (t, id) => t.models->Gid.Map.get(id)->Option.map(UndoRedo.state)
 
 let createModel = (t, id, path) => {
+  ...t,
   models: t.models->Gid.Map.set(id, Model.create("Model")->UndoRedo.create),
   positions: t.positions->FileTree.insertFile(~path, ~position=-1, id)->Option.getExn,
   currentModel: Some(id),
@@ -501,6 +505,7 @@ let deleteModel = (t, id) => {
     models: t.models->Gid.Map.remove(id),
     positions: t.positions->FileTree.removeFile(id' => id' === id),
     currentModel: currentModel,
+    viewTransforms: t.viewTransforms->Gid.Map.remove(id),
   }
 }
 
@@ -526,6 +531,7 @@ let deleteFolder = (t, id) => {
     t.currentModel
   }
   {
+    ...t,
     models: removed->Array.reduce(t.models, (models, rem) => {
       Model.delete(rem)
       models->Gid.Map.remove(rem)
@@ -545,6 +551,7 @@ let duplicateModel = (t, ~existing, ~new_) => {
   let oldModel = t.models->Gid.Map.get(existing)->Option.getExn->UndoRedo.state
   let newModel = oldModel->Model.duplicate(oldModel.info.name ++ " (Copy)")->UndoRedo.create
   {
+    ...t,
     currentModel: Some(new_),
     positions: t.positions->FileTree.insertFile(~path, ~position=position + 1, new_)->Option.getExn,
     models: t.models->Gid.Map.set(new_, newModel),
@@ -556,6 +563,7 @@ let importModel = (t, model, path) => {
   let newId = Gid.create()
   let model = Model.duplicate(model, model.info.name)->UndoRedo.create
   {
+    ...t,
     currentModel: Some(newId),
     positions: t.positions->FileTree.insertFile(~path, ~position=-1, newId)->Option.getExn,
     models: t.models->Gid.Map.set(newId, model),
@@ -606,3 +614,6 @@ let canUndo = (t, id) =>
   t.models->Gid.Map.get(id)->Option.map(UndoRedo.canUndo)->Option.getWithDefault(false)
 let canRedo = (t, id) =>
   t.models->Gid.Map.get(id)->Option.map(UndoRedo.canRedo)->Option.getWithDefault(false)
+
+let viewTransform = (t, id) => t.viewTransforms->Gid.Map.get(id)
+let setViewTransform = (t, id, vt) => {...t, viewTransforms: t.viewTransforms->Gid.Map.set(id, vt)}

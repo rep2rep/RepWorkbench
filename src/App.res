@@ -380,6 +380,10 @@ module App = {
         dispatch(Event.Intelligence.Focus(m, None)->Event.File.Intelligence->Event.File)
       )
     }
+
+    let onZoomed = (~oldZoom as _, ~newZoom) =>
+      focused->Option.iter(id => dispatch(Event.File.ViewTransform(id, newZoom)->Event.File))
+
     let importModels = (fs, path) =>
       fs->Array.forEach(f => {
         File.text(f)
@@ -625,8 +629,12 @@ module App = {
               )
               ->Option.getWithDefault(ModelState.empty->ModelState.data)}
               selection
+              viewTransform={focused
+              ->Option.flatMap(state->State.viewTransform(_))
+              ->Option.getWithDefault(ReactD3Graph.Graph.ViewTransform.init)}
               onSelectionChange={selectionChange}
               onNodePositionChange={movedNodes}
+              onZoomChange={onZoomed}
               keybindings={keybindings}
               showGrid
               style={ReactDOM.Style.make(~flexGrow="1", ())}

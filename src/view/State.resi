@@ -75,3 +75,6 @@ let undo: (t, Gid.t) => t
 let redo: (t, Gid.t) => t
 let canUndo: (t, Gid.t) => bool
 let canRedo: (t, Gid.t) => bool
+
+let viewTransform: (t, Gid.t) => option<ReactD3Graph.Graph.ViewTransform.t>
+let setViewTransform: (t, Gid.t, ReactD3Graph.Graph.ViewTransform.t) => t

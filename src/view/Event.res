@@ -29,6 +29,7 @@ module File = {
     | RenameFolder(Gid.t, string)
     | Undo(Gid.t)
     | Redo(Gid.t)
+    | ViewTransform(Gid.t, ReactD3Graph.Graph.ViewTransform.t)
     | Intelligence(Intelligence.t)
 
   let dispatch = (state, t) =>
@@ -44,6 +45,7 @@ module File = {
     | RenameFolder(id, name) => state->State.renameFolder(id, name)
     | Undo(id) => state->State.undo(id)
     | Redo(id) => state->State.redo(id)
+    | ViewTransform(id, vt) => state->State.setViewTransform(id, vt)
     | Intelligence(i) => state->Intelligence.dispatch(i)
     }
 }
@@ -485,6 +487,7 @@ let rec shouldTriggerIntelligence = e =>
   | File(File.NewFolder(_))
   | File(File.DeleteFolder(_))
   | File(File.RenameFolder(_, _))
+  | File(File.ViewTransform(_, _))
   | File(File.Intelligence(_)) => false
   | Model(id, Model.Seq(vs)) =>
     vs->Array.map(v => Model(id, v))->Array.some(shouldTriggerIntelligence)

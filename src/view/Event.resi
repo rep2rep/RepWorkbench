@@ -18,6 +18,7 @@ module File: {
     | RenameFolder(Gid.t, string)
     | Undo(Gid.t)
     | Redo(Gid.t)
+    | ViewTransform(Gid.t, ReactD3Graph.Graph.ViewTransform.t)
     | Intelligence(Intelligence.t)
 }
 
