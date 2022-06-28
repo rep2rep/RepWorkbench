@@ -1,5 +1,9 @@
 module App = {
   module BoolStore = LocalStorage.MakeJsonable(Bool)
+  module FP = {
+    include FilePanel
+    let make = React.memo(make)
+  }
 
   type state = State.t
   type action = Event.t
@@ -123,12 +127,15 @@ module App = {
       None
     })
 
-    let focused =
-      state
-      ->State.focused
-      ->Option.flatMap(id => state->State.model(id))
-      ->Option.flatMap(_ => state->State.focused)
-    let toolbarActive = focused->Option.isSome
+    let focused = React.useMemo1(
+      () =>
+        state
+        ->State.focused
+        ->Option.flatMap(id => state->State.model(id))
+        ->Option.flatMap(_ => state->State.focused),
+      [state->State.focused],
+    )
+    let toolbarActive = React.useMemo1(() => focused->Option.isSome, [focused])
     let selection =
       focused
       ->Option.flatMap(focused =>
@@ -200,18 +207,42 @@ module App = {
     let undo = _ => focused->Option.iter(focused => dispatch(Event.File.Undo(focused)->Event.File))
     let redo = _ => focused->Option.iter(focused => dispatch(Event.File.Redo(focused)->Event.File))
 
-    let newModel = path => dispatch(Event.File.NewModel(Gid.create(), path)->Event.File)
-    let newFolder = path => dispatch(Event.File.NewFolder(Gid.create(), path)->Event.File)
-    let deleteModel = id => dispatch(Event.File.DeleteModel(id)->Event.File)
-    let deleteFolder = id => dispatch(Event.File.DeleteFolder(id)->Event.File)
-    let focusModel = id => dispatch(Event.File.FocusModel(id)->Event.File)
-    let reorder = newOrder => dispatch(Event.File.ReorderModels(newOrder)->Event.File)
-    let renameModel = (id, name) => dispatch(Event.Model(id, Event.Model.Rename(name)))
-    let renameFolder = (id, name) => dispatch(Event.File.RenameFolder(id, name)->Event.File)
-    let duplicateModel = id => {
+    let newModel = React.useCallback1(
+      path => dispatch(Event.File.NewModel(Gid.create(), path)->Event.File),
+      [dispatch],
+    )
+    let newFolder = React.useCallback1(
+      path => dispatch(Event.File.NewFolder(Gid.create(), path)->Event.File),
+      [dispatch],
+    )
+    let deleteModel = React.useCallback1(
+      id => dispatch(Event.File.DeleteModel(id)->Event.File),
+      [dispatch],
+    )
+    let deleteFolder = React.useCallback1(
+      id => dispatch(Event.File.DeleteFolder(id)->Event.File),
+      [dispatch],
+    )
+    let focusModel = React.useCallback1(
+      id => dispatch(Event.File.FocusModel(id)->Event.File),
+      [dispatch],
+    )
+    let reorder = React.useCallback1(
+      newOrder => dispatch(Event.File.ReorderModels(newOrder)->Event.File),
+      [dispatch],
+    )
+    let renameModel = React.useCallback1(
+      (id, name) => dispatch(Event.Model(id, Event.Model.Rename(name))),
+      [dispatch],
+    )
+    let renameFolder = React.useCallback1(
+      (id, name) => dispatch(Event.File.RenameFolder(id, name)->Event.File),
+      [dispatch],
+    )
+    let duplicateModel = React.useCallback1(id => {
       let newId = Gid.create()
       dispatch(Event.File.DuplicateModel(id, newId)->Event.File)
-    }
+    }, [dispatch])
 
     let selectionChange = (~oldSelection as _, ~newSelection) => {
       dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
@@ -399,7 +430,7 @@ module App = {
     let onZoomed = (~oldZoom as _, ~newZoom) =>
       focused->Option.iter(id => dispatch(Event.File.ViewTransform(id, newZoom)->Event.File))
 
-    let importModels = (fs, path) =>
+    let importModels = React.useCallback1((fs, path) =>
       fs->Array.forEach(f => {
         File.text(f)
         |> Js.Promise.then_(text => {
@@ -424,7 +455,8 @@ module App = {
         })
         |> ignore
       })
-    let exportModel = id => {
+    , [dispatch])
+    let exportModel = React.useCallback1(id => {
       state
       ->State.model(id)
       ->Option.iter(model => {
@@ -438,7 +470,7 @@ module App = {
           "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
         Downloader.download(name ++ ".risn", content)
       })
-    }
+    }, [state->State.modelsHash])
 
     module K = GlobalKeybindings.KeyBinding
     GlobalKeybindings.set([
@@ -489,9 +521,11 @@ module App = {
       }
     }
 
+    Js.Console.log(State.modelsHash(state))
     let fpData = React.useMemo1(() => State.models(state), [State.modelsHash(state)])
+    let modelName = React.useCallback0(model => model->State.Model.info->InspectorState.Model.name)
     let active = React.useMemo1(() => State.focused(state), [State.focused(state)])
-    let modelName = React.useCallback(model => model->State.Model.info->InspectorState.Model.name)
+    let importExtensions = React.useMemo0(() => [".risn", ".repn"])
 
     let viewTransform = ref(None)
     ifChanged(() => {
@@ -511,14 +545,14 @@ module App = {
         ~overflow="hidden",
         (),
       )}>
-      <FilePanel
+      <FP
         id="file-panel"
         title="RISN Editor"
         version="##VERSION##"
         data={fpData}
         dataName={modelName}
         active // Focused is always a model, so this is done separately.
-        importExtensions={[".risn", ".repn"]}
+        importExtensions
         onCreate={newModel}
         onCreateFolder={newFolder}
         onDelete={deleteModel}
