@@ -474,10 +474,9 @@ module App = {
       }
     }
 
-    module FP = FilePanel.Make({
-      type t = State.Model.t
-      let name = model => model->State.Model.info->InspectorState.Model.name
-    })
+    let fpData = React.useMemo1(() => State.models(state), [State.modelsHash(state)])
+    let active = React.useMemo1(() => State.focused(state), [State.focused(state)])
+    let modelName = React.useCallback(model => model->State.Model.info->InspectorState.Model.name)
 
     <main
       style={ReactDOM.Style.make(
@@ -488,12 +487,13 @@ module App = {
         ~overflow="hidden",
         (),
       )}>
-      <FP
+      <FilePanel
         id="file-panel"
         title="RISN Editor"
         version="##VERSION##"
-        data={State.models(state)}
-        active={State.focused(state)} // Focused is always a model, so this is done separately.
+        data={fpData}
+        dataName={modelName}
+        active // Focused is always a model, so this is done separately.
         importExtensions={[".risn", ".repn"]}
         onCreate={newModel}
         onCreateFolder={newFolder}
