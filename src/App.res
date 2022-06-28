@@ -4,6 +4,21 @@ module App = {
   type state = State.t
   type action = Event.t
 
+  let old = ref(None)
+  let ifChanged = (f, v) => {
+    switch old.contents {
+    | None => {
+        old := Some(v)
+        f()
+      }
+    | Some(v') =>
+      if v !== v' {
+        old := Some(v)
+        f()
+      }
+    }
+  }
+
   let intelligence = IntelligencePool.create("worker.js?v=##VERSION##")
   let sendToIntelligence = state => {
     state
@@ -478,6 +493,15 @@ module App = {
     let active = React.useMemo1(() => State.focused(state), [State.focused(state)])
     let modelName = React.useCallback(model => model->State.Model.info->InspectorState.Model.name)
 
+    let viewTransform = ref(None)
+    ifChanged(() => {
+      viewTransform :=
+        focused
+        ->Option.flatMap(state->State.viewTransform(_))
+        ->Option.getWithDefault(ReactD3Graph.Graph.ViewTransform.init)
+        ->Some
+    }, focused)
+
     <main
       style={ReactDOM.Style.make(
         ~display="flex",
@@ -629,6 +653,7 @@ module App = {
               )
               ->Option.getWithDefault(ModelState.empty->ModelState.data)}
               selection
+              viewTransform=?{viewTransform.contents}
               onSelectionChange={selectionChange}
               onNodePositionChange={movedNodes}
               onZoomChange={onZoomed}
