@@ -54,6 +54,12 @@ module Representation = {
     display: t.display,
     notes: t.notes,
   }
+
+  let hash: t => Hash.t = Hash.record3(
+    ("domain", String.hash),
+    ("display", String.hash),
+    ("notes", String.hash),
+  )
 }
 
 module Scheme = {
@@ -243,6 +249,16 @@ module Scheme = {
     organisation: t.organisation,
     notes: t.notes,
   }
+
+  let hash: t => Hash.t = Hash.record7(
+    ("concept_structure", String.hash),
+    ("graphic_structure", String.hash),
+    ("function", o => Option.hash(o, Function.hash)),
+    ("explicit", o => Option.hash(o, Bool.hash)),
+    ("scope", o => Option.hash(o, Scope.hash)),
+    ("organisation", String.hash),
+    ("notes", String.hash),
+  )
 }
 
 module Dimension = {
@@ -512,6 +528,20 @@ module Dimension = {
     organisation: t.organisation,
     notes: t.notes,
   }
+
+  let hash: t => Hash.t = Hash.record11(
+    ("concept", String.hash),
+    ("concept_scale", o => Option.hash(o, Quantity_scale.hash)),
+    ("concept_attributes", attr => attr->List.toArray->Array.hash(String.hash)),
+    ("graphic", String.hash),
+    ("graphic_scale", o => Option.hash(o, Quantity_scale.hash)),
+    ("graphic_attributes", attr => attr->List.toArray->Array.hash(String.hash)),
+    ("function", o => Option.hash(o, Function.hash)),
+    ("scope", o => Option.hash(o, Scope.hash)),
+    ("explicit", o => Option.hash(o, Bool.hash)),
+    ("organisation", String.hash),
+    ("notes", String.hash),
+  )
 }
 
 module Token = {
@@ -671,6 +701,15 @@ module Token = {
     explicit: t.explicit,
     notes: t.notes,
   }
+
+  let hash: t => Hash.t = Hash.record6(
+    ("concept", String.hash),
+    ("graphic", String.hash),
+    ("is_class", o => Option.hash(o, Bool.hash)),
+    ("function", o => Option.hash(o, Function.hash)),
+    ("explicit", o => Option.hash(o, Bool.hash)),
+    ("notes", String.hash),
+  )
 }
 
 module Placeholder = {
@@ -742,6 +781,12 @@ module Placeholder = {
     isIntensional: t.isIntensional,
     notes: t.notes,
   }
+
+  let hash: t => Hash.t = Hash.record3(
+    ("description", String.hash),
+    ("isIntensional", o => Option.hash(o, Bool.hash)),
+    ("notes", String.hash),
+  )
 }
 
 module Schema = {
@@ -899,11 +944,26 @@ module Schema = {
     | Token(t) => t.graphic
     | Placeholder(_) => ""
     }
+
+  let r_const = Hash.unique()
+  let s_const = Hash.unique()
+  let d_const = Hash.unique()
+  let t_const = Hash.unique()
+  let p_const = Hash.unique()
+  let hash: t => Hash.t = t =>
+    switch t {
+    | Representation(r) => [r_const, Representation.hash(r)]->Hash.combine
+    | Scheme(s) => [s_const, Scheme.hash(s)]->Hash.combine
+    | Dimension(d) => [d_const, Dimension.hash(d)]->Hash.combine
+    | Token(t) => [t_const, Token.hash(t)]->Hash.combine
+    | Placeholder(p) => [p_const, Placeholder.hash(p)]->Hash.combine
+    }
 }
 
 module Hierarchy = {
   type t = {notes: string}
 
+  let hash: t => Hash.t = Hash.record1("notes", String.hash)
   let empty = {notes: ""}
   let duplicate = t => {notes: t.notes}
 
@@ -947,6 +1007,7 @@ module Hierarchy = {
 module Anchor = {
   type t = {notes: string}
 
+  let hash: t => Hash.t = Hash.record1("notes", String.hash)
   let empty = {notes: ""}
   let duplicate = t => {notes: t.notes}
 
@@ -988,6 +1049,7 @@ module Anchor = {
 module Relation = {
   type t = {notes: string}
 
+  let hash: t => Hash.t = Hash.record1("notes", String.hash)
   let empty = {notes: ""}
   let duplicate = t => {notes: t.notes}
 
@@ -1032,6 +1094,7 @@ module Relation = {
 module Overlap = {
   type t = {notes: string}
 
+  let hash: t => Hash.t = Hash.record1("notes", String.hash)
   let empty = {notes: ""}
   let duplicate = t => {notes: t.notes}
 
@@ -1072,6 +1135,7 @@ module Overlap = {
 module Disjoint = {
   type t = {notes: string}
 
+  let hash: t => Hash.t = Hash.record1("notes", String.hash)
   let empty = {notes: ""}
   let duplicate = t => {notes: t.notes}
 
@@ -1116,6 +1180,7 @@ module Disjoint = {
 module Generic = {
   type t = {notes: string}
 
+  let hash: t => Hash.t = Hash.record1("notes", String.hash)
   let empty = {notes: ""}
   let duplicate = t => {notes: t.notes}
 
@@ -1181,6 +1246,22 @@ module Link = {
     | Overlap(v) => Overlap(Overlap.duplicate(v))
     | Disjoint(v) => Disjoint(Disjoint.duplicate(v))
     | Generic(v) => Generic(Generic.duplicate(v))
+    }
+
+  let h_const = Hash.unique()
+  let a_const = Hash.unique()
+  let r_const = Hash.unique()
+  let o_const = Hash.unique()
+  let d_const = Hash.unique()
+  let g_const = Hash.unique()
+  let hash = t =>
+    switch t {
+    | Hierarchy(v) => [h_const, Hierarchy.hash(v)]->Hash.combine
+    | Anchor(v) => [a_const, Anchor.hash(v)]->Hash.combine
+    | Relation(v) => [r_const, Relation.hash(v)]->Hash.combine
+    | Overlap(v) => [o_const, Overlap.hash(v)]->Hash.combine
+    | Disjoint(v) => [d_const, Disjoint.hash(v)]->Hash.combine
+    | Generic(v) => [g_const, Generic.hash(v)]->Hash.combine
     }
 
   module Stable = {
@@ -1300,6 +1381,14 @@ module SchemaOrLink = {
     | Link(l) => Link(Link.duplicate(l))
     }
 
+  let schema_hash = Hash.unique()
+  let link_hash = Hash.unique()
+  let hash = t =>
+    switch t {
+    | Schema(s) => Hash.combine([schema_hash, Schema.hash(s)])
+    | Link(l) => Hash.combine([link_hash, Link.hash(l)])
+    }
+
   module Stable = {
     module V1 = {
       type t = t =
@@ -1400,6 +1489,8 @@ module Model = {
         })
     }
   }
+
+  let hash: t => Hash.t = Hash.record2(("name", String.hash), ("notes", String.hash))
 
   let name = t => t.name
   let notes = t => t.notes

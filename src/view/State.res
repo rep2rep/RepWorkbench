@@ -395,6 +395,20 @@ module Model = {
       focusedIntelligence: None,
     }
   }
+
+  let hash: t => Hash.t = Hash.record3(
+    ("info", InspectorState.Model.hash),
+    ("graph", ModelState.hash),
+    (
+      "slots",
+      slots =>
+        slots
+        ->Gid.Map.toArray
+        ->Array.hash(((id, slots)) =>
+          Hash.combine([Gid.hash(id), InspectorState.SchemaOrLink.hash(slots)])
+        ),
+    ),
+  )
 }
 
 let setDB = (newDB, store) => db->SetOnce.set((newDB, store))
@@ -617,3 +631,9 @@ let canRedo = (t, id) =>
 
 let viewTransform = (t, id) => t.viewTransforms->Gid.Map.get(id)
 let setViewTransform = (t, id, vt) => {...t, viewTransforms: t.viewTransforms->Gid.Map.set(id, vt)}
+
+let modelsHash = t =>
+  t.models
+  ->Gid.Map.toArray
+  ->Array.map(((id, model)) => Hash.combine([Gid.hash(id), model->UndoRedo.state->Model.hash]))
+  ->Hash.combine

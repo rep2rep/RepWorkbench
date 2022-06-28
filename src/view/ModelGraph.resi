@@ -1,5 +1,6 @@
 type t
 
+let hash: t => Hash.t
 let duplicate: (t, Gid.Map.t<Gid.t>) => t
 
 let empty: t

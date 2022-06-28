@@ -6,6 +6,20 @@ module Kind = {
     | Token
     | Placeholder
 
+  let r_const = Hash.unique()
+  let s_const = Hash.unique()
+  let d_const = Hash.unique()
+  let t_const = Hash.unique()
+  let p_const = Hash.unique()
+  let hash = t =>
+    switch t {
+    | Representation => r_const
+    | Scheme => s_const
+    | Dimension => d_const
+    | Token => t_const
+    | Placeholder => p_const
+    }
+
   module Stable = {
     module V1 = {
       type t =
@@ -783,6 +797,11 @@ let updateConfig = (t, f) => t->ReactD3Graph.Node.updateConfig(f)
 let updatePayload = (t, f) => {
   let t' = t->ReactD3Graph.Node.updatePayload(n => n->Option.map(f))
   t'->updateConfig(_ => Configs.create(t'->id, t'->ReactD3Graph.Node.payload->Option.getExn))
+}
+
+let hash = t => {
+  let (x, y) = position(t)
+  Hash.combine([Gid.hash(id(t)), Kind.hash(kind(t)), Float.hash(x), Float.hash(y)])
 }
 
 let dupWithNewId = (t, id) =>

@@ -7,6 +7,22 @@ module Kind = {
     | Disjoint
     | Generic
 
+  let h_const = Hash.unique()
+  let a_const = Hash.unique()
+  let r_const = Hash.unique()
+  let o_const = Hash.unique()
+  let d_const = Hash.unique()
+  let g_const = Hash.unique()
+  let hash = t =>
+    switch t {
+    | Hierarchy => h_const
+    | Anchor => a_const
+    | Relation => r_const
+    | Overlap => o_const
+    | Disjoint => d_const
+    | Generic => g_const
+    }
+
   module Stable = {
     module V1 = {
       type t =
@@ -233,6 +249,9 @@ let id = t =>
   ->Option.getExn
 let payload = t => t->ReactD3Graph.Link.payload
 let kind = t => t->payload->Option.getWithDefault(Kind.Hierarchy)
+
+let hash = t =>
+  Hash.combine([Gid.hash(id(t)), Gid.hash(source(t)), Gid.hash(target(t)), Kind.hash(kind(t))])
 
 module Stable = {
   module V1 = {

@@ -225,6 +225,7 @@ module SchemaOrLink: {
     | Link(Link.t)
 
   let duplicate: t => t
+  let hash: t => Hash.t
 
   module Stable: {
     module V1: {
@@ -245,6 +246,8 @@ module Model: {
       let fromJson: Js.Json.t => Or_error.t<t>
     }
   }
+
+  let hash: t => Hash.t
 
   let name: t => string
   let notes: t => string

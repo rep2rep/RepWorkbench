@@ -5,6 +5,8 @@ let duplicate: (t, Gid.Map.t<Gid.t>) => t
 let empty: t
 let data: t => ReactD3Graph.Data.t<ModelNode.Payload.t, ModelLink.Payload.t>
 
+let hash: t => Hash.t
+
 let graph: t => ModelGraph.t
 let addNode: (t, ModelNode.t) => t
 let addNodes: (t, array<ModelNode.t>) => t

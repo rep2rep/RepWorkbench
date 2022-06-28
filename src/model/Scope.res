@@ -1,5 +1,13 @@
 type t = Global | Local
 
+let g_const = Hash.unique()
+let h_const = Hash.unique()
+let hash = t =>
+  switch t {
+  | Global => g_const
+  | Local => h_const
+  }
+
 let toString = t =>
   switch t {
   | Global => "Global"

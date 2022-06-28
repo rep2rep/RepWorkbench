@@ -1,5 +1,7 @@
 type t = Global | Local
 
+let hash: t => Hash.t
+
 let toString: t => string
 let fromString: string => option<t>
 

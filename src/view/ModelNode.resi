@@ -59,6 +59,7 @@ module Payload: {
 
 type t
 
+let hash: t => Hash.t
 let data: t => array<ReactD3Graph.Node.t<Payload.t>>
 
 let create: (~name: string, ~reference: string, ~x: float, ~y: float, Kind.t, Gid.t) => t

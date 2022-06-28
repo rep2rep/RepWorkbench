@@ -131,6 +131,11 @@ module Stable = {
   }
 }
 
+let hash = Hash.record2(
+  ("nodes", arr => arr->Array.hash(ModelNode.hash)),
+  ("links", arr => arr->Array.hash(ModelLink.hash)),
+)
+
 let duplicate = (t, newIdMap) => {
   let nodes =
     t.nodes->Array.map(node =>

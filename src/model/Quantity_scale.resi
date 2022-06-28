@@ -4,6 +4,8 @@ type t =
   | Interval
   | Ratio
 
+let hash: t => Hash.t
+
 let toString: t => string
 let fromString: string => option<t>
 

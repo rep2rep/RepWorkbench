@@ -42,6 +42,7 @@ module Payload: {
 
 type t
 
+let hash: t => Hash.t
 let data: t => array<ReactD3Graph.Link.t<Payload.t>>
 
 let create: (~linkId: Gid.t, ~source: ModelNode.t, ~target: ModelNode.t, Kind.t) => t

@@ -4,6 +4,18 @@ type t =
   | Interval
   | Ratio
 
+let n_const = Hash.unique()
+let o_const = Hash.unique()
+let i_const = Hash.unique()
+let r_const = Hash.unique()
+let hash = t =>
+  switch t {
+  | Nominal => n_const
+  | Ordinal => o_const
+  | Interval => i_const
+  | Ratio => r_const
+  }
+
 let toString = t =>
   switch t {
   | Nominal => "Nominal"

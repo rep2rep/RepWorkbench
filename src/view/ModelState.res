@@ -206,6 +206,8 @@ module Stable = {
   }
 }
 
+let hash = Hash.record1("graph", ModelGraph.hash)
+
 let duplicate = (t, newIdMap) => {
   graph: t.graph->ModelGraph.duplicate(newIdMap),
   selection: t.selection->ModelSelection.duplicate(newIdMap),
