@@ -629,9 +629,6 @@ module App = {
               )
               ->Option.getWithDefault(ModelState.empty->ModelState.data)}
               selection
-              viewTransform={focused
-              ->Option.flatMap(state->State.viewTransform(_))
-              ->Option.getWithDefault(ReactD3Graph.Graph.ViewTransform.init)}
               onSelectionChange={selectionChange}
               onNodePositionChange={movedNodes}
               onZoomChange={onZoomed}
