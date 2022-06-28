@@ -633,7 +633,11 @@ let viewTransform = (t, id) => t.viewTransforms->Gid.Map.get(id)
 let setViewTransform = (t, id, vt) => {...t, viewTransforms: t.viewTransforms->Gid.Map.set(id, vt)}
 
 let modelsHash = t =>
-  t.models
-  ->Gid.Map.toArray
-  ->Array.map(((id, model)) => Hash.combine([Gid.hash(id), model->UndoRedo.state->Model.hash]))
-  ->Hash.combine
+  [
+    t.currentModel->Option.hash(Gid.hash),
+    t.models
+    ->Gid.Map.toArray
+    ->Array.map(((id, model)) => Hash.combine([Gid.hash(id), model->UndoRedo.state->Model.hash]))
+    ->Hash.combine,
+    t.positions->FileTree.hash(Gid.hash),
+  ]->Hash.combine
