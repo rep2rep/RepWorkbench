@@ -470,11 +470,6 @@ module App = {
       }
     }
 
-    module FP = FilePanel.Make({
-      type t = State.Model.t
-      let name = model => model->State.Model.info->InspectorState.Model.name
-    })
-
     <main
       style={ReactDOM.Style.make(
         ~display="flex",
@@ -484,11 +479,12 @@ module App = {
         ~overflow="hidden",
         (),
       )}>
-      <FP
+      <FilePanel
         id="file-panel"
         title="RISN Editor"
         version="##VERSION##"
         data={State.models(state)}
+        dataName={model => model->State.Model.info->InspectorState.Model.name}
         active={State.focused(state)} // Focused is always a model, so this is done separately.
         importExtensions={[".risn", ".repn"]}
         onCreate={newModel}
