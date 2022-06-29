@@ -632,7 +632,7 @@ let canRedo = (t, id) =>
 let viewTransform = (t, id) => t.viewTransforms->Gid.Map.get(id)
 let setViewTransform = (t, id, vt) => {...t, viewTransforms: t.viewTransforms->Gid.Map.set(id, vt)}
 
-let modelsHash = t =>
+let hash = t =>
   [
     t.currentModel->Option.hash(Gid.hash),
     t.models
