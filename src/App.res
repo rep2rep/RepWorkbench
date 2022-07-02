@@ -194,7 +194,6 @@ module App = {
           switch slot {
           | "Description" =>
             Some(Event.Slots.Placeholder(Event.Slots.Placeholder.Description(value)))
-
           | _ => None
           }
 
@@ -650,8 +649,15 @@ module App = {
             ~overflowX="auto",
             (),
           )}>
-          <Button onClick={_ => undo()} value="Undo" enabled={canUndo} tooltip="Cmd+Z" />
-          <Button onClick={_ => redo()} value="Redo" enabled={canRedo} tooltip="Cmd+Shift+Z" />
+          <Button
+            onClick={_ => undo()} value="Undo" enabled={canUndo} tooltip={K.cmdOrCtrl() ++ "+Z"}
+          />
+          <Button
+            onClick={_ => redo()}
+            value="Redo"
+            enabled={canRedo}
+            tooltip={K.cmdOrCtrl() ++ "+Shift+Z"}
+          />
           <Button.Separator />
           <Button
             onClick={_ => addRepNodeAt(~x=0., ~y=0.)}
