@@ -1,5 +1,6 @@
 module App = {
   module BoolStore = LocalStorage.MakeJsonable(Bool)
+  module K = GlobalKeybindings.KeyBinding
   module FP = {
     include FilePanel
     let make = React.memo(make)
@@ -117,15 +118,17 @@ module App = {
   let make = (~init) => {
     let (state, dispatch) = React.useReducer(reducer, init)
 
-    let intelligenceListener = (response: Intelligence_Intf.Response.t) => {
+    let intelligenceListener = React.useCallback1((response: Intelligence_Intf.Response.t) => {
       dispatch(Event.Intelligence.Response(response)->Event.File.Intelligence->Event.File)
-    }
+    }, [dispatch])
 
     React.useEffect0(() => {
       intelligence->IntelligencePool.listen(intelligenceListener)
       dispatch(Event.File(Event.File.Intelligence(Event.Intelligence.Init)))
       None
     })
+
+    let stateHash = State.hash(state)
 
     let focused = React.useMemo1(
       () =>
@@ -136,14 +139,17 @@ module App = {
       [state->State.focused],
     )
     let toolbarActive = React.useMemo1(() => focused->Option.isSome, [focused])
-    let selection =
-      focused
-      ->Option.flatMap(focused =>
-        state
-        ->State.model(focused)
-        ->Option.map(model => model->State.Model.graph->ModelState.selection)
-      )
-      ->Option.getWithDefault(ModelSelection.empty)
+    let selection = React.useMemo2(
+      () =>
+        focused
+        ->Option.flatMap(focused =>
+          state
+          ->State.model(focused)
+          ->Option.map(model => model->State.Model.graph->ModelState.selection)
+        )
+        ->Option.getWithDefault(ModelSelection.empty),
+      (focused, state),
+    )
     let intel =
       focused
       ->Option.flatMap(focused =>
@@ -151,61 +157,74 @@ module App = {
       )
       ->Option.getWithDefault(Intelligence_Intf.Response.empty)
 
-    let dispatchM = e => focused->Option.iter(focused => dispatch(Event.Model(focused, e)))
+    let dispatchM = React.useCallback2(
+      e => focused->Option.iter(focused => dispatch(Event.Model(focused, e))),
+      (focused, dispatch),
+    )
 
     // Node Inline Editing
-    ModelNodeEdit.setGlobal((id, schema, slot, value) => {
-      let e = switch schema {
-      | "Representation" =>
-        switch slot {
-        | "Domain" => Some(Event.Slots.Representation.Domain(value))
-        | "Display" => Some(Event.Slots.Representation.Display(value))
-        | _ => None
-        }->Option.map(e => Event.Slots.Representation(e))
-      | "Scheme" =>
-        switch slot {
-        | "Concept" => Some(Event.Slots.Scheme.Concept_structure(value))
-        | "Graphic" => Some(Event.Slots.Scheme.Graphic_structure(value))
-        | _ => None
-        }->Option.map(e => Event.Slots.Scheme(e))
-      | "Dimension" =>
-        switch slot {
-        | "Concept" => Some(Event.Slots.Dimension.Concept(value))
-        | "Graphic" => Some(Event.Slots.Dimension.Graphic(value))
-        | _ => None
-        }->Option.map(e => Event.Slots.Dimension(e))
-      | "Token" =>
-        switch slot {
-        | "Concept" => Some(Event.Slots.Token.Concept(value))
-        | "Graphic" => Some(Event.Slots.Token.Graphic(value))
-        | _ => None
-        }->Option.map(e => Event.Slots.Token(e))
-      | "Placeholder" =>
-        switch slot {
-        | "Description" => Some(Event.Slots.Placeholder(Event.Slots.Placeholder.Description(value)))
+    React.useEffect1(() => {
+      ModelNodeEdit.setGlobal((id, schema, slot, value) => {
+        let e = switch schema {
+        | "Representation" =>
+          switch slot {
+          | "Domain" => Some(Event.Slots.Representation.Domain(value))
+          | "Display" => Some(Event.Slots.Representation.Display(value))
+          | _ => None
+          }->Option.map(e => Event.Slots.Representation(e))
+        | "Scheme" =>
+          switch slot {
+          | "Concept" => Some(Event.Slots.Scheme.Concept_structure(value))
+          | "Graphic" => Some(Event.Slots.Scheme.Graphic_structure(value))
+          | _ => None
+          }->Option.map(e => Event.Slots.Scheme(e))
+        | "Dimension" =>
+          switch slot {
+          | "Concept" => Some(Event.Slots.Dimension.Concept(value))
+          | "Graphic" => Some(Event.Slots.Dimension.Graphic(value))
+          | _ => None
+          }->Option.map(e => Event.Slots.Dimension(e))
+        | "Token" =>
+          switch slot {
+          | "Concept" => Some(Event.Slots.Token.Concept(value))
+          | "Graphic" => Some(Event.Slots.Token.Graphic(value))
+          | _ => None
+          }->Option.map(e => Event.Slots.Token(e))
+        | "Placeholder" =>
+          switch slot {
+          | "Description" =>
+            Some(Event.Slots.Placeholder(Event.Slots.Placeholder.Description(value)))
+
+          | _ => None
+          }
 
         | _ => None
         }
-
-      | _ => None
-      }
-      let e = e->Option.map(e => Event.Model.Slots(id, e))
-      switch e {
-      | Some(e) =>
-        switch Event.Model.graphEvent(e) {
-        | None => dispatchM(e)
-        | Some(e') => dispatchM(Event.Model.Seq([e, Event.Model.Graph(e')]))
+        let e = e->Option.map(e => Event.Model.Slots(id, e))
+        switch e {
+        | Some(e) =>
+          switch Event.Model.graphEvent(e) {
+          | None => dispatchM(e)
+          | Some(e') => dispatchM(Event.Model.Seq([e, Event.Model.Graph(e')]))
+          }
+        | None => Js.Console.log((id, schema, slot, value))
         }
-      | None => Js.Console.log((id, schema, slot, value))
-      }
-    })
+      })
+      None
+    }, [dispatchM])
 
     let canUndo =
       focused->Option.map(focused => state->State.canUndo(focused))->Option.getWithDefault(false)
     let canRedo =
       focused->Option.map(focused => state->State.canRedo(focused))->Option.getWithDefault(false)
-    let undo = _ => focused->Option.iter(focused => dispatch(Event.File.Undo(focused)->Event.File))
-    let redo = _ => focused->Option.iter(focused => dispatch(Event.File.Redo(focused)->Event.File))
+    let undo = React.useCallback2(
+      _ => focused->Option.iter(focused => dispatch(Event.File.Undo(focused)->Event.File)),
+      (focused, dispatch),
+    )
+    let redo = React.useCallback2(
+      _ => focused->Option.iter(focused => dispatch(Event.File.Redo(focused)->Event.File)),
+      (focused, dispatch),
+    )
 
     let newModel = React.useCallback1(
       path => dispatch(Event.File.NewModel(Gid.create(), path)->Event.File),
@@ -244,11 +263,11 @@ module App = {
       dispatch(Event.File.DuplicateModel(id, newId)->Event.File)
     }, [dispatch])
 
-    let selectionChange = (~oldSelection as _, ~newSelection) => {
+    let selectionChange = React.useMemo1(((), ~oldSelection as _, ~newSelection) => {
       dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
       ModelNodeEdit.callLocal(newSelection)
-    }
-    let addNodeAt = (kind, ~x, ~y) =>
+    }, [dispatchM])
+    let addNodeAt = React.useMemo2(((), kind, ~x, ~y) =>
       dispatchM({
         let oldSelection = selection
         let ids = oldSelection->ModelSelection.nodes
@@ -269,12 +288,28 @@ module App = {
         ModelNodeEdit.callLocal(newSelection)
         Event.Model.Seq(Array.concatMany([[e0], eLinks, [eFinal]]))
       })
-    let addRepNodeAt = (_, ~x, ~y) => ModelNode.Kind.Representation->addNodeAt(~x, ~y)
-    let addSchNodeAt = (_, ~x, ~y) => ModelNode.Kind.Scheme->addNodeAt(~x, ~y)
-    let addDimNodeAt = (_, ~x, ~y) => ModelNode.Kind.Dimension->addNodeAt(~x, ~y)
-    let addTokNodeAt = (_, ~x, ~y) => ModelNode.Kind.Token->addNodeAt(~x, ~y)
-    let addPlcNodeAt = (_, ~x, ~y) => ModelNode.Kind.Placeholder->addNodeAt(~x, ~y)
-    let linkNodes = kind => {
+    , (dispatchM, selection))
+    let addRepNodeAt = React.useMemo1(
+      ((), ~x, ~y) => ModelNode.Kind.Representation->addNodeAt(~x, ~y),
+      [addNodeAt],
+    )
+    let addSchNodeAt = React.useMemo1(
+      ((), ~x, ~y) => ModelNode.Kind.Scheme->addNodeAt(~x, ~y),
+      [addNodeAt],
+    )
+    let addDimNodeAt = React.useMemo1(
+      ((), ~x, ~y) => ModelNode.Kind.Dimension->addNodeAt(~x, ~y),
+      [addNodeAt],
+    )
+    let addTokNodeAt = React.useMemo1(
+      ((), ~x, ~y) => ModelNode.Kind.Token->addNodeAt(~x, ~y),
+      [addNodeAt],
+    )
+    let addPlcNodeAt = React.useMemo1(
+      ((), ~x, ~y) => ModelNode.Kind.Placeholder->addNodeAt(~x, ~y),
+      [addNodeAt],
+    )
+    let linkNodes = React.useMemo2(((), kind) => {
       let ids = selection->ModelSelection.nodes
       switch ids {
       | [] => ()
@@ -296,21 +331,24 @@ module App = {
           ->dispatchM
         }
       }
-    }
-    let connectNodes = _ => linkNodes(ModelLink.Kind.Hierarchy)
-    let anchorNodes = _ => linkNodes(ModelLink.Kind.Anchor)
-    let relateNodes = _ => linkNodes(ModelLink.Kind.Relation)
-    let markOverlappingNodes = _ => linkNodes(ModelLink.Kind.Overlap)
-    let markDisjointNodes = _ => linkNodes(ModelLink.Kind.Disjoint)
-    let makeGenericLink = _ => linkNodes(ModelLink.Kind.Generic)
-    let delete = _ => {
+    }, (selection, dispatchM))
+    let connectNodes = React.useCallback1(_ => linkNodes(ModelLink.Kind.Hierarchy), [linkNodes])
+    let anchorNodes = React.useCallback1(_ => linkNodes(ModelLink.Kind.Anchor), [linkNodes])
+    let relateNodes = React.useCallback1(_ => linkNodes(ModelLink.Kind.Relation), [linkNodes])
+    let markOverlappingNodes = React.useCallback1(
+      _ => linkNodes(ModelLink.Kind.Overlap),
+      [linkNodes],
+    )
+    let markDisjointNodes = React.useCallback1(_ => linkNodes(ModelLink.Kind.Disjoint), [linkNodes])
+    let makeGenericLink = React.useCallback1(_ => linkNodes(ModelLink.Kind.Generic), [linkNodes])
+    let delete = React.useCallback2(_ => {
       let nodes = selection->ModelSelection.nodes->Array.map(id => Event.Model.DeleteNode(id))
       let links = selection->ModelSelection.links->Array.map(id => Event.Model.DeleteLink(id))
       let clearSelection = Event.Model.Graph(Event.Graph.SetSelection(ModelSelection.empty))
       dispatchM(Event.Model.Seq(Array.concatMany([nodes, links, [clearSelection]])))
       ModelNodeEdit.callLocal(ModelSelection.empty)
-    }
-    let unlinkNodes = _ => {
+    }, (selection, dispatchM))
+    let unlinkNodes = React.useCallback2(_ => {
       let edges =
         focused
         ->Option.flatMap(focused =>
@@ -325,13 +363,12 @@ module App = {
         ->Option.getWithDefault([])
       let events = edges->Array.map(id => Event.Model.DeleteLink(id))
       dispatchM(Event.Model.Seq(events))
-    }
-    let movedNodes = (nodeId, ~x, ~y) =>
-      focused->Option.iter(focused => {
-        let nodeId = nodeId->ReactD3Graph.Node.Id.toString->Gid.fromString
-        dispatch(Event.Model(focused, Event.Model.Graph(Event.Graph.MoveNode(nodeId, x, y))))
-      })
-    let nudge = (_, ~dx, ~dy) => {
+    }, (focused, dispatchM))
+    let movedNodes = React.useMemo1(((), nodeId, ~x, ~y) => {
+      let nodeId = nodeId->ReactD3Graph.Node.Id.toString->Gid.fromString
+      dispatchM(Event.Model.Graph(Event.Graph.MoveNode(nodeId, x, y)))
+    }, [dispatchM])
+    let nudge = React.useMemo2(((), ~dx, ~dy) => {
       let es =
         selection
         ->ModelSelection.nodes
@@ -348,8 +385,8 @@ module App = {
           })
         })
       dispatchM(Event.Model.Seq(es))
-    }
-    let duplicateNodes = _ => {
+    }, (selection, dispatchM))
+    let duplicateNodes = React.useCallback2(_ => {
       let nodeIds = selection->ModelSelection.nodes
       let linkIds =
         focused
@@ -377,58 +414,44 @@ module App = {
         )
         ModelNodeEdit.callLocal(newSelection)
       }
-    }
-    let slotsChange = e => {
+    }, (selection, dispatchM))
+    let slotsChange = React.useCallback1(e => {
       switch Event.Model.graphEvent(e) {
       | None => dispatchM(e)
       | Some(e') => dispatchM(Event.Model.Seq([e, Event.Model.Graph(e')]))
       }
-    }
-    let clickError = (_, err) => {
-      let newSelection = ModelSelection.ofNodes(ModelError.nodes(err))
+    }, [dispatchM])
+    let clickIntel = React.useCallback2((id, nodes) => {
+      let newSelection = ModelSelection.ofNodes(nodes)
       focused->Option.iter(m =>
-        dispatch(
-          Event.Intelligence.Focus(m, ModelError.id(err)->Some)
-          ->Event.File.Intelligence
-          ->Event.File,
-        )
+        dispatch(Event.Intelligence.Focus(m, Some(id))->Event.File.Intelligence->Event.File)
       )
       dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
       ModelNodeEdit.callLocal(newSelection)
-    }
-    let clickWarning = (_, warn) => {
-      let newSelection = ModelSelection.ofNodes(ModelWarning.nodes(warn))
-      focused->Option.iter(m =>
-        dispatch(
-          Event.Intelligence.Focus(m, ModelWarning.id(warn)->Some)
-          ->Event.File.Intelligence
-          ->Event.File,
-        )
-      )
-      dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
-      ModelNodeEdit.callLocal(newSelection)
-    }
-    let clickInsight = (_, ins) => {
-      let newSelection = ModelSelection.ofNodes(ModelInsight.nodes(ins))
-      focused->Option.iter(m =>
-        dispatch(
-          Event.Intelligence.Focus(m, ModelInsight.id(ins)->Some)
-          ->Event.File.Intelligence
-          ->Event.File,
-        )
-      )
-      dispatchM(Event.Model.Graph(Event.Graph.SetSelection(newSelection)))
-      ModelNodeEdit.callLocal(newSelection)
-    }
-
-    let deselectErrorOrWarning = _ => {
+    }, (focused, dispatchM))
+    let clickError = React.useCallback1(
+      (_, err) => clickIntel(ModelError.id(err), ModelError.nodes(err)),
+      [clickIntel],
+    )
+    let clickWarning = React.useCallback1(
+      (_, err) => clickIntel(ModelWarning.id(err), ModelWarning.nodes(err)),
+      [clickIntel],
+    )
+    let clickInsight = React.useCallback1(
+      (_, err) => clickIntel(ModelInsight.id(err), ModelInsight.nodes(err)),
+      [clickIntel],
+    )
+    let deselectErrorOrWarning = React.useCallback2(_ => {
       focused->Option.iter(m =>
         dispatch(Event.Intelligence.Focus(m, None)->Event.File.Intelligence->Event.File)
       )
-    }
+    }, (focused, dispatch))
 
-    let onZoomed = (~oldZoom as _, ~newZoom) =>
-      focused->Option.iter(id => dispatch(Event.File.ViewTransform(id, newZoom)->Event.File))
+    let onZoomed = React.useMemo2(
+      ((), ~oldZoom as _, ~newZoom) =>
+        focused->Option.iter(id => dispatch(Event.File.ViewTransform(id, newZoom)->Event.File)),
+      (focused, dispatch),
+    )
 
     let importModels = React.useCallback1((fs, path) =>
       fs->Array.forEach(f => {
@@ -470,48 +493,76 @@ module App = {
           "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
         Downloader.download(name ++ ".risn", content)
       })
-    }, [state->State.modelsHash])
+    }, [stateHash])
 
-    module K = GlobalKeybindings.KeyBinding
-    GlobalKeybindings.set([
-      K.create(K.cmdOrCtrl() ++ "+z", undo),
-      K.create(K.cmdOrCtrl() ++ "+Shift+z", redo),
-      K.create(K.cmdOrCtrl() ++ "+y", redo),
-    ])
+    React.useEffect2(() => {
+      GlobalKeybindings.set([
+        K.create(K.cmdOrCtrl() ++ "+z", undo),
+        K.create(K.cmdOrCtrl() ++ "+Shift+z", redo),
+        K.create(K.cmdOrCtrl() ++ "+y", redo),
+      ])
+      None
+    }, (undo, redo))
 
-    let keybindings = Js.Dict.fromArray([
-      ("r", addRepNodeAt),
-      ("s", addSchNodeAt),
-      ("d", addDimNodeAt),
-      ("t", addTokNodeAt),
-      ("y", addTokNodeAt),
-      ("q", addPlcNodeAt),
-      ("c", (e, ~x as _, ~y as _) => connectNodes(e)),
-      ("a", (e, ~x as _, ~y as _) => anchorNodes(e)),
-      ("e", (e, ~x as _, ~y as _) => relateNodes(e)),
-      ("o", (e, ~x as _, ~y as _) => markOverlappingNodes(e)),
-      ("j", (e, ~x as _, ~y as _) => markDisjointNodes(e)),
-      ("g", (e, ~x as _, ~y as _) => makeGenericLink(e)),
-      ("x", (e, ~x as _, ~y as _) => delete(e)),
-      ("ArrowLeft", (e, ~x as _, ~y as _) => nudge(e, ~dx=-10.0, ~dy=0.0)),
-      ("ArrowRight", (e, ~x as _, ~y as _) => nudge(e, ~dx=10.0, ~dy=0.0)),
-      ("ArrowUp", (e, ~x as _, ~y as _) => nudge(e, ~dx=0.0, ~dy=-10.0)),
-      ("ArrowDown", (e, ~x as _, ~y as _) => nudge(e, ~dx=0.0, ~dy=10.0)),
-      ("Shift+ArrowLeft", (e, ~x as _, ~y as _) => nudge(e, ~dx=-1.0, ~dy=0.0)),
-      ("Shift+ArrowRight", (e, ~x as _, ~y as _) => nudge(e, ~dx=1.0, ~dy=0.0)),
-      ("Shift+ArrowUp", (e, ~x as _, ~y as _) => nudge(e, ~dx=0.0, ~dy=-1.0)),
-      ("Shift+ArrowDown", (e, ~x as _, ~y as _) => nudge(e, ~dx=0.0, ~dy=1.0)),
-      ("Backspace", (e, ~x as _, ~y as _) => delete(e)),
-      ("Delete", (e, ~x as _, ~y as _) => delete(e)),
-      ("v", (e, ~x as _, ~y as _) => unlinkNodes(e)),
-      ("Ctrl+d", (e, ~x as _, ~y as _) => duplicateNodes(e)),
-    ])
+    let adds = React.useMemo5(
+      () => (addRepNodeAt, addSchNodeAt, addDimNodeAt, addTokNodeAt, addPlcNodeAt),
+      (addRepNodeAt, addSchNodeAt, addDimNodeAt, addTokNodeAt, addPlcNodeAt),
+    )
+    let links = React.useMemo6(
+      () => (
+        connectNodes,
+        anchorNodes,
+        relateNodes,
+        markOverlappingNodes,
+        markDisjointNodes,
+        makeGenericLink,
+      ),
+      (
+        connectNodes,
+        anchorNodes,
+        relateNodes,
+        markOverlappingNodes,
+        markDisjointNodes,
+        makeGenericLink,
+      ),
+    )
+    let keybindings = React.useMemo6(
+      () =>
+        Js.Dict.fromArray([
+          ("r", (_, ~x, ~y) => addRepNodeAt(~x, ~y)),
+          ("s", (_, ~x, ~y) => addSchNodeAt(~x, ~y)),
+          ("d", (_, ~x, ~y) => addDimNodeAt(~x, ~y)),
+          ("t", (_, ~x, ~y) => addTokNodeAt(~x, ~y)),
+          ("y", (_, ~x, ~y) => addTokNodeAt(~x, ~y)),
+          ("q", (_, ~x, ~y) => addPlcNodeAt(~x, ~y)),
+          ("c", (_, ~x as _, ~y as _) => connectNodes()),
+          ("a", (_, ~x as _, ~y as _) => anchorNodes()),
+          ("e", (_, ~x as _, ~y as _) => relateNodes()),
+          ("o", (_, ~x as _, ~y as _) => markOverlappingNodes()),
+          ("j", (_, ~x as _, ~y as _) => markDisjointNodes()),
+          ("g", (_, ~x as _, ~y as _) => makeGenericLink()),
+          ("x", (_, ~x as _, ~y as _) => delete()),
+          ("ArrowLeft", (_, ~x as _, ~y as _) => nudge(~dx=-10.0, ~dy=0.0)),
+          ("ArrowRight", (_, ~x as _, ~y as _) => nudge(~dx=10.0, ~dy=0.0)),
+          ("ArrowUp", (_, ~x as _, ~y as _) => nudge(~dx=0.0, ~dy=-10.0)),
+          ("ArrowDown", (_, ~x as _, ~y as _) => nudge(~dx=0.0, ~dy=10.0)),
+          ("Shift+ArrowLeft", (_, ~x as _, ~y as _) => nudge(~dx=-1.0, ~dy=0.0)),
+          ("Shift+ArrowRight", (_, ~x as _, ~y as _) => nudge(~dx=1.0, ~dy=0.0)),
+          ("Shift+ArrowUp", (_, ~x as _, ~y as _) => nudge(~dx=0.0, ~dy=-1.0)),
+          ("Shift+ArrowDown", (_, ~x as _, ~y as _) => nudge(~dx=0.0, ~dy=1.0)),
+          ("Backspace", (_, ~x as _, ~y as _) => delete()),
+          ("Delete", (_, ~x as _, ~y as _) => delete()),
+          ("v", (_, ~x as _, ~y as _) => unlinkNodes()),
+          ("Ctrl+d", (_, ~x as _, ~y as _) => duplicateNodes()),
+        ]),
+      (adds, links, nudge, delete, unlinkNodes, duplicateNodes),
+    )
 
     let (showGrid, setShowGrid) = React.useState(_ => {
       BoolStore.get("REP-SHOW-GRID")->Or_error.getWithDefault(false)
     })
 
-    let toggleGrid = _ => {
+    let toggleGrid = React.useCallback2(_ => {
       if showGrid {
         BoolStore.set("REP-SHOW-GRID", false)
         setShowGrid(_ => false)
@@ -519,13 +570,24 @@ module App = {
         BoolStore.set("REP-SHOW-GRID", true)
         setShowGrid(_ => true)
       }
-    }
+    }, (showGrid, setShowGrid))
 
-    Js.Console.log(State.modelsHash(state))
-    let fpData = React.useMemo1(() => State.models(state), [State.modelsHash(state)])
+    let fpData = React.useMemo1(() => State.models(state), [stateHash])
+    let graphData = React.useMemo2(
+      () =>
+        focused
+        ->Option.flatMap(focused =>
+          state
+          ->State.model(focused)
+          ->Option.map(model => model->State.Model.graph->ModelState.data)
+        )
+        ->Option.getWithDefault(ModelState.empty->ModelState.data),
+      (focused, stateHash),
+    )
     let modelName = React.useCallback0(model => model->State.Model.info->InspectorState.Model.name)
     let active = React.useMemo1(() => State.focused(state), [State.focused(state)])
     let importExtensions = React.useMemo0(() => [".risn", ".repn"])
+    let graphStyle = React.useMemo0(() => ReactDOM.Style.make(~flexGrow="1", ()))
 
     let viewTransform = ref(None)
     ifChanged(() => {
@@ -588,58 +650,70 @@ module App = {
             ~overflowX="auto",
             (),
           )}>
-          <Button onClick={undo} value="Undo" enabled={canUndo} tooltip="Cmd+Z" />
-          <Button onClick={redo} value="Redo" enabled={canRedo} tooltip="Cmd+Shift+Z" />
+          <Button onClick={_ => undo()} value="Undo" enabled={canUndo} tooltip="Cmd+Z" />
+          <Button onClick={_ => redo()} value="Redo" enabled={canRedo} tooltip="Cmd+Shift+Z" />
           <Button.Separator />
           <Button
-            onClick={addRepNodeAt(_, ~x=0., ~y=0.)}
+            onClick={_ => addRepNodeAt(~x=0., ~y=0.)}
             value="Representation"
             enabled={toolbarActive}
             tooltip="R"
           />
           <Button
-            onClick={addSchNodeAt(_, ~x=0., ~y=0.)}
+            onClick={_ => addSchNodeAt(~x=0., ~y=0.)}
             value="R-Scheme"
             enabled={toolbarActive}
             tooltip="S"
           />
           <Button
-            onClick={addDimNodeAt(_, ~x=0., ~y=0.)}
+            onClick={_ => addDimNodeAt(~x=0., ~y=0.)}
             value="R-Dimension"
             enabled={toolbarActive}
             tooltip="D"
           />
           <Button
-            onClick={addTokNodeAt(_, ~x=0., ~y=0.)}
+            onClick={_ => addTokNodeAt(~x=0., ~y=0.)}
             value="R-Symbol"
             enabled={toolbarActive}
             tooltip="Y"
           />
           <Button
-            onClick={addPlcNodeAt(_, ~x=0., ~y=0.)}
+            onClick={_ => addPlcNodeAt(~x=0., ~y=0.)}
             value="Placeholder"
             enabled={toolbarActive}
             tooltip="Q"
           />
           <Button.Separator />
           <Button
-            onClick={duplicateNodes} value="Duplicate" enabled={toolbarActive} tooltip="Ctrl+D"
+            onClick={_ => duplicateNodes()}
+            value="Duplicate"
+            enabled={toolbarActive}
+            tooltip="Ctrl+D"
           />
           <Button.Separator />
-          <Button onClick={connectNodes} value="Connect" enabled={toolbarActive} tooltip="C" />
-          <Button onClick={anchorNodes} value="Anchor" enabled={toolbarActive} tooltip="A" />
-          <Button onClick={relateNodes} value="Equivalence" enabled={toolbarActive} tooltip="E" />
           <Button
-            onClick={markOverlappingNodes} value="Overlap" enabled={toolbarActive} tooltip="O"
+            onClick={_ => connectNodes()} value="Connect" enabled={toolbarActive} tooltip="C"
+          />
+          <Button onClick={_ => anchorNodes()} value="Anchor" enabled={toolbarActive} tooltip="A" />
+          <Button
+            onClick={_ => relateNodes()} value="Equivalence" enabled={toolbarActive} tooltip="E"
           />
           <Button
-            onClick={markDisjointNodes} value="Disjoint" enabled={toolbarActive} tooltip="J"
+            onClick={_ => markOverlappingNodes()}
+            value="Overlap"
+            enabled={toolbarActive}
+            tooltip="O"
           />
-          <Button onClick={makeGenericLink} value="Generic" enabled={toolbarActive} tooltip="G" />
+          <Button
+            onClick={_ => markDisjointNodes()} value="Disjoint" enabled={toolbarActive} tooltip="J"
+          />
+          <Button
+            onClick={_ => makeGenericLink()} value="Generic" enabled={toolbarActive} tooltip="G"
+          />
           <Button.Separator />
-          <Button onClick={unlinkNodes} value="Unlink" enabled={toolbarActive} tooltip="V" />
+          <Button onClick={_ => unlinkNodes()} value="Unlink" enabled={toolbarActive} tooltip="V" />
           <Button.Separator />
-          <Button onClick={delete} value="Delete" enabled={toolbarActive} tooltip="X" />
+          <Button onClick={_ => delete()} value="Delete" enabled={toolbarActive} tooltip="X" />
           <Button.Separator />
           <label htmlFor="gridToggle"> {React.string("Grid")} </label>
           <input
@@ -679,13 +753,7 @@ module App = {
             <ReactD3Graph.Graph
               id={"model-graph"}
               config
-              data={focused
-              ->Option.flatMap(focused =>
-                state
-                ->State.model(focused)
-                ->Option.map(model => model->State.Model.graph->ModelState.data)
-              )
-              ->Option.getWithDefault(ModelState.empty->ModelState.data)}
+              data={graphData}
               selection
               viewTransform=?{viewTransform.contents}
               onSelectionChange={selectionChange}
@@ -693,7 +761,7 @@ module App = {
               onZoomChange={onZoomed}
               keybindings={keybindings}
               showGrid
-              style={ReactDOM.Style.make(~flexGrow="1", ())}
+              style={graphStyle}
             />
             <IntelligenceUI
               intelligence={intel}
