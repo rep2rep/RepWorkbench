@@ -216,6 +216,15 @@ module Payload = {
     }
   }
 
+  let hash: t => Hash.t = Hash.record6(
+    ("kind", Kind.hash),
+    ("name", String.hash),
+    ("name_suffix", Option.hash(_, String.hash)),
+    ("reference", String.hash),
+    ("reference_suffix", Option.hash(_, String.hash)),
+    ("dashed", Bool.hash),
+  )
+
   let kind = t => t.kind
   let dashed = t => t.dashed
 
@@ -801,7 +810,8 @@ let updatePayload = (t, f) => {
 
 let hash = t => {
   let (x, y) = position(t)
-  Hash.combine([Gid.hash(id(t)), Kind.hash(kind(t)), Float.hash(x), Float.hash(y)])
+  let payload = t->ReactD3Graph.Node.payload
+  Hash.combine([Gid.hash(id(t)), Float.hash(x), Float.hash(y), Option.hash(payload, Payload.hash)])
 }
 
 let dupWithNewId = (t, id) =>
