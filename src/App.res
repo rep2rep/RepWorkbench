@@ -25,7 +25,9 @@ module App = {
   }
 
   let intelligence = IntelligencePool.create("worker.js?v=##VERSION##")
+  let intelTimeout = ref(None)
   let sendToIntelligence = state => {
+    intelTimeout.contents->Option.iter(Js.Global.clearTimeout)
     state
     ->State.focused
     ->Option.map(focused =>
@@ -42,17 +44,19 @@ module App = {
           ))
         let id = Gid.create()
 
-        intelligence->IntelligencePool.post({
-          id: id,
-          model: focused,
-          slots: slots->Gid.Map.mapPartial((_, slot) =>
-            switch slot {
-            | InspectorState.SchemaOrLink.Schema(s) => Some(s)
-            | _ => None
-            }
-          ),
-          links: links,
-        })
+        intelTimeout := Js.Global.setTimeout(() =>
+            intelligence->IntelligencePool.post({
+              id: id,
+              model: focused,
+              slots: slots->Gid.Map.mapPartial((_, slot) =>
+                switch slot {
+                | InspectorState.SchemaOrLink.Schema(s) => Some(s)
+                | _ => None
+                }
+              ),
+              links: links,
+            })
+          , 500)->Some
         model->State.Model.setRequestedIntelligence(Some(id))
       })
     )
