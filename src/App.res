@@ -5,6 +5,10 @@ module App = {
     include FilePanel
     let make = React.memo(make)
   }
+  module Graph = {
+    include ReactD3Graph.Graph
+    let make = React.memo(make)
+  }
 
   type state = State.t
   type action = Event.t
@@ -760,7 +764,7 @@ module App = {
               ~overflow="hidden",
               (),
             )}>
-            <ReactD3Graph.Graph
+            <Graph
               id={"model-graph"}
               config
               data={graphData}
