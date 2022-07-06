@@ -375,7 +375,7 @@ module App = {
       let nodeId = nodeId->ReactD3Graph.Node.Id.toString->Gid.fromString
       dispatchM(Event.Model.Graph(Event.Graph.MoveNode(nodeId, x, y)))
     }, [dispatchM])
-    let nudge = React.useMemo2(((), ~dx, ~dy) => {
+    let nudge = React.useMemo3(((), ~dx, ~dy) => {
       let es =
         selection
         ->ModelSelection.nodes
@@ -392,8 +392,8 @@ module App = {
           })
         })
       dispatchM(Event.Model.Seq(es))
-    }, (selection, dispatchM))
-    let duplicateNodes = React.useCallback2(_ => {
+    }, (selection, dispatchM, stateHash))
+    let duplicateNodes = React.useCallback3(_ => {
       let nodeIds = selection->ModelSelection.nodes
       let linkIds =
         focused
@@ -421,7 +421,7 @@ module App = {
         )
         ModelNodeEdit.callLocal(newSelection)
       }
-    }, (selection, dispatchM))
+    }, (selection, dispatchM, stateHash))
     let slotsChange = React.useCallback1(e => {
       switch Event.Model.graphEvent(e) {
       | None => dispatchM(e)
