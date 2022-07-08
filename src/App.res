@@ -355,7 +355,7 @@ module App = {
       dispatchM(Event.Model.Seq(Array.concatMany([nodes, links, [clearSelection]])))
       ModelNodeEdit.callLocal(ModelSelection.empty)
     }, (selection, dispatchM))
-    let unlinkNodes = React.useCallback2(_ => {
+    let unlinkNodes = React.useCallback4(_ => {
       let edges =
         focused
         ->Option.flatMap(focused =>
@@ -370,7 +370,7 @@ module App = {
         ->Option.getWithDefault([])
       let events = edges->Array.map(id => Event.Model.DeleteLink(id))
       dispatchM(Event.Model.Seq(events))
-    }, (focused, dispatchM))
+    }, (focused, dispatchM, selection, stateHash))
     let movedNodes = React.useMemo1(((), nodeId, ~x, ~y) => {
       let nodeId = nodeId->ReactD3Graph.Node.Id.toString->Gid.fromString
       dispatchM(Event.Model.Graph(Event.Graph.MoveNode(nodeId, x, y)))
