@@ -316,38 +316,80 @@ module App = {
       ((), ~x, ~y) => ModelNode.Kind.Placeholder->addNodeAt(~x, ~y),
       [addNodeAt],
     )
-    let linkNodes = React.useMemo2(((), kind) => {
+    let linkNodes = React.useMemo2(((), kind, ~reversed) => {
       let ids = selection->ModelSelection.nodes
       switch ids {
       | [] => ()
       | [source, target] =>
-        dispatchM(
-          Event.Model.LinkNodes({linkId: Gid.create(), source: source, target: target, kind: kind}),
-        )
+        if reversed {
+          dispatchM(
+            Event.Model.LinkNodes({
+              linkId: Gid.create(),
+              source: target,
+              target: source,
+              kind: kind,
+            }),
+          )
+        } else {
+          dispatchM(
+            Event.Model.LinkNodes({
+              linkId: Gid.create(),
+              source: source,
+              target: target,
+              kind: kind,
+            }),
+          )
+        }
       | many => {
           let source = many[0]->Option.getExn
           let targets = many->Js.Array2.sliceFrom(1)
           targets
-          ->Array.map(target => Event.Model.LinkNodes({
-            linkId: Gid.create(),
-            source: source,
-            target: target,
-            kind: kind,
-          }))
+          ->Array.map(target =>
+            if reversed {
+              Event.Model.LinkNodes({
+                linkId: Gid.create(),
+                source: target,
+                target: source,
+                kind: kind,
+              })
+            } else {
+              Event.Model.LinkNodes({
+                linkId: Gid.create(),
+                source: source,
+                target: target,
+                kind: kind,
+              })
+            }
+          )
           ->Event.Model.Seq
           ->dispatchM
         }
       }
     }, (selection, dispatchM))
-    let connectNodes = React.useCallback1(_ => linkNodes(ModelLink.Kind.Hierarchy), [linkNodes])
-    let anchorNodes = React.useCallback1(_ => linkNodes(ModelLink.Kind.Anchor), [linkNodes])
-    let relateNodes = React.useCallback1(_ => linkNodes(ModelLink.Kind.Relation), [linkNodes])
-    let markOverlappingNodes = React.useCallback1(
-      _ => linkNodes(ModelLink.Kind.Overlap),
+    let connectNodes = React.useCallback1(
+      reversed => linkNodes(ModelLink.Kind.Hierarchy, ~reversed),
       [linkNodes],
     )
-    let markDisjointNodes = React.useCallback1(_ => linkNodes(ModelLink.Kind.Disjoint), [linkNodes])
-    let makeGenericLink = React.useCallback1(_ => linkNodes(ModelLink.Kind.Generic), [linkNodes])
+    let anchorNodes = React.useCallback1(
+      reversed => linkNodes(ModelLink.Kind.Anchor, ~reversed),
+      [linkNodes],
+    )
+    let relateNodes = React.useCallback1(
+      _ => linkNodes(ModelLink.Kind.Relation, ~reversed=false),
+      [linkNodes],
+    )
+    let markOverlappingNodes = React.useCallback1(
+      _ => linkNodes(ModelLink.Kind.Overlap, ~reversed=false),
+      [linkNodes],
+    )
+    let markDisjointNodes = React.useCallback1(
+      _ => linkNodes(ModelLink.Kind.Disjoint, ~reversed=false),
+      [linkNodes],
+    )
+    let makeGenericLink = React.useCallback1(
+      _ => linkNodes(ModelLink.Kind.Generic, ~reversed=false),
+      [linkNodes],
+    )
     let delete = React.useCallback2(_ => {
       let nodes = selection->ModelSelection.nodes->Array.map(id => Event.Model.DeleteNode(id))
       let links = selection->ModelSelection.links->Array.map(id => Event.Model.DeleteLink(id))
@@ -542,8 +584,10 @@ module App = {
           ("t", (_, ~x, ~y) => addTokNodeAt(~x, ~y)),
           ("y", (_, ~x, ~y) => addTokNodeAt(~x, ~y)),
           ("q", (_, ~x, ~y) => addPlcNodeAt(~x, ~y)),
-          ("c", (_, ~x as _, ~y as _) => connectNodes()),
-          ("a", (_, ~x as _, ~y as _) => anchorNodes()),
+          ("c", (_, ~x as _, ~y as _) => connectNodes(false)),
+          ("Shift+C", (_, ~x as _, ~y as _) => connectNodes(true)), // reversed direction
+          ("a", (_, ~x as _, ~y as _) => anchorNodes(false)),
+          ("Shift+A", (_, ~x as _, ~y as _) => anchorNodes(true)), // reversed direction
           ("e", (_, ~x as _, ~y as _) => relateNodes()),
           ("o", (_, ~x as _, ~y as _) => markOverlappingNodes()),
           ("j", (_, ~x as _, ~y as _) => markDisjointNodes()),
@@ -706,9 +750,11 @@ module App = {
           />
           <Button.Separator />
           <Button
-            onClick={_ => connectNodes()} value="Connect" enabled={toolbarActive} tooltip="C"
+            onClick={_ => connectNodes(false)} value="Connect" enabled={toolbarActive} tooltip="C"
           />
-          <Button onClick={_ => anchorNodes()} value="Anchor" enabled={toolbarActive} tooltip="A" />
+          <Button
+            onClick={_ => anchorNodes(false)} value="Anchor" enabled={toolbarActive} tooltip="A"
+          />
           <Button
             onClick={_ => relateNodes()} value="Equivalence" enabled={toolbarActive} tooltip="E"
           />
