@@ -583,9 +583,14 @@ module Hierarchy = {
     <>
       <Title value="Hierarchy" />
       <Row>
-        <Label> {React.string("Label")} </Label>
+        <Label
+          htmlFor="inspector-hierarchy-label"
+          help="The order of the connection, if this connection and its siblings are ordered.">
+          {React.string("Label")}
+        </Label>
         <input
           type_="number"
+          name="inspector-hierarchy-label"
           min="1"
           value={slots.order->Option.map(Int.toString)->Option.getWithDefault("")}
           onChange={e =>
