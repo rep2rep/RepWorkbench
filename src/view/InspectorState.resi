@@ -129,10 +129,15 @@ module Schema: {
 }
 
 module Hierarchy: {
-  type t = {notes: string}
+  type t = {order: option<int>, notes: string}
 
   module Stable: {
     module V1: {
+      type t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+    module V2: {
       type t = t
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>
@@ -140,10 +145,15 @@ module Hierarchy: {
   }
 }
 module Anchor: {
-  type t = {notes: string}
+  type t = {order: option<int>, notes: string}
 
   module Stable: {
     module V1: {
+      type t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+    module V2: {
       type t = t
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>
@@ -212,6 +222,13 @@ module Link: {
 
   module Stable: {
     module V1: {
+      type t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+
+      let empty: ModelLink.Kind.Stable.V2.t => t
+    }
+    module V2: {
       type t = t
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>
@@ -229,7 +246,15 @@ module SchemaOrLink: {
 
   module Stable: {
     module V1: {
+      type t =
+        | Schema(Schema.Stable.V2.t)
+        | Link(Link.Stable.V1.t)
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+    module V2: {
       type t = t
+      let v1_to_v2: V1.t => t
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>
     }

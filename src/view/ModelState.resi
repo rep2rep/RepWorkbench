@@ -17,6 +17,7 @@ let removeNode: (t, Gid.t) => t
 let removeLink: (t, Gid.t) => t
 let moveNode: (t, Gid.t, ~x: float, ~y: float) => t
 let updateNodes: (t, ModelNode.t => ModelNode.t) => t
+let updateLinks: (t, ModelLink.t => ModelLink.t) => t
 let nodeWithId: (t, Gid.t) => option<ModelNode.t>
 let incidentLinks: (t, ~nodeId: Gid.t) => {"incoming": Gid.Set.t, "outgoing": Gid.Set.t}
 let linksConnectingNodes: (t, array<Gid.t>) => array<Gid.t>
@@ -46,9 +47,18 @@ module Stable: {
   }
 
   module V4: {
-    type t = t
+    type t
     let toJson: t => Js.Json.t
     let fromJson: Js.Json.t => Or_error.t<t>
     let v3_to_v4: V3.t => t
+
+    let graph: t => ModelGraph.Stable.V3.t
+  }
+
+  module V5: {
+    type t = t
+    let toJson: t => Js.Json.t
+    let fromJson: Js.Json.t => Or_error.t<t>
+    let v4_to_v5: V4.t => t
   }
 }

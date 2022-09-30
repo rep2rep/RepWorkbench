@@ -16,6 +16,7 @@ let mapNodes: (t, ModelNode.t => ModelNode.t) => t
 let addLinks: (t, array<ModelLink.t>) => t
 let addLink: (t, ModelLink.t) => t
 let removeLink: (t, Gid.t) => t
+let mapLinks: (t, ModelLink.t => ModelLink.t) => t
 
 module Stable: {
   module V1: {
@@ -30,8 +31,16 @@ module Stable: {
     let fromJson: Js.Json.t => Or_error.t<t>
   }
   module V3: {
-    type t = t
+    type t
     let v2_to_v3: V2.t => t
+    let toJson: t => Js.Json.t
+    let fromJson: Js.Json.t => Or_error.t<t>
+
+    let links: t => array<ModelLink.Stable.V2.t>
+  }
+  module V4: {
+    type t = t
+    let v3_to_v4: V3.t => t
     let toJson: t => Js.Json.t
     let fromJson: Js.Json.t => Or_error.t<t>
   }

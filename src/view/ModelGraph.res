@@ -85,10 +85,12 @@ module Stable = {
   }
 
   module V3 = {
-    type t = t = {
+    type t = {
       nodes: array<ModelNode.Stable.V2.t>,
       links: array<ModelLink.Stable.V2.t>,
     }
+
+    let links = t => t.links
 
     let v2_to_v3 = v2 => {
       nodes: v2.V2.nodes,
@@ -129,6 +131,57 @@ module Stable = {
         }
       })
   }
+
+  module V4 = {
+    type t = t = {
+      nodes: array<ModelNode.Stable.V2.t>,
+      links: array<ModelLink.Stable.V3.t>,
+    }
+
+    let v3_to_v4 = v3 => {
+      nodes: v3.V3.nodes,
+      links: v3.V3.links->Array.map(ModelLink.Stable.V3.v2_to_v3),
+    }
+
+    let toJson = t =>
+      Js.Dict.fromList(list{
+        ("version", Int.toJson(4)),
+        ("nodes", t.nodes->Array.toJson(ModelNode.Stable.V2.toJson)),
+        ("links", t.links->Array.toJson(ModelLink.Stable.V3.toJson)),
+      })->Js.Json.object_
+
+    let fromJson = json =>
+      json
+      ->Js.Json.decodeObject
+      ->Or_error.fromOption_s("Failed to decode Graph object JSON")
+      ->Or_error.flatMap(dict => {
+        let getValue = (key, reader) =>
+          dict
+          ->Js.Dict.get(key)
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+          ->Or_error.flatMap(reader)
+        let version = getValue("version", Int.fromJson)
+        switch version->Or_error.match {
+        | Or_error.Ok(4) => {
+            let nodes = getValue("nodes", j => j->Array.fromJson(ModelNode.Stable.V2.fromJson))
+            let links = getValue("links", j => j->Array.fromJson(ModelLink.Stable.V3.fromJson))
+
+            Or_error.both((nodes, links))->Or_error.map(((nodes, links)) => {
+              nodes: nodes,
+              links: links,
+            })
+          }
+        | Or_error.Ok(3) => V3.fromJson(json)->Or_error.map(v3_to_v4)
+        | Or_error.Ok(2) => V2.fromJson(json)->Or_error.map(V3.v2_to_v3)->Or_error.map(v3_to_v4)
+        | Or_error.Ok(v) => Or_error.error_ss(["Unknown ModelGraph version ", Int.toString(v)])
+        | Or_error.Err(_) =>
+          V1.fromJson(json)
+          ->Or_error.map(V2.v1_to_v2)
+          ->Or_error.map(V3.v2_to_v3)
+          ->Or_error.map(v3_to_v4)
+        }
+      })
+  }
 }
 
 let hash = Hash.record2(
@@ -148,7 +201,8 @@ let duplicate = (t, newIdMap) => {
     let targetId = newIdMap->Gid.Map.get(ModelLink.target(link))->Option.getExn
     let target = nodes->Array.find(node => ModelNode.id(node) == targetId)->Option.getExn
     let kind = ModelLink.kind(link)
-    ModelLink.create(~linkId, ~source, ~target, kind)
+    let label = ModelLink.label(link)
+    ModelLink.create(~linkId, ~source, ~target, kind, ~label)
   })
   {
     nodes: nodes,
@@ -188,3 +242,4 @@ let removeLink = (t, linkId) => {
   ...t,
   links: t.links->Array.filter(link => ModelLink.id(link) !== linkId),
 }
+let mapLinks = (t, f) => {...t, links: t.links->Array.map(f)}

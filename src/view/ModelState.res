@@ -142,10 +142,11 @@ module Stable = {
   }
 
   module V4 = {
-    type t = t = {
+    type t = {
       graph: ModelGraph.Stable.V3.t,
       selection: ModelSelection.Stable.V1.t,
     }
+    let graph = t => t.graph
 
     let v3_to_v4 = t => {
       graph: t.V3.graph->ModelGraph.Stable.V3.v2_to_v3,
@@ -204,6 +205,79 @@ module Stable = {
         }
       })
   }
+
+  module V5 = {
+    type t = t = {
+      graph: ModelGraph.Stable.V4.t,
+      selection: ModelSelection.Stable.V1.t,
+    }
+
+    let v4_to_v5 = t => {
+      graph: t.V4.graph->ModelGraph.Stable.V4.v3_to_v4,
+      selection: t.V4.selection,
+    }
+
+    let toJson = t =>
+      Js.Dict.fromList(list{
+        ("version", Int.toJson(5)),
+        ("graph", ModelGraph.Stable.V4.toJson(t.graph)),
+      })->Js.Json.object_
+
+    let fromJson = json =>
+      json
+      ->Js.Json.decodeObject
+      ->Or_error.fromOption_s("Failed to decode state object JSON")
+      ->Or_error.flatMap(dict => {
+        let getValue = (key, reader) =>
+          dict
+          ->Js.Dict.get(key)
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+          ->Or_error.flatMap(reader)
+        let version = getValue("version", Int.fromJson)
+        switch version->Or_error.match {
+        | Or_error.Ok(5) => {
+            let graph = getValue("graph", ModelGraph.Stable.V4.fromJson)
+            graph->Or_error.map(graph => {
+              {
+                graph: graph,
+                selection: ModelSelection.empty,
+              }
+            })
+          }
+        | Or_error.Ok(4) => {
+            Js.Console.log("Upgrading ModelState from V4 to V5...")
+            json->V4.fromJson->Or_error.map(v4_to_v5)
+          }
+        | Or_error.Ok(3) => {
+            Js.Console.log("Upgrading ModelState from V3 to V5...")
+            json->V3.fromJson->Or_error.map(V4.v3_to_v4)->Or_error.map(v4_to_v5)
+          }
+        | Or_error.Ok(2) => {
+            Js.Console.log("Upgrading ModelState from V2 to V5...")
+            json
+            ->V2.fromJson
+            ->Or_error.map(V3.v2_to_v3)
+            ->Or_error.map(V4.v3_to_v4)
+            ->Or_error.map(v4_to_v5)
+          }
+        | Or_error.Ok(v) =>
+          Or_error.error_ss([
+            "Attempting to read unsupported ModelState version ",
+            Int.toString(v),
+            "!",
+          ])
+        | Or_error.Err(_) => {
+            Js.Console.log("Upgrading ModelState from V1 to V5...")
+            json
+            ->V1.fromJson
+            ->Or_error.map(V2.v1_to_v2)
+            ->Or_error.map(V3.v2_to_v3)
+            ->Or_error.map(V4.v3_to_v4)
+            ->Or_error.map(v4_to_v5)
+          }
+        }
+      })
+  }
 }
 
 let hash = Hash.record1("graph", ModelGraph.hash)
@@ -241,6 +315,11 @@ let addNodes = (t, nodes) => {
 let updateNodes = (t, f) => {
   ...t,
   graph: t.graph->ModelGraph.mapNodes(f),
+}
+
+let updateLinks = (t, f) => {
+  ...t,
+  graph: t.graph->ModelGraph.mapLinks(f),
 }
 
 let moveNode = (t, id, ~x, ~y) =>
@@ -299,6 +378,7 @@ let duplicateNodes = (t, idMap) => {
           ~source=newNodes->Gid.Map.get(newSource)->Option.getExn,
           ~target=newNodes->Gid.Map.get(newTarget)->Option.getExn,
           ModelLink.kind(link),
+          ~label={ModelLink.label(link)},
         )->Some
       | _ => None
       }

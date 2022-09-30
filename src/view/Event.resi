@@ -74,11 +74,15 @@ module Slots: {
   }
 
   module Hierarchy: {
-    type t = Notes(string)
+    type t =
+      | Notes(string)
+      | Order(option<int>)
   }
 
   module Anchor: {
-    type t = Notes(string)
+    type t =
+      | Notes(string)
+      | Order(option<int>)
   }
 
   module Relation: {
@@ -121,13 +125,24 @@ module Graph: {
       | UpdateDashed(bool)
   }
 
+  module Link: {
+    type t = UpdateOrder(option<int>)
+  }
+
   type rec t =
     | AddNode(ModelNode.t)
     | UpdateNode(Gid.t, Node.t)
+    | UpdateLink(Gid.t, Link.t)
     | DeleteNode(Gid.t)
     | Duplicate(Gid.Map.t<Gid.t>)
     | MoveNode(Gid.t, float, float)
-    | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
+    | LinkNodes({
+        linkId: Gid.t,
+        source: Gid.t,
+        target: Gid.t,
+        kind: ModelLink.Kind.t,
+        label: option<int>,
+      })
     | DeleteLink(Gid.t)
     | SetSelection(ModelSelection.t)
     | Seq(array<t>)
@@ -140,7 +155,13 @@ module Model: {
     | CreateNode(Gid.t, float, float, ModelNode.Kind.t)
     | DeleteNode(Gid.t)
     | Duplicate(Gid.Map.t<Gid.t>)
-    | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
+    | LinkNodes({
+        linkId: Gid.t,
+        source: Gid.t,
+        target: Gid.t,
+        kind: ModelLink.Kind.t,
+        label: option<int>,
+      })
     | DeleteLink(Gid.t)
     | Graph(Graph.t)
     | Slots(Gid.t, Slots.t)

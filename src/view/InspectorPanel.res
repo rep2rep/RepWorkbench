@@ -582,6 +582,20 @@ module Hierarchy = {
   let make = (~slots: InspectorState.Hierarchy.t, ~onChange) => {
     <>
       <Title value="Hierarchy" />
+      <Row>
+        <Label> {React.string("Label")} </Label>
+        <input
+          type_="number"
+          min="1"
+          value={slots.order->Option.map(Int.toString)->Option.getWithDefault("")}
+          onChange={e =>
+            ReactEvent.Form.target(e)["value"]
+            ->Int.fromString
+            ->Event.Slots.Hierarchy.Order
+            ->onChange}
+        />
+        <Button value="Clear" onClick={_ => onChange(Event.Slots.Hierarchy.Order(None))} />
+      </Row>
       <Notes
         name="inspector-hierarchy-notes"
         onChange={e => onChange(Event.Slots.Hierarchy.Notes(ReactEvent.Form.target(e)["value"]))}

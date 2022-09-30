@@ -118,6 +118,15 @@ module App = {
       ],
       (),
     ),
+    ~link=ReactD3Graph.Link.Config.create(
+      ~color=ReactD3Graph.Color.ofHexString("#000000"),
+      ~renderLabel=true,
+      ~fontSize=10.0,
+      ~fontScaling=false,
+      ~strokeWidth=1.,
+      ~markerEnd="arrowhead",
+      (),
+    ),
     ~d3=ReactD3Graph.Config.D3.create(~disableLinkForce=true, ()),
     (),
   )
@@ -288,6 +297,7 @@ module App = {
             source: source,
             target: id,
             kind: ModelLink.Kind.Hierarchy,
+            label: None,
           }))
         }
         let newSelection = ModelSelection.ofNodes([id])
@@ -328,6 +338,7 @@ module App = {
               source: target,
               target: source,
               kind: kind,
+              label: None,
             }),
           )
         } else {
@@ -337,6 +348,7 @@ module App = {
               source: source,
               target: target,
               kind: kind,
+              label: None,
             }),
           )
         }
@@ -351,6 +363,7 @@ module App = {
                 source: target,
                 target: source,
                 kind: kind,
+                label: None,
               })
             } else {
               Event.Model.LinkNodes({
@@ -358,6 +371,7 @@ module App = {
                 source: source,
                 target: target,
                 kind: kind,
+                label: None,
               })
             }
           )
@@ -506,7 +520,7 @@ module App = {
       fs->Array.forEach(f => {
         File.text(f)
         |> Js.Promise.then_(text => {
-          let model = try text->Js.Json.parseExn->State.Model.Stable.V4.fromJson catch {
+          let model = try text->Js.Json.parseExn->State.Model.Stable.V5.fromJson catch {
           | _ => Or_error.error_s("fail")
           }
           switch model->Or_error.match {
@@ -537,7 +551,7 @@ module App = {
             "\n=== Exported " ++ Js.Date.make()->Js.Date.toString ++ " ===",
           )
         let name = State.Model.info(model).name
-        let json = State.Model.Stable.V4.toJson(model)
+        let json = State.Model.Stable.V5.toJson(model)
         let content =
           "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
         Downloader.download(name ++ ".risn", content)

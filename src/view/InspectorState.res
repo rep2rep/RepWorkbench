@@ -961,15 +961,20 @@ module Schema = {
 }
 
 module Hierarchy = {
-  type t = {notes: string}
+  type t = {
+    order: option<int>,
+    notes: string,
+  }
 
-  let hash: t => Hash.t = Hash.record1("notes", String.hash)
-  let empty = {notes: ""}
-  let duplicate = t => {notes: t.notes}
+  let hash: t => Hash.t = Hash.record2(("order", Option.hash(_, Int.hash)), ("notes", String.hash))
+  let empty = {order: None, notes: ""}
+  let duplicate = t => {order: t.order, notes: t.notes}
 
   module Stable = {
     module V1 = {
-      type t = t = {notes: string}
+      type t = {notes: string}
+
+      let empty = {notes: ""}
 
       let toJson = t =>
         Js.Dict.fromList(list{
@@ -1002,18 +1007,67 @@ module Hierarchy = {
           }
         })
     }
+
+    module V2 = {
+      type t = t = {
+        order: option<int>,
+        notes: string,
+      }
+
+      let v1_to_v2 = v1 => {notes: v1.V1.notes, order: None}
+
+      let toJson = t =>
+        Js.Dict.fromArray([
+          ("version", 2->Int.toJson),
+          ("order", t.order->Option.toJson(Int.toJson)),
+          ("notes", t.notes->String.toJson),
+        ])->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Hierarchy slots object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          switch version->Or_error.match {
+          | Or_error.Ok(1) => json->V1.fromJson->Or_error.map(v1_to_v2)
+          | Or_error.Ok(2) => {
+              let order = getValue("order", j => j->Option.fromJson(Int.fromJson))
+              let notes = getValue("notes", String.fromJson)
+              (order, notes)
+              ->Or_error.both
+              ->Or_error.map(((order, notes)) => {
+                order: order,
+                notes: notes,
+              })
+            }
+          | Or_error.Ok(v) =>
+            Or_error.error_ss([
+              "Unrecognised version of InspectorState.Hierarchy: ",
+              Int.toString(v),
+            ])
+          | Or_error.Err(e) => Or_error.error(e)
+          }
+        })
+    }
   }
 }
 module Anchor = {
-  type t = {notes: string}
+  type t = {order: option<int>, notes: string}
 
-  let hash: t => Hash.t = Hash.record1("notes", String.hash)
-  let empty = {notes: ""}
-  let duplicate = t => {notes: t.notes}
+  let hash: t => Hash.t = Hash.record2(("order", Option.hash(_, Int.hash)), ("notes", String.hash))
+  let empty = {order: None, notes: ""}
+  let duplicate = t => {order: t.order, notes: t.notes}
 
   module Stable = {
     module V1 = {
-      type t = t = {notes: string}
+      type t = {notes: string}
+      let empty = {notes: ""}
 
       let toJson = t =>
         Js.Dict.fromList(list{
@@ -1043,6 +1097,48 @@ module Anchor = {
           }
         })
     }
+
+    module V2 = {
+      type t = t = {order: option<int>, notes: string}
+
+      let v1_to_v2 = v1 => {
+        order: None,
+        notes: v1.V1.notes,
+      }
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(2)),
+          ("order", Option.toJson(t.order, Int.toJson)),
+          ("notes", String.toJson(t.notes)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Anchor slots object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          switch version->Or_error.match {
+          | Or_error.Ok(2) => {
+              let order = getValue("order", Option.fromJson(_, Int.fromJson))
+              let notes = getValue("notes", String.fromJson)
+              (order, notes)
+              ->Or_error.both
+              ->Or_error.map(((order, notes)) => {order: order, notes: notes})
+            }
+          | Or_error.Ok(1) => json->V1.fromJson->Or_error.map(v1_to_v2)
+          | Or_error.Ok(v) =>
+            Or_error.error_ss(["Unrecognised version of InspectorState.Anchor: ", Int.toString(v)])
+          | Or_error.Err(e) => Or_error.error(e)
+          }
+        })
+    }
   }
 }
 
@@ -1056,6 +1152,7 @@ module Relation = {
   module Stable = {
     module V1 = {
       type t = t = {notes: string}
+      let empty = {notes: ""}
 
       let toJson = t =>
         Js.Dict.fromList(list{
@@ -1101,6 +1198,7 @@ module Overlap = {
   module Stable = {
     module V1 = {
       type t = t = {notes: string}
+      let empty = {notes: ""}
 
       let toJson = t =>
         Js.Dict.fromList(list{
@@ -1142,6 +1240,7 @@ module Disjoint = {
   module Stable = {
     module V1 = {
       type t = t = {notes: string}
+      let empty = {notes: ""}
 
       let toJson = t =>
         Js.Dict.fromList(list{
@@ -1187,6 +1286,7 @@ module Generic = {
   module Stable = {
     module V1 = {
       type t = t = {notes: string}
+      let empty = {notes: ""}
 
       let toJson = t =>
         Js.Dict.fromList(list{
@@ -1266,13 +1366,23 @@ module Link = {
 
   module Stable = {
     module V1 = {
-      type t = t =
+      type t =
         | Hierarchy(Hierarchy.Stable.V1.t)
         | Anchor(Anchor.Stable.V1.t)
         | Relation(Relation.Stable.V1.t)
         | Overlap(Overlap.Stable.V1.t)
         | Disjoint(Disjoint.Stable.V1.t)
         | Generic(Generic.Stable.V1.t)
+
+      let empty = k =>
+        switch k {
+        | ModelLink.Kind.Hierarchy => Hierarchy(Hierarchy.Stable.V1.empty)
+        | ModelLink.Kind.Anchor => Anchor(Anchor.Stable.V1.empty)
+        | ModelLink.Kind.Relation => Relation(Relation.Stable.V1.empty)
+        | ModelLink.Kind.Overlap => Overlap(Overlap.Stable.V1.empty)
+        | ModelLink.Kind.Disjoint => Disjoint(Disjoint.Stable.V1.empty)
+        | ModelLink.Kind.Generic => Generic(Generic.Stable.V1.empty)
+        }
 
       let toJson = t => {
         let version = ("version", Int.toJson(1))
@@ -1367,6 +1477,120 @@ module Link = {
           }
         })
     }
+
+    module V2 = {
+      type t = t =
+        | Hierarchy(Hierarchy.Stable.V2.t)
+        | Anchor(Anchor.Stable.V2.t)
+        | Relation(Relation.Stable.V1.t)
+        | Overlap(Overlap.Stable.V1.t)
+        | Disjoint(Disjoint.Stable.V1.t)
+        | Generic(Generic.Stable.V1.t)
+
+      let v1_to_v2 = v1 =>
+        switch v1 {
+        | V1.Hierarchy(h) => Hierarchy(Hierarchy.Stable.V2.v1_to_v2(h))
+        | V1.Anchor(a) => Anchor(Anchor.Stable.V2.v1_to_v2(a))
+        | V1.Relation(r) => Relation(r)
+        | V1.Overlap(o) => Overlap(o)
+        | V1.Disjoint(d) => Disjoint(d)
+        | V1.Generic(g) => Generic(g)
+        }
+
+      let toJson = t => {
+        let version = ("version", Int.toJson(2))
+        switch t {
+        | Hierarchy(rel) =>
+          Js.Dict.fromList(list{
+            version,
+            ("kind", String.toJson("hierarchy")),
+            ("payload", Hierarchy.Stable.V2.toJson(rel)),
+          })
+        | Anchor(rel) =>
+          Js.Dict.fromList(list{
+            version,
+            ("kind", String.toJson("anchor")),
+            ("payload", Anchor.Stable.V2.toJson(rel)),
+          })
+
+        | Relation(rel) =>
+          Js.Dict.fromList(list{
+            version,
+            ("kind", String.toJson("relation")),
+            ("payload", Relation.Stable.V1.toJson(rel)),
+          })
+        | Overlap(rel) =>
+          Js.Dict.fromList(list{
+            version,
+            ("kind", String.toJson("overlap")),
+            ("payload", Overlap.Stable.V1.toJson(rel)),
+          })
+        | Disjoint(rel) =>
+          Js.Dict.fromList(list{
+            version,
+            ("kind", String.toJson("disjoint")),
+            ("payload", Disjoint.Stable.V1.toJson(rel)),
+          })
+        | Generic(rel) =>
+          Js.Dict.fromList(list{
+            version,
+            ("kind", String.toJson("generic")),
+            ("payload", Generic.Stable.V1.toJson(rel)),
+          })
+        }->Js.Json.object_
+      }
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Relation slots object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          switch version->Or_error.match {
+          | Or_error.Ok(2) => {
+              let kind = getValue("kind", String.fromJson)
+              switch kind->Or_error.match {
+              | Or_error.Ok("hierarchy") => {
+                  let payload = getValue("payload", Hierarchy.Stable.V2.fromJson)
+                  payload->Or_error.map(payload => Hierarchy(payload))
+                }
+              | Or_error.Ok("anchor") => {
+                  let payload = getValue("payload", Anchor.Stable.V2.fromJson)
+                  payload->Or_error.map(payload => Anchor(payload))
+                }
+
+              | Or_error.Ok("relation") => {
+                  let payload = getValue("payload", Relation.Stable.V1.fromJson)
+                  payload->Or_error.map(payload => Relation(payload))
+                }
+              | Or_error.Ok("overlap") => {
+                  let payload = getValue("payload", Overlap.Stable.V1.fromJson)
+                  payload->Or_error.map(payload => Overlap(payload))
+                }
+              | Or_error.Ok("disjoint") => {
+                  let payload = getValue("payload", Disjoint.Stable.V1.fromJson)
+                  payload->Or_error.map(payload => Disjoint(payload))
+                }
+              | Or_error.Ok("generic") => {
+                  let payload = getValue("payload", Generic.Stable.V1.fromJson)
+                  payload->Or_error.map(payload => Generic(payload))
+                }
+              | Or_error.Ok(k) => Or_error.error_ss(["Unrecognised InspectorState.Link kind: ", k])
+              | Or_error.Err(e) => Or_error.error(e)
+              }
+            }
+          | Or_error.Ok(1) => json->V1.fromJson->Or_error.map(v1_to_v2)
+          | Or_error.Ok(v) =>
+            Or_error.error_ss(["Unrecognised version of InspectorState.Link: ", Int.toString(v)])
+          | Or_error.Err(e) => Or_error.error(e)
+          }
+        })
+    }
   }
 }
 
@@ -1391,7 +1615,7 @@ module SchemaOrLink = {
 
   module Stable = {
     module V1 = {
-      type t = t =
+      type t =
         | Schema(Schema.Stable.V2.t)
         | Link(Link.Stable.V1.t)
 
@@ -1433,6 +1657,66 @@ module SchemaOrLink = {
                 }
               )
             }
+          | Or_error.Ok(v) =>
+            Or_error.error_ss([
+              "Unrecognised version of InspectorState.SchemaOrLink: ",
+              Int.toString(v),
+            ])
+          | Or_error.Err(e) => Or_error.error(e)
+          }
+        })
+    }
+
+    module V2 = {
+      type t = t =
+        | Schema(Schema.Stable.V2.t)
+        | Link(Link.Stable.V2.t)
+
+      let v1_to_v2 = v1 =>
+        switch v1 {
+        | V1.Schema(s) => Schema(s)
+        | V1.Link(l) => Link(Link.Stable.V2.v1_to_v2(l))
+        }
+
+      let toJson = t => {
+        let (kind, payload) = switch t {
+        | Schema(s) => (String.toJson("schema"), Schema.Stable.V2.toJson(s))
+        | Link(l) => (String.toJson("link"), Link.Stable.V2.toJson(l))
+        }
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(2)),
+          ("kind", kind),
+          ("payload", payload),
+        })->Js.Json.object_
+      }
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Relation slots object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          switch version->Or_error.match {
+          | Or_error.Ok(2) => {
+              let payload = getValue("payload", j => Or_error.create(j))
+              let kind = getValue("kind", String.fromJson)
+              (kind, payload)
+              ->Or_error.both
+              ->Or_error.flatMap(((kind, payload)) =>
+                switch kind {
+                | "schema" => Schema.Stable.V2.fromJson(payload)->Or_error.map(s => Schema(s))
+                | "link" => Link.Stable.V2.fromJson(payload)->Or_error.map(l => Link(l))
+                | _ =>
+                  Or_error.error_ss(["Unrecognised kind of InspectorState.SchemaOrLink:", kind])
+                }
+              )
+            }
+          | Or_error.Ok(1) => json->V1.fromJson->Or_error.map(v1_to_v2)
           | Or_error.Ok(v) =>
             Or_error.error_ss([
               "Unrecognised version of InspectorState.SchemaOrLink: ",

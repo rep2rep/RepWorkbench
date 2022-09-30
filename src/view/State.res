@@ -171,7 +171,7 @@ module Model = {
     }
 
     module V4 = {
-      type t = t = {
+      type t = {
         info: InspectorState.Model.Stable.V1.t,
         graph: ModelState.Stable.V4.t,
         slots: Gid.Map.t<InspectorState.SchemaOrLink.Stable.V1.t>,
@@ -183,14 +183,17 @@ module Model = {
       let v3_to_v4 = t => {
         let graph = t.V3.graph->ModelState.Stable.V4.v3_to_v4
         let slots = {
-          let schemas = t.V3.slots->Gid.Map.map(s => InspectorState.SchemaOrLink.Schema(s))
+          let schemas =
+            t.V3.slots->Gid.Map.map(s => InspectorState.SchemaOrLink.Stable.V1.Schema(s))
           let links =
             graph
-            ->ModelState.graph
-            ->ModelGraph.links
+            ->ModelState.Stable.V4.graph
+            ->ModelGraph.Stable.V3.links
             ->Array.map(link => (
-              ModelLink.id(link),
-              InspectorState.SchemaOrLink.Link(InspectorState.Link.empty(ModelLink.kind(link))),
+              ModelLink.Stable.V2.id(link),
+              InspectorState.SchemaOrLink.Stable.V1.Link(
+                InspectorState.Link.Stable.V1.empty(ModelLink.Stable.V2.kind(link)),
+              ),
             ))
             ->Gid.Map.fromArray
           Gid.Map.merge(schemas, links, (_, l, r) =>
@@ -250,11 +253,109 @@ module Model = {
           | Or_error.Ok(4) => {
               let info = getValue("info", InspectorState.Model.Stable.V1.fromJson)
               let graph = getValue("graph", ModelState.Stable.V4.fromJson)
-              let slots = getValue("slots", j =>
-                j->Gid.Map.fromJson(InspectorState.SchemaOrLink.Stable.V1.fromJson)
+              let slots = getValue(
+                "slots",
+                Gid.Map.fromJson(_, InspectorState.SchemaOrLink.Stable.V1.fromJson),
               )
 
-              Or_error.both3((info, graph, slots))->Or_error.map(((info, graph, slots)) => {
+              (info, graph, slots)
+              ->Or_error.both3
+              ->Or_error.map(((info, graph, slots)) => {
+                info: info,
+                graph: graph,
+                slots: slots,
+                intelligence: None,
+                requestedIntelligence: None,
+                focusedIntelligence: None,
+              })
+            }
+          | Or_error.Ok(v) =>
+            Or_error.error_ss([
+              "Attempting to load unsupported Model version ",
+              Int.toString(v),
+              "!",
+            ])
+          }
+        })
+    }
+
+    module V5 = {
+      type t = t = {
+        info: InspectorState.Model.Stable.V1.t,
+        graph: ModelState.Stable.V5.t,
+        slots: Gid.Map.t<InspectorState.SchemaOrLink.Stable.V2.t>,
+        intelligence: option<Intelligence_Intf.Response.t>,
+        requestedIntelligence: option<Gid.t>,
+        focusedIntelligence: option<Gid.t>,
+      }
+
+      let v4_to_v5 = t => {
+        let graph = t.V4.graph->ModelState.Stable.V5.v4_to_v5
+        let slots = t.V4.slots->Gid.Map.map(InspectorState.SchemaOrLink.Stable.V2.v1_to_v2)
+        {
+          info: t.V4.info,
+          graph: graph,
+          slots: slots,
+          intelligence: None,
+          requestedIntelligence: None,
+          focusedIntelligence: None,
+        }
+      }
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(5)),
+          ("info", t.info->InspectorState.Model.Stable.V1.toJson),
+          ("graph", t.graph->ModelState.Stable.V5.toJson),
+          ("slots", t.slots->Gid.Map.toJson(InspectorState.SchemaOrLink.Stable.V2.toJson)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Model state object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          switch version->Or_error.match {
+          | Or_error.Err(_) => {
+              Js.Console.log("Attempting to upgrade model from V1 to V5")
+              V1.fromJson(json)
+              ->Or_error.map(V2.v1_to_v2)
+              ->Or_error.map(V3.v2_to_v3)
+              ->Or_error.map(V4.v3_to_v4)
+              ->Or_error.map(v4_to_v5)
+            }
+          | Or_error.Ok(2) => {
+              Js.Console.log("Attempting to upgrade model from V2 to V5")
+              V2.fromJson(json)
+              ->Or_error.map(V3.v2_to_v3)
+              ->Or_error.map(V4.v3_to_v4)
+              ->Or_error.map(v4_to_v5)
+            }
+          | Or_error.Ok(3) => {
+              Js.Console.log("Attempting to upgrade model from V3 to V5")
+              V3.fromJson(json)->Or_error.map(V4.v3_to_v4)->Or_error.map(v4_to_v5)
+            }
+          | Or_error.Ok(4) => {
+              Js.Console.log("Attempting to upgrade model from V4 to V5")
+              V4.fromJson(json)->Or_error.map(v4_to_v5)
+            }
+          | Or_error.Ok(5) => {
+              let info = getValue("info", InspectorState.Model.Stable.V1.fromJson)
+              let graph = getValue("graph", ModelState.Stable.V5.fromJson)
+              let slots = getValue(
+                "slots",
+                Gid.Map.fromJson(_, InspectorState.SchemaOrLink.Stable.V2.fromJson),
+              )
+
+              (info, graph, slots)
+              ->Or_error.both3
+              ->Or_error.map(((info, graph, slots)) => {
                 info: info,
                 graph: graph,
                 slots: slots,
@@ -326,7 +427,7 @@ module Model = {
       }
     }
   }
-  module Storage = StorageMkr(Stable.V4)
+  module Storage = StorageMkr(Stable.V5)
 
   let prefix = "RepNotation:Model:"
   let store = (t, id) => Storage.set(prefix ++ Gid.toString(id), t)

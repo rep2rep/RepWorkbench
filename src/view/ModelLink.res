@@ -88,7 +88,11 @@ module Kind = {
 }
 
 module Payload = {
-  type t = Kind.t
+  type t = {kind: Kind.t, label: option<int>}
+
+  let setLabel = (t, l) => {...t, label: l}
+
+  let hash: t => Hash.t = Hash.record2(("kind", Kind.hash), ("label", Option.hash(_, Int.hash)))
 
   module Stable = {
     module V1 = {
@@ -104,9 +108,53 @@ module Payload = {
       let toJson = Kind.Stable.V2.toJson
       let fromJson = Kind.Stable.V2.fromJson
     }
+
+    module V3 = {
+      type t = t = {
+        kind: Kind.Stable.V2.t,
+        label: option<int>,
+      }
+
+      let v2_to_v3 = v2 => {
+        kind: v2,
+        label: None,
+      }
+
+      let toJson = t =>
+        Js.Dict.fromArray([
+          ("version", 3->Int.toJson),
+          ("kind", t.kind->Kind.Stable.V2.toJson),
+          ("label", t.label->Option.toJson(Int.toJson)),
+        ])->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode ModelLink object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          switch version->Or_error.match {
+          | Or_error.Ok(3) => {
+              let kind = getValue("kind", Kind.Stable.V2.fromJson)
+              let label = getValue("label", j => j->Option.fromJson(Int.fromJson))
+              (kind, label)
+              ->Or_error.both
+              ->Or_error.map(((kind, label)) => {kind: kind, label: label})
+            }
+          | Or_error.Ok(v) =>
+            Or_error.error_ss(["Unrecognised version of ModelLink: ", Int.toString(v)])
+          | Or_error.Err(_) => json->V2.fromJson->Or_error.map(v2_to_v3)
+          }
+        })
+    }
   }
 
-  let create = s => s
+  let create = s => {kind: s, label: None}
 }
 
 type t = ReactD3Graph.Link.t<Payload.t>
@@ -114,21 +162,43 @@ type t = ReactD3Graph.Link.t<Payload.t>
 let data = t => [t]
 
 module Config = {
-  let hierarchy = ReactD3Graph.Link.Config.create(
-    ~offsetSource=(_, _, _) => {"dx": 0., "dy": 25.},
-    ~offsetTarget=(_, _, _) => {"dx": 0., "dy": -25.},
-    ~color=ReactD3Graph.Color.ofHexString("#000000"),
-    ~strokeWidth=1.,
-    (),
-  )
-  let anchor = ReactD3Graph.Link.Config.create(
-    ~offsetSource=(_, _, _) => {"dx": 0., "dy": 25.},
-    ~offsetTarget=(_, _, _) => {"dx": 0., "dy": -25.},
-    ~color=ReactD3Graph.Color.ofHexString("#000000"),
-    ~strokeWidth=1.,
-    ~markerStart="arrowheadCircle",
-    (),
-  )
+  let hierarchy = order =>
+    ReactD3Graph.Link.Config.create(
+      ~offsetSource=(_, _, _) => {"dx": 0., "dy": 25.},
+      ~offsetTarget=(_, _, _) => {"dx": 0., "dy": -25.},
+      ~color=ReactD3Graph.Color.ofHexString("#000000"),
+      ~strokeWidth=1.,
+      ~labelProperty=_ =>
+        order
+        ->Option.map(Int.toString)
+        ->Option.map(label => {
+          <g>
+            <circle r="8" cx="8" cy="8" fill="white" />
+            <text textAnchor="middle" x="8" y="12" fontSize="0.8rem"> {React.string(label)} </text>
+          </g>
+        })
+        ->Option.getWithDefault(React.null),
+      (),
+    )
+  let anchor = order =>
+    ReactD3Graph.Link.Config.create(
+      ~offsetSource=(_, _, _) => {"dx": 0., "dy": 25.},
+      ~offsetTarget=(_, _, _) => {"dx": 0., "dy": -25.},
+      ~color=ReactD3Graph.Color.ofHexString("#000000"),
+      ~strokeWidth=1.,
+      ~markerStart="arrowheadCircle",
+      ~labelProperty=_ =>
+        order
+        ->Option.map(Int.toString)
+        ->Option.map(label => {
+          <g>
+            <circle r="8" cx="8" cy="8" fill="white" />
+            <text textAnchor="middle" x="8" y="12" fontSize="0.8rem"> {React.string(label)} </text>
+          </g>
+        })
+        ->Option.getWithDefault(React.null),
+      (),
+    )
   let relOffset = (source, target) =>
     (source, target)
     ->Option.both
@@ -221,10 +291,10 @@ module Config = {
   )
 }
 
-let create = (~linkId, ~source, ~target, kind) => {
+let create = (~linkId, ~source, ~target, kind, ~label) => {
   let config = switch kind {
-  | Kind.Hierarchy => Config.hierarchy
-  | Kind.Anchor => Config.anchor
+  | Kind.Hierarchy => Config.hierarchy(label)
+  | Kind.Anchor => Config.anchor(label)
   | Kind.Relation => Config.relation
   | Kind.Overlap => Config.overlap
   | Kind.Disjoint => Config.disjoint
@@ -248,10 +318,30 @@ let id = t =>
   ->Option.map(id => id->ReactD3Graph.Link.Id.toString->Gid.fromString)
   ->Option.getExn
 let payload = t => t->ReactD3Graph.Link.payload
-let kind = t => t->payload->Option.getWithDefault(Kind.Hierarchy)
+let kind = t => t->payload->Option.map(p => p.Payload.kind)->Option.getWithDefault(Kind.Hierarchy)
+let label = t => t->payload->Option.flatMap(p => p.Payload.label)
+let updateConfig = (t, f) => t->ReactD3Graph.Link.updateConfig(f)
+let updatePayload = (t, f) => {
+  let t' = t->ReactD3Graph.Link.updatePayload(Option.map(_, f))
+  let pl = t'->ReactD3Graph.Link.payload->Option.getExn
+  let config = switch pl.Payload.kind {
+  | Kind.Hierarchy => Config.hierarchy(pl.label)
+  | Kind.Anchor => Config.anchor(pl.label)
+  | Kind.Relation => Config.relation
+  | Kind.Overlap => Config.overlap
+  | Kind.Disjoint => Config.disjoint
+  | Kind.Generic => Config.generic
+  }
+  t'->updateConfig(_ => config)
+}
 
 let hash = t =>
-  Hash.combine([Gid.hash(id(t)), Gid.hash(source(t)), Gid.hash(target(t)), Kind.hash(kind(t))])
+  Hash.combine([
+    Gid.hash(id(t)),
+    Gid.hash(source(t)),
+    Gid.hash(target(t)),
+    payload(t)->Option.hash(Payload.hash),
+  ])
 
 module Stable = {
   module V1 = {
@@ -300,8 +390,8 @@ module Stable = {
           let target = target->Gid.toString->ReactD3Graph.Node.Id.ofString
           let payload = payload->Option.getWithDefault(Kind.Stable.V1.Hierarchy)
           let config = switch payload {
-          | Kind.Stable.V1.Hierarchy => Config.hierarchy
-          | Kind.Stable.V1.Anchor => Config.anchor
+          | Kind.Stable.V1.Hierarchy => Config.hierarchy(None)
+          | Kind.Stable.V1.Anchor => Config.anchor(None)
           | Kind.Stable.V1.Relation => Config.relation
           }->Obj.magic
           ReactD3Graph.Link.create(~source, ~target, ~payload, ~config, ~id?, ())
@@ -311,6 +401,9 @@ module Stable = {
 
   module V2 = {
     type t = ReactD3Graph.Link.t<Payload.Stable.V2.t>
+
+    let id = t => Obj.magic(t)["id"]
+    let kind = t => Obj.magic(t)["payload"]->Option.getWithDefault(Kind.Stable.V2.Hierarchy)
 
     let v1_to_v2: V1.t => t = v1 => {
       // Horrible, horrible hack. Terrible, no good, very bad.
@@ -359,8 +452,8 @@ module Stable = {
               let target = target->Gid.toString->ReactD3Graph.Node.Id.ofString
               let payload = payload->Option.getWithDefault(Kind.Stable.V2.Hierarchy)
               let config = switch payload {
-              | Kind.Stable.V2.Hierarchy => Config.hierarchy
-              | Kind.Stable.V2.Anchor => Config.anchor
+              | Kind.Stable.V2.Hierarchy => Config.hierarchy(None)
+              | Kind.Stable.V2.Anchor => Config.anchor(None)
               | Kind.Stable.V2.Relation => Config.relation
               | Kind.Stable.V2.Overlap => Config.overlap
               | Kind.Stable.V2.Disjoint => Config.disjoint
@@ -371,6 +464,74 @@ module Stable = {
           }
         | Or_error.Ok(v) => Or_error.error_ss(["Unrecognised ModelLink version: ", Int.toString(v)])
         | Or_error.Err(_) => V1.fromJson(json)->Or_error.map(v1_to_v2)
+        }
+      })
+  }
+
+  module V3 = {
+    type t = ReactD3Graph.Link.t<Payload.Stable.V3.t>
+
+    let v2_to_v3: V2.t => t = v2 => {
+      // Horrible, horrible hack. Terrible, no good, very bad.
+      let v2' = Obj.magic(v2)
+      v2'["payload"] = v2'["payload"]->Option.map(Payload.Stable.V3.v2_to_v3)
+      Obj.magic(v2')
+    }
+
+    let toJson = t =>
+      Js.Dict.fromList(list{
+        ("version", 3->Int.toJson),
+        ("source", source(t)->Gid.toJson),
+        ("target", target(t)->Gid.toJson),
+        ("id", id(t)->Gid.toJson),
+        ("payload", payload(t)->Option.toJson(Payload.Stable.V3.toJson)),
+      })->Js.Json.object_
+
+    let fromJson = json =>
+      json
+      ->Js.Json.decodeObject
+      ->Or_error.fromOption_s("Failed to decode ModelLink object JSON")
+      ->Or_error.flatMap(dict => {
+        let getValue = (key, reader) =>
+          dict
+          ->Js.Dict.get(key)
+          ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+          ->Or_error.flatMap(reader)
+        let version = getValue("version", Int.fromJson)
+        switch version->Or_error.match {
+        | Or_error.Ok(3) => {
+            let source = getValue("source", Gid.fromJson)
+            let target = getValue("target", Gid.fromJson)
+            let id = getValue("id", Gid.fromJson)
+            let payload = getValue("payload", json =>
+              json->Option.fromJson(Payload.Stable.V3.fromJson)
+            )
+
+            Or_error.both4((source, target, id, payload))->Or_error.map(((
+              source,
+              target,
+              id,
+              payload,
+            )) => {
+              let id = id->Gid.toString->ReactD3Graph.Link.Id.ofString
+              let source = source->Gid.toString->ReactD3Graph.Node.Id.ofString
+              let target = target->Gid.toString->ReactD3Graph.Node.Id.ofString
+              let payload =
+                payload->Option.getWithDefault({kind: Kind.Stable.V2.Hierarchy, label: None})
+              let config = switch payload.kind {
+              | Kind.Stable.V2.Hierarchy => Config.hierarchy(payload.label)
+              | Kind.Stable.V2.Anchor => Config.anchor(payload.label)
+              | Kind.Stable.V2.Relation => Config.relation
+              | Kind.Stable.V2.Overlap => Config.overlap
+              | Kind.Stable.V2.Disjoint => Config.disjoint
+              | Kind.Stable.V2.Generic => Config.generic
+              }->Obj.magic
+              ReactD3Graph.Link.create(~source, ~target, ~payload, ~config, ~id, ())
+            })
+          }
+        | Or_error.Ok(2) => json->V2.fromJson->Or_error.map(v2_to_v3)
+        | Or_error.Ok(v) => Or_error.error_ss(["Unrecognised ModelLink version: ", Int.toString(v)])
+        | Or_error.Err(_) => V1.fromJson(json)->Or_error.map(V2.v1_to_v2)->Or_error.map(v2_to_v3)
         }
       })
   }

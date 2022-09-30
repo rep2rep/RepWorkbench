@@ -152,20 +152,26 @@ module Slots = {
   }
 
   module Hierarchy = {
-    type t = Notes(string)
+    type t =
+      | Notes(string)
+      | Order(option<int>)
 
-    let dispatch = (_, t) =>
+    let dispatch = (state, t) =>
       switch t {
-      | Notes(s) => {InspectorState.Hierarchy.notes: s}
+      | Notes(s) => {...state, InspectorState.Hierarchy.notes: s}
+      | Order(o) => {...state, InspectorState.Hierarchy.order: o}
       }
   }
 
   module Anchor = {
-    type t = Notes(string)
+    type t =
+      | Notes(string)
+      | Order(option<int>)
 
-    let dispatch = (_, t) =>
+    let dispatch = (state, t) =>
       switch t {
-      | Notes(s) => {InspectorState.Anchor.notes: s}
+      | Notes(s) => {...state, InspectorState.Anchor.notes: s}
+      | Order(o) => {...state, InspectorState.Anchor.order: o}
       }
   }
 
@@ -282,13 +288,29 @@ module Graph = {
       }
   }
 
+  module Link = {
+    type t = UpdateOrder(option<int>)
+
+    let dispatch = (link, t) =>
+      switch t {
+      | UpdateOrder(order) => link->ModelLink.updatePayload(ModelLink.Payload.setLabel(_, order))
+      }
+  }
+
   type rec t =
     | AddNode(ModelNode.t)
     | UpdateNode(Gid.t, Node.t)
+    | UpdateLink(Gid.t, Link.t)
     | DeleteNode(Gid.t)
     | Duplicate(Gid.Map.t<Gid.t>)
     | MoveNode(Gid.t, float, float)
-    | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
+    | LinkNodes({
+        linkId: Gid.t,
+        source: Gid.t,
+        target: Gid.t,
+        kind: ModelLink.Kind.t,
+        label: option<int>,
+      })
     | DeleteLink(Gid.t)
     | SetSelection(ModelSelection.t)
     | Seq(array<t>)
@@ -305,15 +327,23 @@ module Graph = {
           node
         }
       )
+    | UpdateLink(id, e) =>
+      state->ModelState.updateLinks(link =>
+        if ModelLink.id(link) === id {
+          Link.dispatch(link, e)
+        } else {
+          link
+        }
+      )
     | DeleteNode(id) => state->ModelState.removeNode(id)
     | Duplicate(idMap) => state->ModelState.duplicateNodes(idMap)
     | MoveNode(id, x, y) => state->ModelState.moveNode(id, ~x, ~y)
-    | LinkNodes({linkId, source, target, kind}) => {
+    | LinkNodes({linkId, source, target, kind, label}) => {
         let modelSource = state->ModelState.nodeWithId(source)
         let modelTarget = state->ModelState.nodeWithId(target)
         switch (modelSource, modelTarget) {
         | (Some(source), Some(target)) =>
-          state->ModelState.addLink(ModelLink.create(~linkId, ~source, ~target, kind))
+          state->ModelState.addLink(ModelLink.create(~linkId, ~source, ~target, kind, ~label))
         | _ => state
         }
       }
@@ -329,7 +359,13 @@ module Model = {
     | CreateNode(Gid.t, float, float, ModelNode.Kind.t)
     | DeleteNode(Gid.t)
     | Duplicate(Gid.Map.t<Gid.t>)
-    | LinkNodes({linkId: Gid.t, source: Gid.t, target: Gid.t, kind: ModelLink.Kind.t})
+    | LinkNodes({
+        linkId: Gid.t,
+        source: Gid.t,
+        target: Gid.t,
+        kind: ModelLink.Kind.t,
+        label: option<int>,
+      })
     | DeleteLink(Gid.t)
     | Graph(Graph.t)
     | Slots(Gid.t, Slots.t)
@@ -374,7 +410,7 @@ module Model = {
           })
         state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
       }
-    | LinkNodes({linkId, source, target, kind}) => {
+    | LinkNodes({linkId, source, target, kind, label}) => {
         let slots = InspectorState.Link.empty(kind)->InspectorState.SchemaOrLink.Link
         let allSlots = state->State.Model.slots->Gid.Map.set(linkId, slots)
         let state = state->State.Model.updateSlots(allSlots)
@@ -382,7 +418,13 @@ module Model = {
           state
           ->State.Model.graph
           ->Graph.dispatch(
-            Graph.LinkNodes({linkId: linkId, source: source, target: target, kind: kind}),
+            Graph.LinkNodes({
+              linkId: linkId,
+              source: source,
+              target: target,
+              kind: kind,
+              label: label,
+            }),
           )
         state->State.Model.updateGraph(graph)
       }
@@ -423,40 +465,49 @@ module Model = {
         | Slots.Dimension(Slots.Dimension.Concept(s))
         | Slots.Token(Slots.Token.Concept(s))
         | Slots.Placeholder(Slots.Placeholder.Description(s)) =>
-          Some(Graph.Node.UpdateName(s))
+          Some(id => Graph.UpdateNode(id, Graph.Node.UpdateName(s)))
         | Slots.Representation(Slots.Representation.Display(s))
         | Slots.Scheme(Slots.Scheme.Graphic_structure(s))
         | Slots.Dimension(Slots.Dimension.Graphic(s))
         | Slots.Token(Slots.Token.Graphic(s)) =>
-          Some(Graph.Node.UpdateReference(s))
+          Some(id => Graph.UpdateNode(id, Graph.Node.UpdateReference(s)))
         | Slots.Dimension(Slots.Dimension.Concept_scale(s)) =>
           Some(
-            Graph.Node.UpdateNameSuffix(
-              Some(
-                s
-                ->Option.map(Quantity_scale.toString)
-                ->Option.getWithDefault("-")
-                ->String.slice(~from=0, ~to_=1),
+            id => Graph.UpdateNode(
+              id,
+              Graph.Node.UpdateNameSuffix(
+                Some(
+                  s
+                  ->Option.map(Quantity_scale.toString)
+                  ->Option.getWithDefault("-")
+                  ->String.slice(~from=0, ~to_=1),
+                ),
               ),
             ),
           )
         | Slots.Dimension(Slots.Dimension.Graphic_scale(s)) =>
           Some(
-            Graph.Node.UpdateReferenceSuffix(
-              Some(
-                s
-                ->Option.map(Quantity_scale.toString)
-                ->Option.getWithDefault("-")
-                ->String.slice(~from=0, ~to_=1),
+            id => Graph.UpdateNode(
+              id,
+              Graph.Node.UpdateReferenceSuffix(
+                Some(
+                  s
+                  ->Option.map(Quantity_scale.toString)
+                  ->Option.getWithDefault("-")
+                  ->String.slice(~from=0, ~to_=1),
+                ),
               ),
             ),
           )
         | Slots.Token(Slots.Token.Is_class(b))
         | Slots.Placeholder(Slots.Placeholder.IsIntensional(b)) =>
-          Some(Graph.Node.UpdateDashed(b->Option.getWithDefault(false)))
+          Some(id => Graph.UpdateNode(id, Graph.Node.UpdateDashed(b->Option.getWithDefault(false))))
+        | Slots.Hierarchy(Slots.Hierarchy.Order(o))
+        | Slots.Anchor(Slots.Anchor.Order(o)) =>
+          Some(id => Graph.UpdateLink(id, Graph.Link.UpdateOrder(o)))
         | _ => None
         }
-        e'->Option.map(e' => Graph.UpdateNode(id, e'))
+        e'->Option.map(f => f(id))
       }
     }
 }

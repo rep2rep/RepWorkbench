@@ -39,6 +39,12 @@ module Model: {
     }
 
     module V4: {
+      type t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+
+    module V5: {
       type t = t
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>
