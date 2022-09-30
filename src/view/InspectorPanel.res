@@ -615,6 +615,22 @@ module Anchor = {
   let make = (~slots: InspectorState.Anchor.t, ~onChange) => {
     <>
       <Title value="Anchor" />
+      <Row>
+        <Label
+          htmlFor="inspector-anchor-label"
+          help="The order of the connection, if this connection and its siblings are ordered.">
+          {React.string("Label")}
+        </Label>
+        <input
+          type_="number"
+          name="inspector-anchor-label"
+          min="1"
+          value={slots.order->Option.map(Int.toString)->Option.getWithDefault("")}
+          onChange={e =>
+            ReactEvent.Form.target(e)["value"]->Int.fromString->Event.Slots.Anchor.Order->onChange}
+        />
+        <Button value="Clear" onClick={_ => onChange(Event.Slots.Anchor.Order(None))} />
+      </Row>
       <Notes
         name="inspector-anchor-notes"
         onChange={e => onChange(Event.Slots.Anchor.Notes(ReactEvent.Form.target(e)["value"]))}
