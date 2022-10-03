@@ -47,7 +47,7 @@ and Scheme: {
     explicit: bool,
     scope: Scope.t,
     tokens: list<Schema_intf.token>,
-    dimensions: Non_empty_list.t<Schema_intf.dimension>,
+    dimensions: list<Schema_intf.dimension>,
     schemes: list<t>,
     organisation: string,
   }

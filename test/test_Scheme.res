@@ -23,7 +23,7 @@ let s = {
   explicit: true,
   scope: Scope.Local,
   tokens: List.singleton(Test_Token.t),
-  dimensions: Non_empty_list.singleton(Test_Dimension.d),
+  dimensions: List.singleton(Test_Dimension.d),
   schemes: List.empty,
   organisation: "Organisation",
 }

@@ -17,7 +17,7 @@ and scheme = {
   explicit: bool,
   scope: Scope.t,
   tokens: list<token>,
-  dimensions: Non_empty_list.t<dimension>,
+  dimensions: list<dimension>,
   schemes: list<scheme>,
   organisation: string,
 }

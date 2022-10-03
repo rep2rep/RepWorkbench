@@ -132,9 +132,7 @@ module Conv = {
     | Schema.Scheme(s) =>
       [
         s.tokens->List.map(t => (s.id, t.id, ModelLink.Kind.Hierarchy)),
-        s.dimensions
-        ->Non_empty_list.map(d => (s.id, d.id, ModelLink.Kind.Hierarchy))
-        ->Non_empty_list.toList,
+        s.dimensions->List.map(d => (s.id, d.id, ModelLink.Kind.Hierarchy)),
         s.schemes->List.map(s' => (s.id, s'.id, ModelLink.Kind.Hierarchy)),
       ]->Array.flatMap(List.toArray)
     | Schema.Dimension(d) =>
@@ -369,22 +367,7 @@ module Conv = {
         }
       )
       ->Result.all(combineMessages)
-      ->Result.flatMap(a =>
-        a
-        ->Non_empty_list.fromArray
-        ->Result.fromOption(() => (
-          [
-            ModelError.create(
-              ~nodes=[id],
-              ~message="R-scheme has no R-dimension below it.",
-              ~details="This R-scheme has no immediate children that are R-dimensions. However, an R-scheme must directly encapsulate at least one R-dimension.",
-              ~suggestion="Add an R-dimension, or replace this R-scheme with another schema.",
-              (),
-            ),
-          ],
-          [],
-        ))
-      )
+      ->Result.map(List.fromArray)
     let schemes =
       filter(ModelNode.Kind.Scheme, (_, s) =>
         switch s {

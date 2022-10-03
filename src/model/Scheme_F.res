@@ -10,7 +10,7 @@ module Make = (
     explicit: bool,
     scope: Scope.t,
     tokens: list<Token.t>,
-    dimensions: Non_empty_list.t<Dimension.t>,
+    dimensions: list<Dimension.t>,
     schemes: list<t>,
     organisation: string,
   }
@@ -25,14 +25,14 @@ module Make = (
           Gid.toString(t.id),
           "' must be explicit if and only if it has a graphic instance",
         ]),
-      (t.dimensions->Non_empty_list.length > 2 || t.tokens->List.isEmpty->not)
+      (t.dimensions->List.length > 2 || t.tokens->List.isEmpty->not)
         ->Or_error.fromBool_ss([
           "Scheme '",
           Gid.toString(t.id),
           "' must have either at least two dimensions, or at least one dimension and one token",
         ]),
       t.tokens->List.map(Token.validate)->Or_error.allUnit,
-      t.dimensions->Non_empty_list.map(Dimension.validate)->Non_empty_list.toList->Or_error.allUnit,
+      t.dimensions->List.map(Dimension.validate)->Or_error.allUnit,
       t.schemes->List.map(validate)->Or_error.allUnit,
     })
 
@@ -41,9 +41,7 @@ module Make = (
     let (other_json1, idxs1) =
       t.tokens->Schema_intf.collapse(List.empty, idxs0, Token.id, Token._toJsonHelper)
     let (other_json2, idxs2) =
-      t.dimensions
-      ->Non_empty_list.toList
-      ->Schema_intf.collapse(other_json1, idxs1, Dimension.id, Dimension._toJsonHelper)
+      t.dimensions->Schema_intf.collapse(other_json1, idxs1, Dimension.id, Dimension._toJsonHelper)
     let (other_json3, idxs3) =
       t.schemes->Schema_intf.collapse(other_json2, idxs2, id, _toJsonHelper)
 
@@ -57,10 +55,7 @@ module Make = (
           ("explicit", Bool.toJson(t.explicit)),
           ("scope", Scope.toJson(t.scope)),
           ("tokens", t.tokens->List.map(Token.id)->List.toJson(Gid.toJson)),
-          (
-            "dimensions",
-            t.dimensions->Non_empty_list.map(Dimension.id)->Non_empty_list.toJson(Gid.toJson),
-          ),
+          ("dimensions", t.dimensions->List.map(Dimension.id)->List.toJson(Gid.toJson)),
           ("schemes", t.schemes->List.map(id)->List.toJson(Gid.toJson)),
           ("organisation", String.toJson(t.organisation)),
         })->Js.Json.object_,
@@ -104,7 +99,7 @@ module Make = (
         let organisation = get_value("organisation", String.fromJson)
 
         let token_ids = get_value("tokens", j => j->List.fromJson(Gid.fromJson))
-        let dimension_ids = get_value("dimensions", j => j->Non_empty_list.fromJson(Gid.fromJson))
+        let dimension_ids = get_value("dimensions", j => j->List.fromJson(Gid.fromJson))
         let scheme_ids = get_value("schemes", j => j->List.fromJson(Gid.fromJson))
 
         token_ids
@@ -121,7 +116,6 @@ module Make = (
         ->Or_error.flatMap(((representations1, schemes1, dimensions1, tokens1)) =>
           dimension_ids
           ->Or_error.tag("Reading dimensions")
-          ->Or_error.map(Non_empty_list.toList)
           ->Schema_intf.recurse(
             Dimension._fromJsonHelper,
             global_dict,
@@ -161,9 +155,7 @@ module Make = (
                 dimension_ids
                 ->Or_error.tag("Loading dimensions")
                 ->Or_error.flatMap(dimension_ids =>
-                  dimension_ids
-                  ->Non_empty_list.map(id => dimensions3->id_get(id))
-                  ->Non_empty_list.or_error_all
+                  dimension_ids->List.map(id => dimensions3->id_get(id))->Or_error.all
                 )
               let schemes =
                 scheme_ids

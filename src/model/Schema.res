@@ -51,7 +51,7 @@ and Scheme: {
     explicit: bool,
     scope: Scope.t,
     tokens: list<Schema_intf.token>,
-    dimensions: Non_empty_list.t<Schema_intf.dimension>,
+    dimensions: list<Schema_intf.dimension>,
     schemes: list<t>,
     organisation: string,
   }
@@ -121,7 +121,7 @@ let children = t =>
   | Scheme(s) =>
     List.concatMany([
       s.tokens->List.map(t => Token(t)),
-      s.dimensions->Non_empty_list.toList->List.map(d => Dimension(d)),
+      s.dimensions->List.map(d => Dimension(d)),
       s.schemes->List.map(s => Scheme(s)),
     ])
   | Dimension(d) =>
