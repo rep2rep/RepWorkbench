@@ -101,9 +101,6 @@ T.listen(request => {
     switch (k1, k2) {
     | (ModelLink.Kind.Hierarchy, Idiom.Link.Hierarchy)
     | (ModelLink.Kind.Anchor, Idiom.Link.Anchor)
-    | (ModelLink.Kind.Relation, Idiom.Link.Relation)
-    | (ModelLink.Kind.Overlap, Idiom.Link.Overlap)
-    | (ModelLink.Kind.Disjoint, Idiom.Link.Disjoint)
     | (ModelLink.Kind.Generic, Idiom.Link.Generic) => true
     | (_, Idiom.Link.Any) => true
     | _ => false

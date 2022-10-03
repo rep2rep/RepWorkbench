@@ -22,7 +22,7 @@ module Request = {
       (
         "links",
         t.links->Array.toJson(
-          tuple3ToJson(Gid.toJson, Gid.toJson, ModelLink.Kind.Stable.V2.toJson),
+          tuple3ToJson(Gid.toJson, Gid.toJson, ModelLink.Kind.Stable.V3.toJson),
         ),
       ),
     })->Js.Json.object_
@@ -44,7 +44,7 @@ module Request = {
         "links",
         Array.fromJson(
           _,
-          tuple3FromJson(Gid.fromJson, Gid.fromJson, ModelLink.Kind.Stable.V2.fromJson),
+          tuple3FromJson(Gid.fromJson, Gid.fromJson, ModelLink.Kind.Stable.V3.fromJson),
         ),
       )
       Or_error.both4((id, model, slots, links))->Or_error.map(((id, model, slots, links)) => {

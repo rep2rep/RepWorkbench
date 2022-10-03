@@ -388,18 +388,6 @@ module App = {
       reversed => linkNodes(ModelLink.Kind.Anchor, ~reversed),
       [linkNodes],
     )
-    let relateNodes = React.useCallback1(
-      _ => linkNodes(ModelLink.Kind.Relation, ~reversed=false),
-      [linkNodes],
-    )
-    let markOverlappingNodes = React.useCallback1(
-      _ => linkNodes(ModelLink.Kind.Overlap, ~reversed=false),
-      [linkNodes],
-    )
-    let markDisjointNodes = React.useCallback1(
-      _ => linkNodes(ModelLink.Kind.Disjoint, ~reversed=false),
-      [linkNodes],
-    )
     let makeGenericLink = React.useCallback1(
       _ => linkNodes(ModelLink.Kind.Generic, ~reversed=false),
       [linkNodes],
@@ -571,23 +559,9 @@ module App = {
       () => (addRepNodeAt, addSchNodeAt, addDimNodeAt, addTokNodeAt, addPlcNodeAt),
       (addRepNodeAt, addSchNodeAt, addDimNodeAt, addTokNodeAt, addPlcNodeAt),
     )
-    let links = React.useMemo6(
-      () => (
-        connectNodes,
-        anchorNodes,
-        relateNodes,
-        markOverlappingNodes,
-        markDisjointNodes,
-        makeGenericLink,
-      ),
-      (
-        connectNodes,
-        anchorNodes,
-        relateNodes,
-        markOverlappingNodes,
-        markDisjointNodes,
-        makeGenericLink,
-      ),
+    let links = React.useMemo3(
+      () => (connectNodes, anchorNodes, makeGenericLink),
+      (connectNodes, anchorNodes, makeGenericLink),
     )
     let keybindings = React.useMemo6(
       () =>
@@ -602,9 +576,6 @@ module App = {
           ("Shift+C", (_, ~x as _, ~y as _) => connectNodes(true)), // reversed direction
           ("a", (_, ~x as _, ~y as _) => anchorNodes(false)),
           ("Shift+A", (_, ~x as _, ~y as _) => anchorNodes(true)), // reversed direction
-          ("e", (_, ~x as _, ~y as _) => relateNodes()),
-          ("o", (_, ~x as _, ~y as _) => markOverlappingNodes()),
-          ("j", (_, ~x as _, ~y as _) => markDisjointNodes()),
           ("g", (_, ~x as _, ~y as _) => makeGenericLink()),
           ("x", (_, ~x as _, ~y as _) => delete()),
           ("ArrowLeft", (_, ~x as _, ~y as _) => nudge(~dx=-10.0, ~dy=0.0)),
@@ -768,18 +739,6 @@ module App = {
           />
           <Button
             onClick={_ => anchorNodes(false)} value="Anchor" enabled={toolbarActive} tooltip="A"
-          />
-          <Button
-            onClick={_ => relateNodes()} value="Equivalence" enabled={toolbarActive} tooltip="E"
-          />
-          <Button
-            onClick={_ => markOverlappingNodes()}
-            value="Overlap"
-            enabled={toolbarActive}
-            tooltip="O"
-          />
-          <Button
-            onClick={_ => markDisjointNodes()} value="Disjoint" enabled={toolbarActive} tooltip="J"
           />
           <Button
             onClick={_ => makeGenericLink()} value="Generic" enabled={toolbarActive} tooltip="G"

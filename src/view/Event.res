@@ -175,33 +175,6 @@ module Slots = {
       }
   }
 
-  module Relation = {
-    type t = Notes(string)
-
-    let dispatch = (_, t) =>
-      switch t {
-      | Notes(s) => {InspectorState.Relation.notes: s}
-      }
-  }
-
-  module Overlap = {
-    type t = Notes(string)
-
-    let dispatch = (_, t) =>
-      switch t {
-      | Notes(s) => {InspectorState.Overlap.notes: s}
-      }
-  }
-
-  module Disjoint = {
-    type t = Notes(string)
-
-    let dispatch = (_, t) =>
-      switch t {
-      | Notes(s) => {InspectorState.Disjoint.notes: s}
-      }
-  }
-
   module Generic = {
     type t = Notes(string)
 
@@ -219,9 +192,6 @@ module Slots = {
     | Placeholder(Placeholder.t)
     | Hierarchy(Hierarchy.t)
     | Anchor(Anchor.t)
-    | Relation(Relation.t)
-    | Overlap(Overlap.t)
-    | Disjoint(Disjoint.t)
     | Generic(Generic.t)
 
   let dispatch = (state, t) =>
@@ -252,15 +222,8 @@ module Slots = {
       Hierarchy.dispatch(state, e)->InspectorState.Link.Hierarchy->InspectorState.SchemaOrLink.Link
     | (InspectorState.SchemaOrLink.Link(InspectorState.Link.Anchor(state)), Anchor(e)) =>
       Anchor.dispatch(state, e)->InspectorState.Link.Anchor->InspectorState.SchemaOrLink.Link
-    | (InspectorState.SchemaOrLink.Link(InspectorState.Link.Relation(state)), Relation(e)) =>
-      Relation.dispatch(state, e)->InspectorState.Link.Relation->InspectorState.SchemaOrLink.Link
-    | (InspectorState.SchemaOrLink.Link(InspectorState.Link.Overlap(state)), Overlap(e)) =>
-      Overlap.dispatch(state, e)->InspectorState.Link.Overlap->InspectorState.SchemaOrLink.Link
-    | (InspectorState.SchemaOrLink.Link(InspectorState.Link.Disjoint(state)), Disjoint(e)) =>
-      Disjoint.dispatch(state, e)->InspectorState.Link.Disjoint->InspectorState.SchemaOrLink.Link
     | (InspectorState.SchemaOrLink.Link(InspectorState.Link.Generic(state)), Generic(e)) =>
       Generic.dispatch(state, e)->InspectorState.Link.Generic->InspectorState.SchemaOrLink.Link
-
     | _ => state
     }
 }

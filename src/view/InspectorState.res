@@ -1142,140 +1142,6 @@ module Anchor = {
   }
 }
 
-module Relation = {
-  type t = {notes: string}
-
-  let hash: t => Hash.t = Hash.record1("notes", String.hash)
-  let empty = {notes: ""}
-  let duplicate = t => {notes: t.notes}
-
-  module Stable = {
-    module V1 = {
-      type t = t = {notes: string}
-      let empty = {notes: ""}
-
-      let toJson = t =>
-        Js.Dict.fromList(list{
-          ("version", Int.toJson(1)),
-          ("notes", String.toJson(t.notes)),
-        })->Js.Json.object_
-
-      let fromJson = json =>
-        json
-        ->Js.Json.decodeObject
-        ->Or_error.fromOption_s("Failed to decode Relation slots object JSON")
-        ->Or_error.flatMap(dict => {
-          let getValue = (key, reader) =>
-            dict
-            ->Js.Dict.get(key)
-            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
-            ->Or_error.flatMap(reader)
-          let version = getValue("version", Int.fromJson)
-          switch version->Or_error.match {
-          | Or_error.Ok(1) => {
-              let notes = getValue("notes", String.fromJson)
-              notes->Or_error.map(notes => {notes: notes})
-            }
-          | Or_error.Ok(v) =>
-            Or_error.error_ss([
-              "Unrecognised version of InspectorState.Relation: ",
-              Int.toString(v),
-            ])
-          | Or_error.Err(e) => Or_error.error(e)
-          }
-        })
-    }
-  }
-}
-
-module Overlap = {
-  type t = {notes: string}
-
-  let hash: t => Hash.t = Hash.record1("notes", String.hash)
-  let empty = {notes: ""}
-  let duplicate = t => {notes: t.notes}
-
-  module Stable = {
-    module V1 = {
-      type t = t = {notes: string}
-      let empty = {notes: ""}
-
-      let toJson = t =>
-        Js.Dict.fromList(list{
-          ("version", Int.toJson(1)),
-          ("notes", String.toJson(t.notes)),
-        })->Js.Json.object_
-
-      let fromJson = json =>
-        json
-        ->Js.Json.decodeObject
-        ->Or_error.fromOption_s("Failed to decode Overlap slots object JSON")
-        ->Or_error.flatMap(dict => {
-          let getValue = (key, reader) =>
-            dict
-            ->Js.Dict.get(key)
-            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
-            ->Or_error.flatMap(reader)
-          let version = getValue("version", Int.fromJson)
-          switch version->Or_error.match {
-          | Or_error.Ok(1) => {
-              let notes = getValue("notes", String.fromJson)
-              notes->Or_error.map(notes => {notes: notes})
-            }
-          | Or_error.Ok(v) =>
-            Or_error.error_ss(["Unrecognised version of InspectorState.Overlap: ", Int.toString(v)])
-          | Or_error.Err(e) => Or_error.error(e)
-          }
-        })
-    }
-  }
-}
-module Disjoint = {
-  type t = {notes: string}
-
-  let hash: t => Hash.t = Hash.record1("notes", String.hash)
-  let empty = {notes: ""}
-  let duplicate = t => {notes: t.notes}
-
-  module Stable = {
-    module V1 = {
-      type t = t = {notes: string}
-      let empty = {notes: ""}
-
-      let toJson = t =>
-        Js.Dict.fromList(list{
-          ("version", Int.toJson(1)),
-          ("notes", String.toJson(t.notes)),
-        })->Js.Json.object_
-
-      let fromJson = json =>
-        json
-        ->Js.Json.decodeObject
-        ->Or_error.fromOption_s("Failed to decode Disjoint slots object JSON")
-        ->Or_error.flatMap(dict => {
-          let getValue = (key, reader) =>
-            dict
-            ->Js.Dict.get(key)
-            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
-            ->Or_error.flatMap(reader)
-          let version = getValue("version", Int.fromJson)
-          switch version->Or_error.match {
-          | Or_error.Ok(1) => {
-              let notes = getValue("notes", String.fromJson)
-              notes->Or_error.map(notes => {notes: notes})
-            }
-          | Or_error.Ok(v) =>
-            Or_error.error_ss([
-              "Unrecognised version of InspectorState.Disjoint: ",
-              Int.toString(v),
-            ])
-          | Or_error.Err(e) => Or_error.error(e)
-          }
-        })
-    }
-  }
-}
-
 module Generic = {
   type t = {notes: string}
 
@@ -1323,18 +1189,12 @@ module Link = {
   type t =
     | Hierarchy(Hierarchy.t)
     | Anchor(Anchor.t)
-    | Relation(Relation.t)
-    | Overlap(Overlap.t)
-    | Disjoint(Disjoint.t)
     | Generic(Generic.t)
 
   let empty = kind =>
     switch kind {
     | ModelLink.Kind.Hierarchy => Hierarchy(Hierarchy.empty)
     | ModelLink.Kind.Anchor => Anchor(Anchor.empty)
-    | ModelLink.Kind.Relation => Relation(Relation.empty)
-    | ModelLink.Kind.Overlap => Overlap(Overlap.empty)
-    | ModelLink.Kind.Disjoint => Disjoint(Disjoint.empty)
     | ModelLink.Kind.Generic => Generic(Generic.empty)
     }
 
@@ -1342,25 +1202,16 @@ module Link = {
     switch t {
     | Hierarchy(v) => Hierarchy(Hierarchy.duplicate(v))
     | Anchor(v) => Anchor(Anchor.duplicate(v))
-    | Relation(v) => Relation(Relation.duplicate(v))
-    | Overlap(v) => Overlap(Overlap.duplicate(v))
-    | Disjoint(v) => Disjoint(Disjoint.duplicate(v))
     | Generic(v) => Generic(Generic.duplicate(v))
     }
 
   let h_const = Hash.unique()
   let a_const = Hash.unique()
-  let r_const = Hash.unique()
-  let o_const = Hash.unique()
-  let d_const = Hash.unique()
   let g_const = Hash.unique()
   let hash = t =>
     switch t {
     | Hierarchy(v) => [h_const, Hierarchy.hash(v)]->Hash.combine
     | Anchor(v) => [a_const, Anchor.hash(v)]->Hash.combine
-    | Relation(v) => [r_const, Relation.hash(v)]->Hash.combine
-    | Overlap(v) => [o_const, Overlap.hash(v)]->Hash.combine
-    | Disjoint(v) => [d_const, Disjoint.hash(v)]->Hash.combine
     | Generic(v) => [g_const, Generic.hash(v)]->Hash.combine
     }
 
@@ -1369,19 +1220,19 @@ module Link = {
       type t =
         | Hierarchy(Hierarchy.Stable.V1.t)
         | Anchor(Anchor.Stable.V1.t)
-        | Relation(Relation.Stable.V1.t)
-        | Overlap(Overlap.Stable.V1.t)
-        | Disjoint(Disjoint.Stable.V1.t)
+        | Relation(Generic.Stable.V1.t)
+        | Overlap(Generic.Stable.V1.t)
+        | Disjoint(Generic.Stable.V1.t)
         | Generic(Generic.Stable.V1.t)
 
       let empty = k =>
         switch k {
-        | ModelLink.Kind.Hierarchy => Hierarchy(Hierarchy.Stable.V1.empty)
-        | ModelLink.Kind.Anchor => Anchor(Anchor.Stable.V1.empty)
-        | ModelLink.Kind.Relation => Relation(Relation.Stable.V1.empty)
-        | ModelLink.Kind.Overlap => Overlap(Overlap.Stable.V1.empty)
-        | ModelLink.Kind.Disjoint => Disjoint(Disjoint.Stable.V1.empty)
-        | ModelLink.Kind.Generic => Generic(Generic.Stable.V1.empty)
+        | ModelLink.Kind.Stable.V2.Hierarchy => Hierarchy(Hierarchy.Stable.V1.empty)
+        | ModelLink.Kind.Stable.V2.Anchor => Anchor(Anchor.Stable.V1.empty)
+        | ModelLink.Kind.Stable.V2.Relation => Relation(Generic.Stable.V1.empty)
+        | ModelLink.Kind.Stable.V2.Overlap => Overlap(Generic.Stable.V1.empty)
+        | ModelLink.Kind.Stable.V2.Disjoint => Disjoint(Generic.Stable.V1.empty)
+        | ModelLink.Kind.Stable.V2.Generic => Generic(Generic.Stable.V1.empty)
         }
 
       let toJson = t => {
@@ -1404,19 +1255,19 @@ module Link = {
           Js.Dict.fromList(list{
             version,
             ("kind", String.toJson("relation")),
-            ("payload", Relation.Stable.V1.toJson(rel)),
+            ("payload", Generic.Stable.V1.toJson(rel)),
           })
         | Overlap(rel) =>
           Js.Dict.fromList(list{
             version,
             ("kind", String.toJson("overlap")),
-            ("payload", Overlap.Stable.V1.toJson(rel)),
+            ("payload", Generic.Stable.V1.toJson(rel)),
           })
         | Disjoint(rel) =>
           Js.Dict.fromList(list{
             version,
             ("kind", String.toJson("disjoint")),
-            ("payload", Disjoint.Stable.V1.toJson(rel)),
+            ("payload", Generic.Stable.V1.toJson(rel)),
           })
         | Generic(rel) =>
           Js.Dict.fromList(list{
@@ -1450,17 +1301,16 @@ module Link = {
                   let payload = getValue("payload", Anchor.Stable.V1.fromJson)
                   payload->Or_error.map(payload => Anchor(payload))
                 }
-
               | Or_error.Ok("relation") => {
-                  let payload = getValue("payload", Relation.Stable.V1.fromJson)
+                  let payload = getValue("payload", Generic.Stable.V1.fromJson)
                   payload->Or_error.map(payload => Relation(payload))
                 }
               | Or_error.Ok("overlap") => {
-                  let payload = getValue("payload", Overlap.Stable.V1.fromJson)
+                  let payload = getValue("payload", Generic.Stable.V1.fromJson)
                   payload->Or_error.map(payload => Overlap(payload))
                 }
               | Or_error.Ok("disjoint") => {
-                  let payload = getValue("payload", Disjoint.Stable.V1.fromJson)
+                  let payload = getValue("payload", Generic.Stable.V1.fromJson)
                   payload->Or_error.map(payload => Disjoint(payload))
                 }
               | Or_error.Ok("generic") => {
@@ -1482,18 +1332,15 @@ module Link = {
       type t = t =
         | Hierarchy(Hierarchy.Stable.V2.t)
         | Anchor(Anchor.Stable.V2.t)
-        | Relation(Relation.Stable.V1.t)
-        | Overlap(Overlap.Stable.V1.t)
-        | Disjoint(Disjoint.Stable.V1.t)
         | Generic(Generic.Stable.V1.t)
 
       let v1_to_v2 = v1 =>
         switch v1 {
         | V1.Hierarchy(h) => Hierarchy(Hierarchy.Stable.V2.v1_to_v2(h))
         | V1.Anchor(a) => Anchor(Anchor.Stable.V2.v1_to_v2(a))
-        | V1.Relation(r) => Relation(r)
-        | V1.Overlap(o) => Overlap(o)
-        | V1.Disjoint(d) => Disjoint(d)
+        | V1.Relation(r) => Generic(r)
+        | V1.Overlap(o) => Generic(o)
+        | V1.Disjoint(d) => Generic(d)
         | V1.Generic(g) => Generic(g)
         }
 
@@ -1511,25 +1358,6 @@ module Link = {
             version,
             ("kind", String.toJson("anchor")),
             ("payload", Anchor.Stable.V2.toJson(rel)),
-          })
-
-        | Relation(rel) =>
-          Js.Dict.fromList(list{
-            version,
-            ("kind", String.toJson("relation")),
-            ("payload", Relation.Stable.V1.toJson(rel)),
-          })
-        | Overlap(rel) =>
-          Js.Dict.fromList(list{
-            version,
-            ("kind", String.toJson("overlap")),
-            ("payload", Overlap.Stable.V1.toJson(rel)),
-          })
-        | Disjoint(rel) =>
-          Js.Dict.fromList(list{
-            version,
-            ("kind", String.toJson("disjoint")),
-            ("payload", Disjoint.Stable.V1.toJson(rel)),
           })
         | Generic(rel) =>
           Js.Dict.fromList(list{
@@ -1562,19 +1390,6 @@ module Link = {
               | Or_error.Ok("anchor") => {
                   let payload = getValue("payload", Anchor.Stable.V2.fromJson)
                   payload->Or_error.map(payload => Anchor(payload))
-                }
-
-              | Or_error.Ok("relation") => {
-                  let payload = getValue("payload", Relation.Stable.V1.fromJson)
-                  payload->Or_error.map(payload => Relation(payload))
-                }
-              | Or_error.Ok("overlap") => {
-                  let payload = getValue("payload", Overlap.Stable.V1.fromJson)
-                  payload->Or_error.map(payload => Overlap(payload))
-                }
-              | Or_error.Ok("disjoint") => {
-                  let payload = getValue("payload", Disjoint.Stable.V1.fromJson)
-                  payload->Or_error.map(payload => Disjoint(payload))
                 }
               | Or_error.Ok("generic") => {
                   let payload = getValue("payload", Generic.Stable.V1.fromJson)

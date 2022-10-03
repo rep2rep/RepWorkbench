@@ -85,18 +85,6 @@ module Slots: {
       | Order(option<int>)
   }
 
-  module Relation: {
-    type t = Notes(string)
-  }
-
-  module Overlap: {
-    type t = Notes(string)
-  }
-
-  module Disjoint: {
-    type t = Notes(string)
-  }
-
   module Generic: {
     type t = Notes(string)
   }
@@ -109,9 +97,6 @@ module Slots: {
     | Placeholder(Placeholder.t)
     | Hierarchy(Hierarchy.t)
     | Anchor(Anchor.t)
-    | Relation(Relation.t)
-    | Overlap(Overlap.t)
-    | Disjoint(Disjoint.t)
     | Generic(Generic.t)
 }
 

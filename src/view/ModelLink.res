@@ -2,24 +2,15 @@ module Kind = {
   type t =
     | Hierarchy
     | Anchor
-    | Relation
-    | Overlap
-    | Disjoint
     | Generic
 
   let h_const = Hash.unique()
   let a_const = Hash.unique()
-  let r_const = Hash.unique()
-  let o_const = Hash.unique()
-  let d_const = Hash.unique()
   let g_const = Hash.unique()
   let hash = t =>
     switch t {
     | Hierarchy => h_const
     | Anchor => a_const
-    | Relation => r_const
-    | Overlap => o_const
-    | Disjoint => d_const
     | Generic => g_const
     }
 
@@ -51,7 +42,7 @@ module Kind = {
     }
 
     module V2 = {
-      type t = t =
+      type t =
         | Hierarchy
         | Anchor
         | Relation
@@ -84,6 +75,42 @@ module Kind = {
           }
         )
     }
+
+    module V3 = {
+      type t = t =
+        | Hierarchy
+        | Anchor
+        | Generic
+
+      let v2_to_v3 = v2 =>
+        switch v2 {
+        | V2.Hierarchy => Hierarchy
+        | V2.Anchor => Anchor
+        | V2.Relation => Generic
+        | V2.Overlap => Generic
+        | V2.Disjoint => Generic
+        | V2.Generic => Generic
+        }
+
+      let toJson = t =>
+        switch t {
+        | Hierarchy => "Hierarchy"
+        | Anchor => "Anchor"
+        | Generic => "Generic"
+        }->String.toJson
+
+      let fromJson = json =>
+        json
+        ->String.fromJson
+        ->Or_error.flatMap(s =>
+          switch s {
+          | "Hierarchy" => Or_error.create(Hierarchy)
+          | "Anchor" => Or_error.create(Anchor)
+          | "Generic" => Or_error.create(Generic)
+          | _ => json->V2.fromJson->Or_error.map(v2_to_v3)
+          }
+        )
+    }
   }
 }
 
@@ -111,19 +138,19 @@ module Payload = {
 
     module V3 = {
       type t = t = {
-        kind: Kind.Stable.V2.t,
+        kind: Kind.Stable.V3.t,
         label: option<int>,
       }
 
       let v2_to_v3 = v2 => {
-        kind: v2,
+        kind: v2->Kind.Stable.V3.v2_to_v3,
         label: None,
       }
 
       let toJson = t =>
         Js.Dict.fromArray([
           ("version", 3->Int.toJson),
-          ("kind", t.kind->Kind.Stable.V2.toJson),
+          ("kind", t.kind->Kind.Stable.V3.toJson),
           ("label", t.label->Option.toJson(Int.toJson)),
         ])->Js.Json.object_
 
@@ -140,7 +167,7 @@ module Payload = {
           let version = getValue("version", Int.fromJson)
           switch version->Or_error.match {
           | Or_error.Ok(3) => {
-              let kind = getValue("kind", Kind.Stable.V2.fromJson)
+              let kind = getValue("kind", Kind.Stable.V3.fromJson)
               let label = getValue("label", j => j->Option.fromJson(Int.fromJson))
               (kind, label)
               ->Or_error.both
@@ -232,56 +259,6 @@ module Config = {
       }
     })
     ->Option.getWithDefault({"dx": 0., "dy": 0.})
-  let relation = ReactD3Graph.Link.Config.create(
-    ~offsetSource=(source, target, _) => relOffset(source, target),
-    ~offsetTarget=(source, target, _) => relOffset(target, source),
-    ~color=ReactD3Graph.Color.ofHexString("#808080"),
-    ~strokeWidth=4.,
-    ~strokeDasharray=5.,
-    (),
-  )
-  let overlapOffset = (source, target) =>
-    (source, target)
-    ->Option.both
-    ->Option.map(((source, target)) => {
-      let x1 = source["x"]
-      let x2 = target["x"]
-      let width = (source->ReactD3Graph.Core.readKeyExn("size"))["width"]
-      let payload: ModelNode.Payload.t = source->ReactD3Graph.Core.readKeyExn("payload")
-      let width = switch payload.kind {
-      | Representation | Scheme | Token | Placeholder => width
-      | Dimension => width -. 80.
-      }
-      let dx = if x1 < x2 {
-        // Come out of right hand edge
-        width /. 20. -. 4.
-      } else {
-        // Come out of left hand edge
-        width /. -20. +. 1.
-      }
-      {"dx": dx, "dy": 0.}
-    })
-    ->Option.getWithDefault({"dx": 0., "dy": 0.})
-  let overlap = ReactD3Graph.Link.Config.create(
-    ~offsetSource=(source, target, _) => overlapOffset(source, target),
-    ~offsetTarget=(source, target, _) => overlapOffset(target, source),
-    ~color=ReactD3Graph.Color.ofHexString("#000000"),
-    ~strokeWidth=2.,
-    ~strokeDasharray=5.,
-    ~markerStart="arrowheadCircleSmall",
-    ~markerEnd="arrowheadCircleSmall",
-    (),
-  )
-  let disjoint = ReactD3Graph.Link.Config.create(
-    ~offsetSource=(source, target, _) => overlapOffset(source, target),
-    ~offsetTarget=(source, target, _) => overlapOffset(target, source),
-    ~color=ReactD3Graph.Color.ofHexString("#000000"),
-    ~strokeWidth=2.,
-    ~strokeDasharray=5.,
-    ~markerStart="arrowheadDiamond",
-    ~markerEnd="arrowheadDiamond",
-    (),
-  )
   let generic = ReactD3Graph.Link.Config.create(
     ~offsetSource=(source, target, _) => relOffset(source, target),
     ~offsetTarget=(source, target, _) => relOffset(target, source),
@@ -295,9 +272,6 @@ let create = (~linkId, ~source, ~target, kind, ~label) => {
   let config = switch kind {
   | Kind.Hierarchy => Config.hierarchy(label)
   | Kind.Anchor => Config.anchor(label)
-  | Kind.Relation => Config.relation
-  | Kind.Overlap => Config.overlap
-  | Kind.Disjoint => Config.disjoint
   | Kind.Generic => Config.generic
   }
   ReactD3Graph.Link.create(
@@ -327,9 +301,6 @@ let updatePayload = (t, f) => {
   let config = switch pl.Payload.kind {
   | Kind.Hierarchy => Config.hierarchy(pl.label)
   | Kind.Anchor => Config.anchor(pl.label)
-  | Kind.Relation => Config.relation
-  | Kind.Overlap => Config.overlap
-  | Kind.Disjoint => Config.disjoint
   | Kind.Generic => Config.generic
   }
   t'->updateConfig(_ => config)
@@ -392,7 +363,7 @@ module Stable = {
           let config = switch payload {
           | Kind.Stable.V1.Hierarchy => Config.hierarchy(None)
           | Kind.Stable.V1.Anchor => Config.anchor(None)
-          | Kind.Stable.V1.Relation => Config.relation
+          | Kind.Stable.V1.Relation => Config.generic
           }->Obj.magic
           ReactD3Graph.Link.create(~source, ~target, ~payload, ~config, ~id?, ())
         })
@@ -454,9 +425,9 @@ module Stable = {
               let config = switch payload {
               | Kind.Stable.V2.Hierarchy => Config.hierarchy(None)
               | Kind.Stable.V2.Anchor => Config.anchor(None)
-              | Kind.Stable.V2.Relation => Config.relation
-              | Kind.Stable.V2.Overlap => Config.overlap
-              | Kind.Stable.V2.Disjoint => Config.disjoint
+              | Kind.Stable.V2.Relation => Config.generic
+              | Kind.Stable.V2.Overlap => Config.generic
+              | Kind.Stable.V2.Disjoint => Config.generic
               | Kind.Stable.V2.Generic => Config.generic
               }->Obj.magic
               ReactD3Graph.Link.create(~source, ~target, ~payload, ~config, ~id, ())
@@ -517,14 +488,11 @@ module Stable = {
               let source = source->Gid.toString->ReactD3Graph.Node.Id.ofString
               let target = target->Gid.toString->ReactD3Graph.Node.Id.ofString
               let payload =
-                payload->Option.getWithDefault({kind: Kind.Stable.V2.Hierarchy, label: None})
+                payload->Option.getWithDefault({kind: Kind.Stable.V3.Hierarchy, label: None})
               let config = switch payload.kind {
-              | Kind.Stable.V2.Hierarchy => Config.hierarchy(payload.label)
-              | Kind.Stable.V2.Anchor => Config.anchor(payload.label)
-              | Kind.Stable.V2.Relation => Config.relation
-              | Kind.Stable.V2.Overlap => Config.overlap
-              | Kind.Stable.V2.Disjoint => Config.disjoint
-              | Kind.Stable.V2.Generic => Config.generic
+              | Kind.Stable.V3.Hierarchy => Config.hierarchy(payload.label)
+              | Kind.Stable.V3.Anchor => Config.anchor(payload.label)
+              | Kind.Stable.V3.Generic => Config.generic
               }->Obj.magic
               ReactD3Graph.Link.create(~source, ~target, ~payload, ~config, ~id, ())
             })

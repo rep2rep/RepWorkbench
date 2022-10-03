@@ -1083,7 +1083,7 @@ let fromSlotsAndLinks = (slots, links) => {
               let relations =
                 links
                 ->Array.keepMap(((s, t, k)) =>
-                  if k === ModelLink.Kind.Relation {
+                  if k === ModelLink.Kind.Generic {
                     switch (schemas->Gid.Map.get(s), schemas->Gid.Map.get(t)) {
                     | (Some((_, Result.Ok(s))), Some((_, Result.Ok(t)))) =>
                       Result.Ok(
@@ -1167,7 +1167,7 @@ let toSlotsAndLinks = t => {
     ->Gid.Map.fromArray
   let relations = t.relations->Array.map(r => {
     let (a, b) = SchemaRelation.schema(r)
-    (Schema.id(a), Schema.id(b), ModelLink.Kind.Relation)
+    (Schema.id(a), Schema.id(b), ModelLink.Kind.Generic)
   })
   let links = schemas->Array.flatMap(Conv.schema_to_links)
   (slots, Array.concat(links, relations))

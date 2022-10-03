@@ -161,42 +161,6 @@ module Anchor: {
   }
 }
 
-module Relation: {
-  type t = {notes: string}
-
-  module Stable: {
-    module V1: {
-      type t = t
-      let toJson: t => Js.Json.t
-      let fromJson: Js.Json.t => Or_error.t<t>
-    }
-  }
-}
-
-module Overlap: {
-  type t = {notes: string}
-
-  module Stable: {
-    module V1: {
-      type t = t
-      let toJson: t => Js.Json.t
-      let fromJson: Js.Json.t => Or_error.t<t>
-    }
-  }
-}
-
-module Disjoint: {
-  type t = {notes: string}
-
-  module Stable: {
-    module V1: {
-      type t = t
-      let toJson: t => Js.Json.t
-      let fromJson: Js.Json.t => Or_error.t<t>
-    }
-  }
-}
-
 module Generic: {
   type t = {notes: string}
 
@@ -213,9 +177,6 @@ module Link: {
   type t =
     | Hierarchy(Hierarchy.t)
     | Anchor(Anchor.t)
-    | Relation(Relation.t)
-    | Overlap(Overlap.t)
-    | Disjoint(Disjoint.t)
     | Generic(Generic.t)
 
   let empty: ModelLink.Kind.t => t

@@ -13,9 +13,6 @@ module Link = {
     | Any
     | Hierarchy
     | Anchor
-    | Relation
-    | Overlap
-    | Disjoint
     | Generic
 }
 

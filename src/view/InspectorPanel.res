@@ -640,48 +640,6 @@ module Anchor = {
   }
 }
 
-module Relation = {
-  @react.component
-  let make = (~slots: InspectorState.Relation.t, ~onChange) => {
-    <>
-      <Title value="Equivalence" />
-      <Notes
-        name="inspector-relation-notes"
-        onChange={e => onChange(Event.Slots.Relation.Notes(ReactEvent.Form.target(e)["value"]))}
-        value={slots.notes}
-      />
-    </>
-  }
-}
-
-module Overlap = {
-  @react.component
-  let make = (~slots: InspectorState.Overlap.t, ~onChange) => {
-    <>
-      <Title value="Overlap" />
-      <Notes
-        name="inspector-overlap-notes"
-        onChange={e => onChange(Event.Slots.Overlap.Notes(ReactEvent.Form.target(e)["value"]))}
-        value={slots.notes}
-      />
-    </>
-  }
-}
-
-module Disjoint = {
-  @react.component
-  let make = (~slots: InspectorState.Disjoint.t, ~onChange) => {
-    <>
-      <Title value="Disjoint" />
-      <Notes
-        name="inspector-disjoint-notes"
-        onChange={e => onChange(Event.Slots.Disjoint.Notes(ReactEvent.Form.target(e)["value"]))}
-        value={slots.notes}
-      />
-    </>
-  }
-}
-
 module Generic = {
   @react.component
   let make = (~slots: InspectorState.Generic.t, ~onChange) => {
@@ -795,12 +753,6 @@ let showLink = (linkId, link, onChange) =>
     />
   | InspectorState.Link.Anchor(slots) =>
     <Anchor slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Anchor(c)))} />
-  | InspectorState.Link.Relation(slots) =>
-    <Relation slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Relation(c)))} />
-  | InspectorState.Link.Overlap(slots) =>
-    <Overlap slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Overlap(c)))} />
-  | InspectorState.Link.Disjoint(slots) =>
-    <Disjoint slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Disjoint(c)))} />
   | InspectorState.Link.Generic(slots) =>
     <Generic slots onChange={c => onChange(Event.Model.Slots(linkId, Event.Slots.Generic(c)))} />
   }

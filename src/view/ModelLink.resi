@@ -2,9 +2,6 @@ module Kind: {
   type t =
     | Hierarchy
     | Anchor
-    | Relation
-    | Overlap
-    | Disjoint
     | Generic
 
   module Stable: {
@@ -14,7 +11,22 @@ module Kind: {
       let fromJson: Js.Json.t => Or_error.t<t>
     }
     module V2: {
-      type t = t
+      type t =
+        | Hierarchy
+        | Anchor
+        | Relation
+        | Overlap
+        | Disjoint
+        | Generic
+
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
+    }
+    module V3: {
+      type t = t =
+        | Hierarchy
+        | Anchor
+        | Generic
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>
     }
