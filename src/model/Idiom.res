@@ -158,6 +158,7 @@ let pickCollection = {
   let expand = ((gnodes, glinks), mapping) => {
     let parentIso = mapping->Gid.Map.get(parent)->Option.getExn
     let classChildIso = mapping->Gid.Map.get(classChild)->Option.getExn
+    let nParents = id => glinks->Array.keep(((_, tgt, _)) => tgt == id)->Array.length
     let allLinks = glinks->Array.mapPartial(lnk => {
       let (src, tgt, kind) = lnk
       if (
@@ -180,7 +181,9 @@ let pickCollection = {
       }
     })
     let childrenIso =
-      allLinks->Array.map(((_, child, _)) => (child, gnodes->Gid.Map.get(child)->Option.getExn))
+      allLinks
+      ->Array.map(((_, child, _)) => (child, gnodes->Gid.Map.get(child)->Option.getExn))
+      ->Array.keep(((id, _)) => nParents(id) == 1)
     (
       Array.concat(
         [(parentIso, gnodes->Gid.Map.get(parentIso)->Option.getExn)],
@@ -189,7 +192,19 @@ let pickCollection = {
       allLinks,
     )
   }
-  {base: base, expand: expand, reject: (_, _) => false}
+  let reject = ((_, glinks), mapping) => {
+    let tgtIds = mapping->Gid.Map.values->Gid.Set.fromArray
+    let children = glinks->Array.mapPartial(((_, tgt, _)) =>
+      if tgtIds->Gid.Set.has(tgt) {
+        Some(tgt)
+      } else {
+        None
+      }
+    )
+    let nParents = id => glinks->Array.keep(((_, tgt, _)) => tgt == id)->Array.length
+    children->Array.some(id => nParents(id) > 1)
+  }
+  {base: base, expand: expand, reject: reject}
 }
 
 let filterCollection = {
