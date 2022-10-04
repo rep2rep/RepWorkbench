@@ -263,8 +263,25 @@ let filterCollection = {
         None
       }
     })
+    let nDimParents = id =>
+      glinks
+      ->Array.keep(((src, tgt, _)) =>
+        tgt === id &&
+          gnodes
+          ->Gid.Map.get(src)
+          ->Option.map(sch =>
+            switch sch {
+            | InspectorState.Schema.Dimension(_) => true
+            | _ => false
+            }
+          )
+          ->Option.getWithDefault(false)
+      )
+      ->Array.length
     let children =
-      allLinks->Array.map(((_, child, _)) => (child, gnodes->Gid.Map.get(child)->Option.getExn))
+      allLinks
+      ->Array.map(((_, child, _)) => (child, gnodes->Gid.Map.get(child)->Option.getExn))
+      ->Array.keep(((child, _)) => nDimParents(child) === 1)
     (
       Array.concat(
         [(parentIso, gnodes->Gid.Map.get(parentIso)->Option.getExn)],
@@ -273,7 +290,26 @@ let filterCollection = {
       allLinks,
     )
   }
-  {base: base, expand: expand, reject: (_, _) => false}
+  let reject = ((gnodes, glinks), mapping) => {
+    let nDimParents = id =>
+      glinks
+      ->Array.keep(((src, tgt, _)) =>
+        tgt === id &&
+          gnodes
+          ->Gid.Map.get(src)
+          ->Option.map(sch =>
+            switch sch {
+            | InspectorState.Schema.Dimension(_) => true
+            | _ => false
+            }
+          )
+          ->Option.getWithDefault(false)
+      )
+      ->Array.length
+    let childrenIso = children->Array.keepMap(((child, _)) => mapping->Gid.Map.get(child))
+    childrenIso->Array.some(child => nDimParents(child) != 1)
+  }
+  {base: base, expand: expand, reject: reject}
 }
 
 let forEachCollection = {
