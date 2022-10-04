@@ -342,7 +342,12 @@ let reduceCollection = {
       allLinks,
     )
   }
-  {base: base, expand: expand, reject: (_, _) => false}
+  let reject = ((_, glinks), mapping) => {
+    let intermediateIso = mapping->Gid.Map.get(intermediate)->Option.getExn
+    let intermediateParents = glinks->Array.keep(((_, tgt, _)) => tgt == intermediateIso)
+    intermediateParents->Array.length != 1
+  }
+  {base: base, expand: expand, reject: reject}
 }
 
 let implicitCoordinateSystem = {
