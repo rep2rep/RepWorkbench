@@ -78,7 +78,7 @@ let convertIsomorphism = (
       ->Option.getWithDefault(false)
     )
   })
-  if links_ok {
+  if links_ok && find->Idiom.reject(whole, mapping')->not {
     // Hooray! We have an isomorphism!
     // Let's build the actual sub-model that matches it.
     find->Idiom.matchMaximal(whole, mapping')->Some

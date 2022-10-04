@@ -22,6 +22,7 @@ type base = (Gid.Map.t<Node.t>, array<(Gid.t, Gid.t, Link.t)>)
 type t<'kind> = {
   base: base,
   expand: (graph, Gid.Map.t<Gid.t>) => graph,
+  reject: (graph, Gid.Map.t<Gid.t>) => bool,
 }
 
 let nodes = t => {
@@ -33,6 +34,7 @@ let links = t => {
   links
 }
 let matchMaximal = (t, graph, mapping) => t.expand(graph, mapping)
+let reject = (t, graph, mapping) => t.reject(graph, mapping)
 
 type sumDimension
 type prodDimension
@@ -87,7 +89,7 @@ let sumDimension = {
       allLinks,
     )
   }
-  {base: base, expand: expand}
+  {base: base, expand: expand, reject: (_, _) => false}
 }
 
 let prodDimension = {
@@ -134,7 +136,7 @@ let prodDimension = {
       allLinks,
     )
   }
-  {base: base, expand: expand}
+  {base: base, expand: expand, reject: (_, _) => false}
 }
 
 let pickCollection = {
@@ -187,7 +189,7 @@ let pickCollection = {
       allLinks,
     )
   }
-  {base: base, expand: expand}
+  {base: base, expand: expand, reject: (_, _) => false}
 }
 
 let filterCollection = {
@@ -256,7 +258,7 @@ let filterCollection = {
       allLinks,
     )
   }
-  {base: base, expand: expand}
+  {base: base, expand: expand, reject: (_, _) => false}
 }
 
 let forEachCollection = {
@@ -295,7 +297,7 @@ let forEachCollection = {
       allLinks,
     )
   }
-  {base: base, expand: expand}
+  {base: base, expand: expand, reject: (_, _) => false}
 }
 
 let reduceCollection = {
@@ -325,7 +327,7 @@ let reduceCollection = {
       allLinks,
     )
   }
-  {base: base, expand: expand}
+  {base: base, expand: expand, reject: (_, _) => false}
 }
 
 let implicitCoordinateSystem = {
@@ -372,7 +374,7 @@ let implicitCoordinateSystem = {
       allLinks,
     )
   }
-  {base: base, expand: expand}
+  {base: base, expand: expand, reject: (_, _) => false}
 }
 
 let explicitCoordinateSystem = {
@@ -430,5 +432,5 @@ let explicitCoordinateSystem = {
       allLinks,
     )
   }
-  {base: base, expand: expand}
+  {base: base, expand: expand, reject: (_, _) => false}
 }
