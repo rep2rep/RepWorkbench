@@ -1,71 +1,4 @@
 module Conv = {
-  let internalError = (code, details) =>
-    ModelError.create(
-      ~nodes=[],
-      ~message="Internal Error: " ++ code,
-      ~details,
-      ~suggestion="Notify Aaron about this so he can fix it :-) ",
-      (),
-    )
-
-  let needsParentError = nodes =>
-    ModelError.create(
-      ~nodes,
-      ~message="Schema has no parent, but it needs one.",
-      ~details="All schemas, except for Representation schemas, must either be in the hierarchy, or be anchored below a R-symbol in the hierarchy. This schema is neither in the hierarchy, nor anchored.",
-      ~suggestion="Connect this schema below another schema.",
-      (),
-    )
-
-  let noFunctionError = nodes =>
-    ModelError.create(
-      ~nodes,
-      ~message="Missing \"Function\" of schema.",
-      ~details="This schema requires a \"Function\", whether it is semantic, auxiliary, or arbitrary. This has not been set.",
-      ~suggestion="Select the appropriate \"Function\" from the dropdown menu.",
-      (),
-    )
-
-  let noExplicitError = nodes =>
-    ModelError.create(
-      ~nodes,
-      ~message="Missing whether schema is \"Explicit\".",
-      ~details="This schema needs to be marked as \"Explicit\", or not, depending on whether it is explicit in the representation. This has not been set.",
-      ~suggestion="Select the appropriate \"Explicit\" value (Yes or No) from the dropdown menu.",
-      (),
-    )
-
-  let noScopeError = nodes =>
-    ModelError.create(
-      ~nodes,
-      ~message="Missing the \"Scope\" of the schema.",
-      ~details="This schema is either \"Global\" or \"Local\" in \"Scope\". This has not been set.",
-      ~suggestion="Select the appropriate \"Scope\" value (Global or Local) from the dropdown menu.",
-      (),
-    )
-
-  let noQuantityScaleError = (nodes, kind) =>
-    ModelError.create(
-      ~nodes,
-      ~message="Missing the \"" ++ kind ++ " Scale\" of the R-dimension.",
-      ~details="This R-dimension's \"" ++
-      kind ++ " Scale\" must be one of \"Nominal\", \"Ordinal\", \"Interval\", or \"Ratio\". This has not been set.",
-      ~suggestion="Select the appropriate \"" ++ kind ++ " Scale\" value from the dropdown menu.",
-      (),
-    )
-
-  let defaultReferenceWarning = (nodes, label, kind) =>
-    ModelWarning.create(
-      ~nodes,
-      ~message=kind ++ " is using default " ++ label ++ ".",
-      ~details="We give each " ++
-      kind ++
-      " the default " ++
-      label ++ " \"#Ref#\", but this is intended only as a placeholder.",
-      ~suggestion="Replace this " ++ kind ++ "schema's " ++ label ++ ".",
-      (),
-    )
-
   let combineMessages = msgs =>
     msgs->Array.reduce(([], []), ((errs, warns), (e, w)) => (
       Array.concat(errs, e),
@@ -107,13 +40,7 @@ module Conv = {
     }
     f(links)
     if Array.length(firstRoots) === 0 && Array.length(all_ids) !== 0 {
-      let err = ModelError.create(
-        ~nodes=[],
-        ~message="Model has a cycle.",
-        ~details="Models should not contain cycles: that is, the hierarchy and anchoring links should always connect a higher schema to a lower schema. We have found a situation where a lower schema is connected to a higher schema.",
-        ~suggestion="We've detected a cycle. Find the link going the 'wrong way', and remove it.",
-        (),
-      )
+      let err = ModelError.cyclesError
       (firstRoots, result, [err])
     } else {
       (firstRoots, result, [])
@@ -160,9 +87,9 @@ module Conv = {
             // Straight-up missing - eek!
             Result.Error((
               [
-                internalError(
-                  "MISSING",
-                  "Expected node with ID " ++ Gid.toString(id) ++ " is missing",
+                ModelError.internalError(
+                  ~code="MISSING",
+                  ~details="Expected node with ID " ++ Gid.toString(id) ++ " is missing",
                 ),
               ],
               [],
@@ -194,21 +121,7 @@ module Conv = {
           )
         )
         ->Result.allUnit(combineMessages)
-      let anchors = Result.Error(
-        [
-          ModelError.create(
-            ~nodes=[node],
-            ~message={kind ++ " schema has unexpected anchored children."},
-            ~details={
-              "Anchoring is a type of link that is uniquely below R-symbol schemas. However, this node is a " ++
-              kind ++ " schema."
-            },
-            ~suggestion="(1) Make this schema an R-symbol. (2) Connect the children using hierarchy. (3) Remove the children.",
-            (),
-          ),
-        ],
-        [],
-      )
+      let anchors = Result.Error([ModelError.unexpectedAnchorsError([node], kind)], [])
       [msgs, anchors]->Result.allUnit(combineMessages)
     }
   }
@@ -234,19 +147,19 @@ module Conv = {
       Result.Error((
         [],
         [
-          ModelWarning.create(
-            ~nodes=[id],
-            ~message="Representation is using default domain.",
-            ~details="We give each Representation the default name \"#Rep#\", but this is intended only as a placeholder.",
-            ~suggestion="Replace this Representation schema's domain.",
-            (),
+          ModelWarning.defaultConceptWarning(
+            [id],
+            ~field="domain",
+            ~default="#Rep#",
+            #representation,
           ),
         ],
       ))
     | s => Result.Ok(s)
     }
     let display = switch slots.display {
-    | "#Ref#" => Result.Error(([], [defaultReferenceWarning([id], "display", "Representation")]))
+    | "#Ref#" =>
+      Result.Error(([], [ModelWarning.defaultReferenceWarning([id], "display", #representation)]))
     | s => Result.Ok(s)
     }
     let tokens =
@@ -289,7 +202,7 @@ module Conv = {
       )
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
-    let anchors__ = hasAnchorsResult(id, anchored, schemas, "Representation")
+    let anchors__ = hasAnchorsResult(id, anchored, schemas, #representation)
     (domain, display, tokens, dimensions, schemes, subrepresentations, anchors__)
     ->Result.both7(combineMessages)
     ->Result.map(((
@@ -328,12 +241,11 @@ module Conv = {
       Result.Error((
         [],
         [
-          ModelWarning.create(
-            ~nodes=[id],
-            ~message="R-Scheme is using default concept structure.",
-            ~details="We give each R-Scheme the default concept structure \"#Sch#\", but this is intended only as a placeholder.",
-            ~suggestion="Replace this R-Scheme schema's concept structure.",
-            (),
+          ModelWarning.defaultConceptWarning(
+            [id],
+            ~field="concept structure",
+            ~default="#Sch#",
+            #scheme,
           ),
         ],
       ))
@@ -341,12 +253,12 @@ module Conv = {
     }
     let graphic_structure = switch slots.graphic_structure {
     | "#Ref#" =>
-      Result.Error(([], [defaultReferenceWarning([id], "graphic structure", "R-scheme")]))
+      Result.Error(([], [ModelWarning.defaultReferenceWarning([id], "graphic structure", #scheme)]))
     | s => Result.Ok(s)
     }
-    let function = slots.function->Result.fromOption(() => ([noFunctionError([id])], []))
-    let explicit = slots.explicit->Result.fromOption(() => ([noExplicitError([id])], []))
-    let scope = slots.scope->Result.fromOption(() => ([noScopeError([id])], []))
+    let function = slots.function->Result.fromOption(() => ([ModelError.noFunctionError([id])], []))
+    let explicit = slots.explicit->Result.fromOption(() => ([ModelError.noExplicitError([id])], []))
+    let scope = slots.scope->Result.fromOption(() => ([ModelError.noScopeError([id])], []))
     let organisation = Result.Ok(slots.organisation)
     let tokens =
       filter(ModelNode.Kind.Token, (_, t) =>
@@ -381,19 +293,11 @@ module Conv = {
     let representations__ =
       filter(~allowPlaceholders=false, ModelNode.Kind.Representation, (id', _) => Some(
         Result.Error(
-          [
-            ModelError.create(
-              ~nodes=[id, id'],
-              ~message="R-scheme has a Representation below it.",
-              ~details="R-scheme schemas cannot have Representation schemas as direct descendants.",
-              ~suggestion="Remove this Representation schema, or connect it elsewhere in the model.",
-              (),
-            ),
-          ],
+          [ModelError.badHierarchyError([id, id'], ~parent=#scheme, ~child=#representation)],
           [],
         ),
       ))->Result.allUnit(combineMessages)
-    let anchors__ = hasAnchorsResult(id, anchored, schemas, "R-scheme")
+    let anchors__ = hasAnchorsResult(id, anchored, schemas, #scheme)
 
     (
       concept_structure,
@@ -455,31 +359,30 @@ module Conv = {
     | "#Dim#" =>
       Result.Error((
         [],
-        [
-          ModelWarning.create(
-            ~nodes=[id],
-            ~message="R-dimension is using default concept.",
-            ~details="We give each R-dimension the default concept \"#Dim#\", but this is intended only as a placeholder.",
-            ~suggestion="Replace this R-dimension schema's concept.",
-            (),
-          ),
-        ],
+        [ModelWarning.defaultConceptWarning([id], ~field="concept", ~default="#Dim#", #dimension)],
       ))
     | s => Result.Ok(s)
     }
     let concept_scale =
-      slots.concept_scale->Result.fromOption(() => ([noQuantityScaleError([id], "Concept")], []))
+      slots.concept_scale->Result.fromOption(() => (
+        [ModelError.noQuantityScaleError([id], #concept)],
+        [],
+      ))
     let concept_attributes = Result.Ok(slots.concept_attributes)
     let graphic = switch slots.graphic {
-    | "#Ref#" => Result.Error(([], [defaultReferenceWarning([id], "graphic", "R-dimension")]))
+    | "#Ref#" =>
+      Result.Error(([], [ModelWarning.defaultReferenceWarning([id], "graphic", #dimension)]))
     | s => Result.Ok(s)
     }
     let graphic_scale =
-      slots.concept_scale->Result.fromOption(() => ([noQuantityScaleError([id], "Graphic")], []))
+      slots.concept_scale->Result.fromOption(() => (
+        [ModelError.noQuantityScaleError([id], #graphic)],
+        [],
+      ))
     let graphic_attributes = Result.Ok(slots.graphic_attributes)
-    let function = slots.function->Result.fromOption(() => ([noFunctionError([id])], []))
-    let explicit = slots.explicit->Result.fromOption(() => ([noExplicitError([id])], []))
-    let scope = slots.scope->Result.fromOption(() => ([noScopeError([id])], []))
+    let function = slots.function->Result.fromOption(() => ([ModelError.noFunctionError([id])], []))
+    let explicit = slots.explicit->Result.fromOption(() => ([ModelError.noExplicitError([id])], []))
+    let scope = slots.scope->Result.fromOption(() => ([ModelError.noScopeError([id])], []))
     let organisation = Result.Ok(slots.organisation)
 
     let tokCount = ref(0)
@@ -519,34 +422,18 @@ module Conv = {
     let representations__ =
       filter(~allowPlaceholders=false, ModelNode.Kind.Representation, (id', _) => Some(
         Result.Error(
-          [
-            ModelError.create(
-              ~nodes=[id, id'],
-              ~message="R-dimension has a Representation below it.",
-              ~details="R-dimension schemas cannot have Representation schemas as direct descendants.",
-              ~suggestion="Remove this Representation schema, or connect it elsewhere in the model.",
-              (),
-            ),
-          ],
+          [ModelError.badHierarchyError([id, id'], ~parent=#dimension, ~child=#representation)],
           [],
         ),
       ))->Result.allUnit(combineMessages)
     let schemes__ =
       filter(~allowPlaceholders=false, ModelNode.Kind.Scheme, (id', _) => Some(
         Result.Error(
-          [
-            ModelError.create(
-              ~nodes=[id, id'],
-              ~message="R-dimensions has an R-scheme below it.",
-              ~details="R-dimension schemas cannot have R-scheme schemas as direct descendants.",
-              ~suggestion="Remove this R-scheme schema, or connect it elsewhere in the model.",
-              (),
-            ),
-          ],
+          [ModelError.badHierarchyError([id, id'], ~parent=#dimension, ~child=#scheme)],
           [],
         ),
       ))->Result.allUnit(combineMessages)
-    let anchors__ = hasAnchorsResult(id, anchored, schemas, "R-dimension")
+    let anchors__ = hasAnchorsResult(id, anchored, schemas, #dimension)
 
     let at_least_one_token_or_dimension__ = if tokCount.contents + dimCount.contents >= 1 {
       Result.Ok()
@@ -556,7 +443,7 @@ module Conv = {
           ModelError.create(
             ~nodes=[id],
             ~message="R-dimensions must have at least one child.",
-            ~details="R-dimensions must contain at least one R-symbol, or the must split into sub-R-dimensions (or do both). This R-dimension has no R-symbol children and no sub-R-dimensions.",
+            ~details="R-dimensions must contain at least one R-symbol, or must split into sub-R-dimensions (or both). This R-dimension has no R-symbol children and no sub-R-dimensions.",
             ~suggestion="Add an R-symbol or a sub-R-dimension below this R-dimension.",
             (),
           ),
@@ -633,20 +520,12 @@ module Conv = {
     | "#Sym#" =>
       Result.Error((
         [],
-        [
-          ModelWarning.create(
-            ~nodes=[id],
-            ~message="R-symbol is using default concept.",
-            ~details="We give each R-symbol the default concept \"#Sym#\", but this is intended only as a placeholder.",
-            ~suggestion="Replace this R-symbol schema's concept.",
-            (),
-          ),
-        ],
+        [ModelWarning.defaultConceptWarning([id], ~field="concept", ~default="#Sym#", #token)],
       ))
     | s => Result.Ok(s)
     }
     let graphic = switch slots.graphic {
-    | "#Ref#" => Result.Error(([], [defaultReferenceWarning([id], "graphic", "R-symbol")]))
+    | "#Ref#" => Result.Error(([], [ModelWarning.defaultReferenceWarning([id], "graphic", #token)]))
     | s => Result.Ok(s)
     }
     let is_class =
@@ -662,8 +541,8 @@ module Conv = {
         ],
         [],
       ))
-    let function = slots.function->Result.fromOption(() => ([noFunctionError([id])], []))
-    let explicit = slots.explicit->Result.fromOption(() => ([noExplicitError([id])], []))
+    let function = slots.function->Result.fromOption(() => ([ModelError.noFunctionError([id])], []))
+    let explicit = slots.explicit->Result.fromOption(() => ([ModelError.noExplicitError([id])], []))
 
     let badNonAnchorError = (id', kind, anchor) =>
       ModelError.create(
@@ -821,7 +700,17 @@ module Conv = {
 
     let description = switch slots.description {
     | "#Placeholder#" =>
-      Result.Error(([], [defaultReferenceWarning([id], "description", "Placeholder")]))
+      Result.Error((
+        [],
+        [
+          ModelWarning.defaultConceptWarning(
+            [id],
+            ~field="description",
+            ~default="#Placeholder#",
+            #placeholder,
+          ),
+        ],
+      ))
     | s => Result.Ok(s)
     }
     let isIntensional =
@@ -1001,9 +890,9 @@ let fromSlotsAndLinks = (slots, links) => {
               ModelNode.Kind.Placeholder,
               Result.Error((
                 [
-                  Conv.internalError(
-                    "BAD LINK",
-                    "Node with ID " ++ Gid.toString(id) ++ " missing.",
+                  ModelError.internalError(
+                    ~code="BAD LINK",
+                    ~details="Node with ID " ++ Gid.toString(id) ++ " missing.",
                   ),
                 ],
                 [],
@@ -1023,13 +912,13 @@ let fromSlotsAndLinks = (slots, links) => {
       let handleRoot = (root, ~multi) =>
         switch schemas->Gid.Map.get(root) {
         | None => {
-            let e = Conv.internalError(
-              "LOST ROOT" ++ if multi {
+            let e = ModelError.internalError(
+              ~code="LOST ROOT" ++ if multi {
                 " MULTI"
               } else {
                 ""
               },
-              "We know what the root should be (" ++
+              ~details="We know what the root should be (" ++
               Gid.toString(root) ++ "), but somehow never found it!",
             )
             schemas
@@ -1042,9 +931,9 @@ let fromSlotsAndLinks = (slots, links) => {
           // Failed to build for other reasons.
           switch slots->Gid.Map.get(root) {
           | None => {
-              let e = Conv.internalError(
-                "EXTRA ROOT",
-                "We have found an ID (" ++
+              let e = ModelError.internalError(
+                ~code="EXTRA ROOT",
+                ~details="We have found an ID (" ++
                 Gid.toString(root) ++ "), but have no idea what it's for!",
               )
               err->Result.thenError(([e], []), Conv.combineMessages)
@@ -1055,7 +944,7 @@ let fromSlotsAndLinks = (slots, links) => {
             | InspectorState.Schema.Placeholder(_)
             | InspectorState.Schema.Representation(_) => err
             | _ => {
-                let e = Conv.needsParentError([root])
+                let e = ModelError.needsParentError([root])
                 err->Result.thenError(([e], []), Conv.combineMessages)
               }
             }
@@ -1078,9 +967,9 @@ let fromSlotsAndLinks = (slots, links) => {
                       )->Some
                     | (Some((_, Result.Error(_))), Some((_, Result.Error(_)))) => None // Failed to build them, but we did find them.
                     | _ => {
-                        let e = Conv.internalError(
-                          "REL MISSING",
-                          "A relation link should be between two nodes (" ++
+                        let e = ModelError.internalError(
+                          ~code="REL MISSING",
+                          ~details="A relation link should be between two nodes (" ++
                           Gid.toString(s) ++
                           ", " ++
                           Gid.toString(t) ++ "), but I can't find them!",
@@ -1096,7 +985,7 @@ let fromSlotsAndLinks = (slots, links) => {
               relations->Result.map(relations => {root: r, relations: relations})
             }
           | Schema.Scheme(_) | Schema.Dimension(_) | Schema.Token(_) => {
-              let e = Conv.needsParentError([root])
+              let e = ModelError.needsParentError([root])
               Result.Error(([e], []))
             }
           }
@@ -1106,23 +995,13 @@ let fromSlotsAndLinks = (slots, links) => {
         if Gid.Map.isEmpty(slots) {
           Result.Error(([], [])) // No model, but it's OK because it's empty!
         } else {
-          let e = ModelError.create(
-            ~nodes=[],
-            ~message="Could not determine root of model.",
-            ~details="Each model should have a root. Somehow, we failed to find a root!",
-            (),
-          )
+          let e = ModelError.noRootError
           Result.Error(([e], []))
         }
       | [root] => handleRoot(root, ~multi=false)
       | _ => {
           let models = roots->Array.map(handleRoot(_, ~multi=true))
-          let w = ModelWarning.create(
-            ~nodes=roots,
-            ~message="More than one model detected.",
-            ~details="There are multiple models in this file, or a model with multiple roots.",
-            (),
-          )
+          let w = ModelWarning.multipleRootsWarning(roots)
           models
           ->Result.all(Conv.combineMessages)
           ->Result.thenError(([], [w]), Conv.combineMessages)

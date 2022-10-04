@@ -74,3 +74,118 @@ let nodes = t => t.nodes
 let message = t => t.message
 let details = t => t.details
 let suggestion = t => t.suggestion
+
+// Some useful errors
+
+let kindToString = kind =>
+  switch kind {
+  | #representation => "Representation"
+  | #scheme => "R-Scheme"
+  | #dimension => "R-Dimension"
+  | #token => "R-Symbol"
+  | #placeholder => "Placeholder"
+  }
+
+let internalError = (~code, ~details) =>
+  create(
+    ~nodes=[],
+    ~message="Internal Error: " ++ code,
+    ~details,
+    ~suggestion="Notify Aaron about this so he can fix it :-) ",
+    (),
+  )
+
+let needsParentError = nodes =>
+  create(
+    ~nodes,
+    ~message="Schema has no parent, but it needs one.",
+    ~details="All schemas, except for Representation schemas, must either be in the hierarchy, or be anchored below a R-symbol in the hierarchy. This schema is neither in the hierarchy, nor anchored.",
+    ~suggestion="Connect this schema below another schema.",
+    (),
+  )
+
+let noFunctionError = nodes =>
+  create(
+    ~nodes,
+    ~message="Missing \"Function\" of schema.",
+    ~details="This schema requires a \"Function\", whether it is semantic, auxiliary, or arbitrary. This has not been set.",
+    ~suggestion="Select the appropriate \"Function\" from the dropdown menu.",
+    (),
+  )
+
+let noExplicitError = nodes =>
+  create(
+    ~nodes,
+    ~message="Missing whether schema is \"Explicit\".",
+    ~details="This schema needs to be marked as \"Explicit\", or not, depending on whether it is explicit in the representation. This has not been set.",
+    ~suggestion="Select the appropriate \"Explicit\" value (Yes or No) from the dropdown menu.",
+    (),
+  )
+
+let noScopeError = nodes =>
+  create(
+    ~nodes,
+    ~message="Missing the \"Scope\" of the schema.",
+    ~details="This schema is either \"Global\" or \"Local\" in \"Scope\". This has not been set.",
+    ~suggestion="Select the appropriate \"Scope\" value (Global or Local) from the dropdown menu.",
+    (),
+  )
+
+let noQuantityScaleError = (nodes, kind) => {
+  let kind = switch kind {
+  | #concept => "Concept"
+  | #graphic => "Graphic"
+  }
+  create(
+    ~nodes,
+    ~message="Missing the \"" ++ kind ++ " Scale\" of the R-dimension.",
+    ~details="This R-dimension's \"" ++
+    kind ++ " Scale\" must be one of \"Nominal\", \"Ordinal\", \"Interval\", or \"Ratio\". This has not been set.",
+    ~suggestion="Select the appropriate \"" ++ kind ++ " Scale\" value from the dropdown menu.",
+    (),
+  )
+}
+let cyclesError = create(
+  ~nodes=[],
+  ~message="Model has a cycle.",
+  ~details="Models should not contain cycles: that is, the hierarchy and anchoring links should always connect a higher schema to a lower schema. We have found a situation where a lower schema is connected to a higher schema.",
+  ~suggestion="We've detected a cycle. Find the link going the 'wrong way', and remove it.",
+  (),
+)
+let noRootError = create(
+  ~nodes=[],
+  ~message="Could not determine root of model.",
+  ~details="Each model should have a root. Somehow, we failed to find a root!",
+  (),
+)
+
+let unexpectedAnchorsError = (nodes, kind) => {
+  let kind = kindToString(kind)
+  create(
+    ~nodes,
+    ~message={kind ++ " schema has unexpected anchored children."},
+    ~details={
+      "Anchoring is a type of link that is uniquely below R-symbol schemas. However, this node is a " ++
+      kind ++ " schema."
+    },
+    ~suggestion="(1) Make this schema an R-symbol. (2) Connect the children using hierarchy. (3) Remove the children.",
+    (),
+  )
+}
+
+let badHierarchyError = (nodes, ~parent, ~child) => {
+  let parent = kindToString(parent)
+  let child = kindToString(child)
+  let childArticle = if child->String.startsWith("R-") {
+    "an"
+  } else {
+    "a"
+  }
+  create(
+    ~nodes,
+    ~message=parent ++ " has " ++ childArticle ++ " " ++ child ++ " below it.",
+    ~details=parent ++ " schemas cannot have " ++ child ++ " schemas as direct descendants.",
+    ~suggestion="Remove this " ++ child ++ " schema, or connect it elsewhere in the model.",
+    (),
+  )
+}

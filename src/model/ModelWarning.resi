@@ -16,3 +16,17 @@ let nodes: t => array<Gid.t>
 let message: t => string
 let details: t => string
 let suggestion: t => option<string>
+
+// Some useful warnings
+let defaultConceptWarning: (
+  array<Gid.t>,
+  ~field: string,
+  ~default: string,
+  [#representation | #scheme | #dimension | #token | #placeholder],
+) => t
+let defaultReferenceWarning: (
+  array<Gid.t>,
+  string,
+  [#representation | #scheme | #dimension | #token | #placeholder],
+) => t
+let multipleRootsWarning: array<Gid.t> => t
