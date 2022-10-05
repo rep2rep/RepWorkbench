@@ -1153,6 +1153,12 @@ module Generic = {
     module V1 = {
       type t = t = {notes: string}
       let empty = {notes: ""}
+      let appendNote = (t, note) =>
+        if t.notes === "" {
+          {notes: note}
+        } else {
+          {notes: t.notes ++ "\n" ++ note}
+        }
 
       let toJson = t =>
         Js.Dict.fromList(list{
@@ -1338,9 +1344,10 @@ module Link = {
         switch v1 {
         | V1.Hierarchy(h) => Hierarchy(Hierarchy.Stable.V2.v1_to_v2(h))
         | V1.Anchor(a) => Anchor(Anchor.Stable.V2.v1_to_v2(a))
-        | V1.Relation(r) => Generic(r)
-        | V1.Overlap(o) => Generic(o)
-        | V1.Disjoint(d) => Generic(d)
+        | V1.Relation(r) =>
+          Generic(r->Generic.Stable.V1.appendNote("Converted from Equivalence link"))
+        | V1.Overlap(o) => Generic(o->Generic.Stable.V1.appendNote("Converted from Overlap link"))
+        | V1.Disjoint(d) => Generic(d->Generic.Stable.V1.appendNote("Converted from Disjoint link"))
         | V1.Generic(g) => Generic(g)
         }
 
