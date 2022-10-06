@@ -89,9 +89,7 @@
       <tr><td><span class="key">Ctrl</span> <span class="key">D</span></td><td>Duplicate the selected schemas.</td></tr>
       <tr><td><span class="key">C</span></td><td>Connect two schemas.</td></tr>
       <tr><td><span class="key">A</span></td><td>Connect two schemas by anchoring.</td></tr>
-      <tr><td><span class="key">E</span></td><td>Connect two schemas by equivalence.</td></tr>
-      <tr><td><span class="key">O</span></td><td>Connect two schemas by a link indicating that they overlap.</td></tr>
-      <tr><td><span class="key">J</span></td><td>Connect two schemas by a link indicating that they are disjoint.</td></tr>
+      <tr><td><span class="key">G</span></td><td>Connect two schemas with a generic link (discouraged).</td></tr>
       <tr><td><span class="key">V</span></td><td>Remove all links between selected schemas.</td></tr>
       <tr><td><span class="key">X</span>/<span class="key">Backspace</span></td><td>Delete all selected links, or schemas and links connected to them.</td></tr>
     </table>
@@ -198,20 +196,19 @@
             but may be connected to each other. The newly created schemas are positions slightly offset from
             the schemas they were duplicated from, and they become the current selection.
       </p></td></tr>
-      <tr><td><p><input type="button" value="Connect" /><br><input type="button" value="Anchor" /><br><input type="button" value="Equivalence" /><br><input type="button" value="Overlap" /><br><input type="button" value="Disjoint" /></p></td><td>
+      <tr><td><p><input type="button" value="Connect" /><br><input type="button" value="Anchor" /><br><input type="button" value="Generic" /></p></td><td>
           <p>
             These three buttons are used to connect schemas together. The first button creates a
             Hierarchy connection (the 'typical' connection in RISN), the second button
-            creates an 'anchored' connection, the third creates an 'equivalence' connection, the
-            fourth creates a connection indicating the two schemas overlap, and the fifth creates
-            a connection indicating that the two schemas are disjoint. When  clicking these buttons,
-            you must have exactly two schemas selected: more than two, or fewer than two, and these
-            buttons have no effect. The 'direction' of the connection is determined by the order in
-            which the schemas were selected: the first selected schema is the 'parent', while the
-            second is the 'child'. The parent is connected from the bottom of the schema, while the
-            child is connected from the top. If you have connected the schemas back to front, the
-            connection will appear to 'cut through' the schemas; unlink them, select them in the
-            opposite order, and click the button again to correct the direction.
+            creates an 'anchored' connection, and the third creates a 'generic' connection, intended
+            for internal use only. When  clicking these buttons, you must have at least two schemas
+            selected: fewer than two, and these buttons have no effect. The 'direction' of the
+            connection is determined by the order in which the schemas were selected:
+            the first selected schema is the 'parent', while the rest are the 'children'. The parent
+            is connected from the bottom of the schema, while the children are connected from the top.
+            If you have connected the schemas back to front, the connection will appear to 'cut
+            through' the schemas; unlink them, select them in the opposite order, and click the
+            button again to correct the direction.
       </p></td></tr>
       <tr><td><p><input type="button" value="Unlink" /></p></td><td>
           <p>
@@ -370,7 +367,7 @@
       <tr><td>Notes</td><td>Add any other comments about this schema here.</td></tr>
     </table>
     <h3 id="slots-connections">Connection Slots</h3>
-    <p>All the connections have a Notes slot, just like all schemas.</p>
+    <p>Both the connections have a Notes slot, just like all schemas.</p>
     <p>The Hierarchy and Anchor connections have the following slot:</p>
     <table>
       <tr><th>Slot</th><th>Description</th></tr>
