@@ -547,5 +547,40 @@ let explicitCoordinateSystem = {
       allLinks,
     )
   }
-  {base: base, expand: expand, reject: (_, _) => false}
+  let reject = ((gnodes, glinks), mapping) => {
+    let rootIso = mapping->Gid.Map.get(root)
+    let coordRootIso = mapping->Gid.Map.get(coordRoot)
+    let allRootChildren = glinks->Array.keepMap(((src, tgt, _)) =>
+      (rootIso, coordRootIso)
+      ->Option.both
+      ->Option.flatMap(((r, c)) =>
+        if src === r && tgt !== c {
+          Some(tgt)
+        } else {
+          None
+        }
+      )
+    )
+    let allCoordChildren = glinks->Array.keepMap(((src, tgt, _)) =>
+      coordRootIso->Option.flatMap(c =>
+        if src === c {
+          Some(tgt)
+        } else {
+          None
+        }
+      )
+    )
+    let isDim = id =>
+      gnodes
+      ->Gid.Map.get(id)
+      ->Option.map(schema =>
+        switch schema {
+        | InspectorState.Schema.Dimension(_) => true
+        | _ => false
+        }
+      )
+      ->Option.getWithDefault(false)
+    allRootChildren->Array.some(n => !isDim(n)) || allCoordChildren->Array.some(n => !isDim(n))
+  }
+  {base: base, expand: expand, reject: reject}
 }
