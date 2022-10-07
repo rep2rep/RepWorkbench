@@ -466,7 +466,30 @@ let implicitCoordinateSystem = {
       allLinks,
     )
   }
-  {base: base, expand: expand, reject: (_, _) => false}
+  let reject = ((gnodes, glinks), mapping) => {
+    let parentIso = mapping->Gid.Map.get(parent)
+    let allChildren = glinks->Array.keepMap(((src, tgt, _)) =>
+      parentIso->Option.flatMap(p =>
+        if src === p {
+          Some(tgt)
+        } else {
+          None
+        }
+      )
+    )
+    let isDim = id =>
+      gnodes
+      ->Gid.Map.get(id)
+      ->Option.map(schema =>
+        switch schema {
+        | InspectorState.Schema.Dimension(_) => true
+        | _ => false
+        }
+      )
+      ->Option.getWithDefault(false)
+    allChildren->Array.some(n => !isDim(n))
+  }
+  {base: base, expand: expand, reject: reject}
 }
 
 let explicitCoordinateSystem = {
