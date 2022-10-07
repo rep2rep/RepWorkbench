@@ -373,13 +373,13 @@ module Stable = {
   module V2 = {
     type t = ReactD3Graph.Link.t<Payload.Stable.V2.t>
 
-    let id = t => Obj.magic(t)["id"]
+    let id = t => Obj.magic(t)["id"]->Gid.fromString
     let kind = t => Obj.magic(t)["payload"]->Option.getWithDefault(Kind.Stable.V2.Hierarchy)
 
     let v1_to_v2: V1.t => t = v1 => {
       // Horrible, horrible hack. Terrible, no good, very bad.
       let v1' = Obj.magic(v1)
-      v1'["id"] = Gid.create()
+      v1'["id"] = Gid.create()->Gid.toString
       Obj.magic(v1')
     }
 
