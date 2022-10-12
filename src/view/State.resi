@@ -59,6 +59,9 @@ let setDB: (IndexedDB.t, string) => unit
 let store: t => unit
 let load: unit => Promise.t<option<t>>
 
+let toJson: t => Js.Json.t
+let fromJson: Js.Json.t => Or_error.t<t>
+
 let empty: t
 
 let hash: t => Hash.t

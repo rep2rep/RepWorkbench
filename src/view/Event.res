@@ -1,3 +1,14 @@
+let mkJson = (key, args) => [String.toJson(key), args->Array.toJson(j => j)]->Array.toJson(j => j)
+let readJson = json =>
+  json
+  ->Array.fromJson(Or_error.create)
+  ->Or_error.flatMap(arr =>
+    switch arr {
+    | [key, args] => (String.fromJson(key), Array.fromJson(args, Or_error.create))->Or_error.both
+    | _ => Or_error.error_s("Malformed event JSON")
+    }
+  )
+
 module Intelligence = {
   type t =
     | Init
@@ -14,6 +25,28 @@ module Intelligence = {
     | Focus(model, id) =>
       state->State.updateModelBypassUndoRedo(model, m => m->State.Model.setFocusedIntelligence(id))
     }
+
+  let toJson = t =>
+    switch t {
+    | Init => mkJson("Init", [])
+    | Response(i) => mkJson("Response", [Intelligence_Intf.Response.toJson(i)])
+    | Focus(model, id) => mkJson("Focus", [Gid.toJson(model), id->Option.toJson(Gid.toJson)])
+    }
+
+  let fromJson = json =>
+    json
+    ->readJson
+    ->Or_error.flatMap(((key, args)) =>
+      switch (key, args) {
+      | ("Init", []) => Or_error.create(Init)
+      | ("Response", [i]) => i->Intelligence_Intf.Response.fromJson->Or_error.map(i => Response(i))
+      | ("Focus", [model, id]) =>
+        (Gid.fromJson(model), id->Option.fromJson(Gid.fromJson))
+        ->Or_error.both
+        ->Or_error.map(((model, id)) => Focus(model, id))
+      | _ => Or_error.error_s("Unrecognised Event.Intelligence.t JSON")
+      }
+    )
 }
 
 module File = {
@@ -48,6 +81,75 @@ module File = {
     | ViewTransform(id, vt) => state->State.setViewTransform(id, vt)
     | Intelligence(i) => state->Intelligence.dispatch(i)
     }
+
+  let viewTransformToJson = _ => Js.Json.null
+  let viewTransformFromJson = _ => ReactD3Graph.Graph.ViewTransform.init->Or_error.create
+
+  let toJson = t =>
+    switch t {
+    | NewModel(id, path) =>
+      mkJson("NewModel", [Gid.toJson(id), FileTree.Path.Stable.V1.toJson(path)])
+    | NewFolder(id, path) =>
+      mkJson("NewFolder", [Gid.toJson(id), FileTree.Path.Stable.V1.toJson(path)])
+    | DeleteModel(id) => mkJson("DeleteModel", [Gid.toJson(id)])
+    | DeleteFolder(id) => mkJson("DeleteFolder", [Gid.toJson(id)])
+    | FocusModel(id) => mkJson("FocusModel", [id->Option.toJson(Gid.toJson)])
+    | DuplicateModel(existing, new_) =>
+      mkJson("DuplicateModel", [Gid.toJson(existing), Gid.toJson(new_)])
+    | ImportModel(model, path) =>
+      mkJson(
+        "ImportModel",
+        [State.Model.Stable.V5.toJson(model), FileTree.Path.Stable.V1.toJson(path)],
+      )
+    | ReorderModels(tree) => mkJson("ReorderModels", [tree->FileTree.Stable.V2.toJson(Gid.toJson)])
+    | RenameFolder(id, name) => mkJson("RenameFolder", [Gid.toJson(id), String.toJson(name)])
+    | Undo(id) => mkJson("Undo", [Gid.toJson(id)])
+    | Redo(id) => mkJson("Redo", [Gid.toJson(id)])
+    | ViewTransform(id, vt) => mkJson("ViewTransform", [Gid.toJson(id), viewTransformToJson(vt)])
+    | Intelligence(i) => mkJson("Intelligence", [Intelligence.toJson(i)])
+    }
+
+  let fromJson = json =>
+    json
+    ->readJson
+    ->Or_error.flatMap(((key, args)) =>
+      switch (key, args) {
+      | ("NewModel", [id, path]) =>
+        (Gid.fromJson(id), FileTree.Path.Stable.V1.fromJson(path))
+        ->Or_error.both
+        ->Or_error.map(((id, path)) => NewModel(id, path))
+      | ("NewFolder", [id, path]) =>
+        (Gid.fromJson(id), FileTree.Path.Stable.V1.fromJson(path))
+        ->Or_error.both
+        ->Or_error.map(((id, path)) => NewFolder(id, path))
+      | ("DeleteModel", [id]) => id->Gid.fromJson->Or_error.map(id => DeleteModel(id))
+      | ("DeleteFolder", [id]) => id->Gid.fromJson->Or_error.map(id => DeleteFolder(id))
+      | ("FocusModel", [id]) =>
+        id->Option.fromJson(Gid.fromJson)->Or_error.map(id => FocusModel(id))
+      | ("DuplicateModel", [existing, new_]) =>
+        (Gid.fromJson(existing), Gid.fromJson(new_))
+        ->Or_error.both
+        ->Or_error.map(((existing, new_)) => DuplicateModel(existing, new_))
+      | ("ImportModel", [model, path]) =>
+        (State.Model.Stable.V5.fromJson(model), FileTree.Path.Stable.V1.fromJson(path))
+        ->Or_error.both
+        ->Or_error.map(((model, path)) => ImportModel(model, path))
+      | ("ReorderModels", [tree]) =>
+        tree->FileTree.Stable.V2.fromJson(Gid.fromJson)->Or_error.map(tree => ReorderModels(tree))
+      | ("RenameFolder", [id, name]) =>
+        (Gid.fromJson(id), String.fromJson(name))
+        ->Or_error.both
+        ->Or_error.map(((id, name)) => RenameFolder(id, name))
+      | ("Undo", [id]) => id->Gid.fromJson->Or_error.map(id => Undo(id))
+      | ("Redo", [id]) => id->Gid.fromJson->Or_error.map(id => Redo(id))
+      | ("ViewTransform", [id, vt]) =>
+        (Gid.fromJson(id), viewTransformFromJson(vt))
+        ->Or_error.both
+        ->Or_error.map(((id, vt)) => ViewTransform(id, vt))
+      | ("Intelligence", [i]) => i->Intelligence.fromJson->Or_error.map(i => Intelligence(i))
+      | _ => Or_error.error_s("Unrecognised Event.File.t JSON")
+      }
+    )
 }
 
 module Slots = {
@@ -63,6 +165,25 @@ module Slots = {
       | Display(s) => {...state, InspectorState.Representation.display: s}
       | Notes(s) => {...state, InspectorState.Representation.notes: s}
       }
+
+    let toJson = t =>
+      switch t {
+      | Domain(s) => mkJson("Domain", [String.toJson(s)])
+      | Display(s) => mkJson("Display", [String.toJson(s)])
+      | Notes(s) => mkJson("Notes", [String.toJson(s)])
+      }
+
+    let fromJson = json =>
+      json
+      ->readJson
+      ->Or_error.flatMap(((key, args)) =>
+        switch (key, args) {
+        | ("Domain", [s]) => s->String.fromJson->Or_error.map(s => Domain(s))
+        | ("Display", [s]) => s->String.fromJson->Or_error.map(s => Display(s))
+        | ("Notes", [s]) => s->String.fromJson->Or_error.map(s => Notes(s))
+        | _ => Or_error.error_s("Unrecognised Event.Slots.Representation.t JSON")
+        }
+      )
   }
 
   module Scheme = {
@@ -85,6 +206,33 @@ module Slots = {
       | Organisation(s) => {...state, InspectorState.Scheme.organisation: s}
       | Notes(s) => {...state, InspectorState.Scheme.notes: s}
       }
+
+    let toJson = t =>
+      switch t {
+      | Concept_structure(s) => mkJson("Concept_structure", [String.toJson(s)])
+      | Graphic_structure(s) => mkJson("Graphic_structure", [String.toJson(s)])
+      | Function(f) => mkJson("Function", [f->Option.toJson(Function.toJson)])
+      | Explicit(e) => mkJson("Explicit", [e->Option.toJson(Bool.toJson)])
+      | Scope(s) => mkJson("Scope", [s->Option.toJson(Scope.toJson)])
+      | Organisation(s) => mkJson("Organisation", [String.toJson(s)])
+      | Notes(s) => mkJson("Notes", [String.toJson(s)])
+      }
+
+    let fromJson = json =>
+      json
+      ->readJson
+      ->Or_error.flatMap(((key, args)) =>
+        switch (key, args) {
+        | ("Concept_structure", [s]) => s->String.fromJson->Or_error.map(s => Concept_structure(s))
+        | ("Graphic_structure", [s]) => s->String.fromJson->Or_error.map(s => Graphic_structure(s))
+        | ("Function", [f]) => f->Option.fromJson(Function.fromJson)->Or_error.map(f => Function(f))
+        | ("Explicit", [e]) => e->Option.fromJson(Bool.fromJson)->Or_error.map(e => Explicit(e))
+        | ("Scope", [s]) => s->Option.fromJson(Scope.fromJson)->Or_error.map(s => Scope(s))
+        | ("Organisation", [s]) => s->String.fromJson->Or_error.map(s => Organisation(s))
+        | ("Notes", [s]) => s->String.fromJson->Or_error.map(s => Notes(s))
+        | _ => Or_error.error_s("Unrecognised Event.Slots.Scheme.t JSON")
+        }
+      )
   }
 
   module Dimension = {
@@ -115,6 +263,45 @@ module Slots = {
       | Organisation(s) => {...state, InspectorState.Dimension.organisation: s}
       | Notes(s) => {...state, InspectorState.Dimension.notes: s}
       }
+
+    let toJson = t =>
+      switch t {
+      | Concept(s) => mkJson("Concept", [String.toJson(s)])
+      | Concept_scale(s) => mkJson("Concept_scale", [s->Option.toJson(Quantity_scale.toJson)])
+      | Concept_attributes(s) => mkJson("Concept_attributes", [s->List.toJson(String.toJson)])
+      | Graphic(s) => mkJson("Graphic", [String.toJson(s)])
+      | Graphic_scale(s) => mkJson("Graphic_scale", [s->Option.toJson(Quantity_scale.toJson)])
+      | Graphic_attributes(s) => mkJson("Graphic_attributes", [s->List.toJson(String.toJson)])
+      | Function(f) => mkJson("Function", [f->Option.toJson(Function.toJson)])
+      | Explicit(e) => mkJson("Explicit", [e->Option.toJson(Bool.toJson)])
+      | Scope(s) => mkJson("Scope", [s->Option.toJson(Scope.toJson)])
+      | Organisation(s) => mkJson("Organisation", [String.toJson(s)])
+      | Notes(s) => mkJson("Notes", [String.toJson(s)])
+      }
+
+    let fromJson = json =>
+      json
+      ->readJson
+      ->Or_error.flatMap(((key, args)) =>
+        switch (key, args) {
+        | ("Concept", [s]) => s->String.fromJson->Or_error.map(s => Concept(s))
+        | ("Concept_scale", [s]) =>
+          s->Option.fromJson(Quantity_scale.fromJson)->Or_error.map(s => Concept_scale(s))
+        | ("Concept_attributes", [s]) =>
+          s->List.fromJson(String.fromJson)->Or_error.map(s => Concept_attributes(s))
+        | ("Graphic", [s]) => s->String.fromJson->Or_error.map(s => Graphic(s))
+        | ("Graphic_scale", [s]) =>
+          s->Option.fromJson(Quantity_scale.fromJson)->Or_error.map(s => Graphic_scale(s))
+        | ("Graphic_attributes", [s]) =>
+          s->List.fromJson(String.fromJson)->Or_error.map(s => Graphic_attributes(s))
+        | ("Function", [f]) => f->Option.fromJson(Function.fromJson)->Or_error.map(f => Function(f))
+        | ("Explicit", [e]) => e->Option.fromJson(Bool.fromJson)->Or_error.map(e => Explicit(e))
+        | ("Scope", [s]) => s->Option.fromJson(Scope.fromJson)->Or_error.map(s => Scope(s))
+        | ("Organisation", [s]) => s->String.fromJson->Or_error.map(s => Organisation(s))
+        | ("Notes", [s]) => s->String.fromJson->Or_error.map(s => Notes(s))
+        | _ => Or_error.error_s("Unrecognised Event.Slots.Dimension.t JSON")
+        }
+      )
   }
 
   module Token = {
@@ -135,6 +322,31 @@ module Slots = {
       | Explicit(s) => {...state, InspectorState.Token.explicit: s}
       | Notes(s) => {...state, InspectorState.Token.notes: s}
       }
+
+    let toJson = t =>
+      switch t {
+      | Concept(s) => mkJson("Concept", [String.toJson(s)])
+      | Graphic(s) => mkJson("Graphic", [String.toJson(s)])
+      | Is_class(s) => mkJson("Is_class", [s->Option.toJson(Bool.toJson)])
+      | Function(f) => mkJson("Function", [f->Option.toJson(Function.toJson)])
+      | Explicit(e) => mkJson("Explicit", [e->Option.toJson(Bool.toJson)])
+      | Notes(s) => mkJson("Notes", [String.toJson(s)])
+      }
+
+    let fromJson = json =>
+      json
+      ->readJson
+      ->Or_error.flatMap(((key, args)) =>
+        switch (key, args) {
+        | ("Concept", [s]) => s->String.fromJson->Or_error.map(s => Concept(s))
+        | ("Graphic", [s]) => s->String.fromJson->Or_error.map(s => Graphic(s))
+        | ("Is_class", [s]) => s->Option.fromJson(Bool.fromJson)->Or_error.map(s => Is_class(s))
+        | ("Function", [f]) => f->Option.fromJson(Function.fromJson)->Or_error.map(f => Function(f))
+        | ("Explicit", [e]) => e->Option.fromJson(Bool.fromJson)->Or_error.map(e => Explicit(e))
+        | ("Notes", [s]) => s->String.fromJson->Or_error.map(s => Notes(s))
+        | _ => Or_error.error_s("Unrecognised Event.Slots.Token.t JSON")
+        }
+      )
   }
 
   module Placeholder = {
@@ -149,6 +361,26 @@ module Slots = {
       | IsIntensional(s) => {...state, InspectorState.Placeholder.isIntensional: s}
       | Notes(s) => {...state, InspectorState.Placeholder.notes: s}
       }
+
+    let toJson = t =>
+      switch t {
+      | Description(s) => mkJson("Description", [String.toJson(s)])
+      | IsIntensional(s) => mkJson("IsIntensional", [s->Option.toJson(Bool.toJson)])
+      | Notes(s) => mkJson("Notes", [String.toJson(s)])
+      }
+
+    let fromJson = json =>
+      json
+      ->readJson
+      ->Or_error.flatMap(((key, args)) =>
+        switch (key, args) {
+        | ("Description", [s]) => s->String.fromJson->Or_error.map(s => Description(s))
+        | ("IsIntensional", [s]) =>
+          s->Option.fromJson(Bool.fromJson)->Or_error.map(s => IsIntensional(s))
+        | ("Notes", [s]) => s->String.fromJson->Or_error.map(s => Notes(s))
+        | _ => Or_error.error_s("Unrecognised Event.Slots.Placeholder.t JSON")
+        }
+      )
   }
 
   module Hierarchy = {
@@ -161,6 +393,23 @@ module Slots = {
       | Notes(s) => {...state, InspectorState.Hierarchy.notes: s}
       | Order(o) => {...state, InspectorState.Hierarchy.order: o}
       }
+
+    let toJson = t =>
+      switch t {
+      | Notes(s) => mkJson("Notes", [String.toJson(s)])
+      | Order(s) => mkJson("Order", [s->Option.toJson(Int.toJson)])
+      }
+
+    let fromJson = json =>
+      json
+      ->readJson
+      ->Or_error.flatMap(((key, args)) =>
+        switch (key, args) {
+        | ("Notes", [s]) => s->String.fromJson->Or_error.map(s => Notes(s))
+        | ("Order", [s]) => s->Option.fromJson(Int.fromJson)->Or_error.map(s => Order(s))
+        | _ => Or_error.error_s("Unrecognised Event.Slots.Hierarchy.t JSON")
+        }
+      )
   }
 
   module Anchor = {
@@ -173,6 +422,23 @@ module Slots = {
       | Notes(s) => {...state, InspectorState.Anchor.notes: s}
       | Order(o) => {...state, InspectorState.Anchor.order: o}
       }
+
+    let toJson = t =>
+      switch t {
+      | Notes(s) => mkJson("Notes", [String.toJson(s)])
+      | Order(s) => mkJson("Order", [s->Option.toJson(Int.toJson)])
+      }
+
+    let fromJson = json =>
+      json
+      ->readJson
+      ->Or_error.flatMap(((key, args)) =>
+        switch (key, args) {
+        | ("Notes", [s]) => s->String.fromJson->Or_error.map(s => Notes(s))
+        | ("Order", [s]) => s->Option.fromJson(Int.fromJson)->Or_error.map(s => Order(s))
+        | _ => Or_error.error_s("Unrecognised Event.Slots.Anchor.t JSON")
+        }
+      )
   }
 
   module Generic = {
@@ -182,6 +448,21 @@ module Slots = {
       switch t {
       | Notes(s) => {InspectorState.Generic.notes: s}
       }
+
+    let toJson = t =>
+      switch t {
+      | Notes(s) => mkJson("Notes", [String.toJson(s)])
+      }
+
+    let fromJson = json =>
+      json
+      ->readJson
+      ->Or_error.flatMap(((key, args)) =>
+        switch (key, args) {
+        | ("Notes", [s]) => s->String.fromJson->Or_error.map(s => Notes(s))
+        | _ => Or_error.error_s("Unrecognised Event.Slots.Generic.t JSON")
+        }
+      )
   }
 
   type t =
@@ -226,6 +507,35 @@ module Slots = {
       Generic.dispatch(state, e)->InspectorState.Link.Generic->InspectorState.SchemaOrLink.Link
     | _ => state
     }
+
+  let toJson = t =>
+    switch t {
+    | Representation(r) => mkJson("Representation", [Representation.toJson(r)])
+    | Scheme(s) => mkJson("Scheme", [Scheme.toJson(s)])
+    | Dimension(d) => mkJson("Dimension", [Dimension.toJson(d)])
+    | Token(t) => mkJson("Token", [Token.toJson(t)])
+    | Placeholder(p) => mkJson("Placeholder", [Placeholder.toJson(p)])
+    | Hierarchy(h) => mkJson("Hierarchy", [Hierarchy.toJson(h)])
+    | Anchor(a) => mkJson("Anchor", [Anchor.toJson(a)])
+    | Generic(g) => mkJson("Generic", [Generic.toJson(g)])
+    }
+
+  let fromJson = json =>
+    json
+    ->readJson
+    ->Or_error.flatMap(((key, args)) =>
+      switch (key, args) {
+      | ("Representation", [r]) => r->Representation.fromJson->Or_error.map(r => Representation(r))
+      | ("Scheme", [s]) => s->Scheme.fromJson->Or_error.map(s => Scheme(s))
+      | ("Dimension", [d]) => d->Dimension.fromJson->Or_error.map(d => Dimension(d))
+      | ("Token", [t]) => t->Token.fromJson->Or_error.map(t => Token(t))
+      | ("Placeholder", [p]) => p->Placeholder.fromJson->Or_error.map(p => Placeholder(p))
+      | ("Hierarchy", [h]) => h->Hierarchy.fromJson->Or_error.map(h => Hierarchy(h))
+      | ("Anchor", [a]) => a->Anchor.fromJson->Or_error.map(a => Anchor(a))
+      | ("Generic", [g]) => g->Generic.fromJson->Or_error.map(g => Generic(g))
+      | _ => Or_error.error_s("Unrecognised Event.Slot.t JSON")
+      }
+    )
 }
 
 module Graph = {
@@ -249,6 +559,32 @@ module Graph = {
       | UpdateDashed(dashed) =>
         node->ModelNode.updatePayload(payload => {...payload, dashed: dashed})
       }
+
+    let toJson = t =>
+      switch t {
+      | UpdateName(s) => mkJson("UpdateName", [String.toJson(s)])
+      | UpdateNameSuffix(s) => mkJson("UpdateNameSuffix", [s->Option.toJson(String.toJson)])
+      | UpdateReference(s) => mkJson("UpdateReference", [String.toJson(s)])
+      | UpdateReferenceSuffix(s) =>
+        mkJson("UpdateReferenceSuffix", [s->Option.toJson(String.toJson)])
+      | UpdateDashed(b) => mkJson("UpdateDashed", [Bool.toJson(b)])
+      }
+
+    let fromJson = json =>
+      json
+      ->readJson
+      ->Or_error.flatMap(((key, args)) =>
+        switch (key, args) {
+        | ("UpdateName", [s]) => s->String.fromJson->Or_error.map(s => UpdateName(s))
+        | ("UpdateNameSuffix", [s]) =>
+          s->Option.fromJson(String.fromJson)->Or_error.map(s => UpdateNameSuffix(s))
+        | ("UpdateReference", [s]) => s->String.fromJson->Or_error.map(s => UpdateReference(s))
+        | ("UpdateReferenceSuffix", [s]) =>
+          s->Option.fromJson(String.fromJson)->Or_error.map(s => UpdateReferenceSuffix(s))
+        | ("UpdateDashed", [b]) => b->Bool.fromJson->Or_error.map(b => UpdateDashed(b))
+        | _ => Or_error.error_s("Unrecognised Event.Graph.Node.t JSON")
+        }
+      )
   }
 
   module Link = {
@@ -258,6 +594,22 @@ module Graph = {
       switch t {
       | UpdateOrder(order) => link->ModelLink.updatePayload(ModelLink.Payload.setLabel(_, order))
       }
+
+    let toJson = t =>
+      switch t {
+      | UpdateOrder(order) => mkJson("UpdateOrder", [order->Option.toJson(Int.toJson)])
+      }
+
+    let fromJson = json =>
+      json
+      ->readJson
+      ->Or_error.flatMap(((key, args)) =>
+        switch (key, args) {
+        | ("UpdateOrder", [order]) =>
+          order->Option.fromJson(Int.fromJson)->Or_error.map(order => UpdateOrder(order))
+        | _ => Or_error.error_s("Unknown Event.Graph.Link.t JSON")
+        }
+      )
   }
 
   type rec t =
@@ -313,6 +665,75 @@ module Graph = {
     | DeleteLink(linkId) => state->ModelState.removeLink(linkId)
     | SetSelection(selection) => state->ModelState.setSelection(selection)
     }
+
+  let rec toJson = t =>
+    switch t {
+    | AddNode(m) => mkJson("AddNode", [ModelNode.Stable.V2.toJson(m)])
+    | UpdateNode(id, node) => mkJson("UpdateNode", [Gid.toJson(id), Node.toJson(node)])
+    | UpdateLink(id, link) => mkJson("UpdateLink", [Gid.toJson(id), Link.toJson(link)])
+    | DeleteNode(id) => mkJson("DeleteNode", [Gid.toJson(id)])
+    | Duplicate(map) => mkJson("Duplicate", [map->Gid.Map.toJson(Gid.toJson)])
+    | MoveNode(id, x, y) => mkJson("MoveNode", [Gid.toJson(id), Float.toJson(x), Float.toJson(y)])
+    | LinkNodes({linkId, source, target, kind, label}) =>
+      mkJson(
+        "LinkNodes",
+        [
+          Gid.toJson(linkId),
+          Gid.toJson(source),
+          Gid.toJson(target),
+          ModelLink.Kind.Stable.V3.toJson(kind),
+          label->Option.toJson(Int.toJson),
+        ],
+      )
+    | DeleteLink(id) => mkJson("DeleteLink", [Gid.toJson(id)])
+    | SetSelection(s) => mkJson("SetSelection", [ModelSelection.Stable.V1.toJson(s)])
+    | Seq(ts) => mkJson("Seq", ts->Array.map(toJson))
+    }
+
+  let rec fromJson = json =>
+    json
+    ->readJson
+    ->Or_error.flatMap(((key, args)) =>
+      switch (key, args) {
+      | ("AddNode", [m]) => m->ModelNode.Stable.V2.fromJson->Or_error.map(m => AddNode(m))
+      | ("UpdateNode", [id, node]) =>
+        (Gid.fromJson(id), Node.fromJson(node))
+        ->Or_error.both
+        ->Or_error.map(((id, node)) => UpdateNode(id, node))
+      | ("UpdateLink", [id, link]) =>
+        (Gid.fromJson(id), Link.fromJson(link))
+        ->Or_error.both
+        ->Or_error.map(((id, link)) => UpdateLink(id, link))
+      | ("DeleteNode", [id]) => id->Gid.fromJson->Or_error.map(id => DeleteNode(id))
+      | ("Duplicate", [map]) =>
+        map->Gid.Map.fromJson(Gid.fromJson)->Or_error.map(map => Duplicate(map))
+      | ("MoveNode", [id, x, y]) =>
+        (Gid.fromJson(id), Float.fromJson(x), Float.fromJson(y))
+        ->Or_error.both3
+        ->Or_error.map(((id, x, y)) => MoveNode(id, x, y))
+      | ("LinkNodes", [linkId, source, target, kind, label]) =>
+        (
+          Gid.fromJson(linkId),
+          Gid.fromJson(source),
+          Gid.fromJson(target),
+          ModelLink.Kind.Stable.V3.fromJson(kind),
+          label->Option.fromJson(Int.fromJson),
+        )
+        ->Or_error.both5
+        ->Or_error.map(((linkId, source, target, kind, label)) => LinkNodes({
+          linkId: linkId,
+          source: source,
+          target: target,
+          kind: kind,
+          label: label,
+        }))
+      | ("DeleteLink", [id]) => id->Gid.fromJson->Or_error.map(id => DeleteLink(id))
+      | ("SetSelection", [s]) =>
+        s->ModelSelection.Stable.V1.fromJson->Or_error.map(s => SetSelection(s))
+      | ("Seq", ts) => ts->Array.map(fromJson)->Or_error.allArray->Or_error.map(ts => Seq(ts))
+      | _ => Or_error.error_s("Unrecognised Event.Graph.t JSON")
+      }
+    )
 }
 
 module Model = {
@@ -473,21 +894,100 @@ module Model = {
         e'->Option.map(f => f(id))
       }
     }
+
+  let rec toJson = t =>
+    switch t {
+    | Rename(s) => mkJson("Rename", [String.toJson(s)])
+    | SetNotes(s) => mkJson("SetNotes", [String.toJson(s)])
+    | CreateNode(id, x, y, kind) =>
+      mkJson(
+        "CreateNode",
+        [Gid.toJson(id), Float.toJson(x), Float.toJson(y), ModelNode.Kind.Stable.V2.toJson(kind)],
+      )
+    | DeleteNode(id) => mkJson("DeleteNode", [Gid.toJson(id)])
+    | Duplicate(nodes) => mkJson("Duplicate", [nodes->Gid.Map.toJson(Gid.toJson)])
+    | LinkNodes({linkId, source, target, kind, label}) =>
+      mkJson(
+        "LinkNodes",
+        [
+          Gid.toJson(linkId),
+          Gid.toJson(source),
+          Gid.toJson(target),
+          ModelLink.Kind.Stable.V3.toJson(kind),
+          Option.toJson(label, Int.toJson),
+        ],
+      )
+    | DeleteLink(id) => mkJson("DeleteLink", [Gid.toJson(id)])
+    | Graph(g) => mkJson("Graph", [Graph.toJson(g)])
+    | Slots(id, s) => mkJson("Slots", [Gid.toJson(id), Slots.toJson(s)])
+    | Seq(ts) => mkJson("Seq", ts->Array.map(toJson))
+    }
+
+  let rec fromJson = json =>
+    json
+    ->readJson
+    ->Or_error.flatMap(((key, args)) =>
+      switch (key, args) {
+      | ("Rename", [s]) => s->String.fromJson->Or_error.map(s => Rename(s))
+      | ("SetNotes", [s]) => s->String.fromJson->Or_error.map(s => SetNotes(s))
+      | ("CreateNode", [id, x, y, kind]) =>
+        (
+          Gid.fromJson(id),
+          Float.fromJson(x),
+          Float.fromJson(y),
+          ModelNode.Kind.Stable.V2.fromJson(kind),
+        )
+        ->Or_error.both4
+        ->Or_error.map(((id, x, y, kind)) => CreateNode(id, x, y, kind))
+      | ("DeleteNode", [id]) => id->Gid.fromJson->Or_error.map(id => DeleteNode(id))
+      | ("Duplicate", [nodes]) =>
+        nodes->Gid.Map.fromJson(Gid.fromJson)->Or_error.map(nodes => Duplicate(nodes))
+      | ("LinkNodes", [linkId, source, target, kind, label]) =>
+        (
+          Gid.fromJson(linkId),
+          Gid.fromJson(source),
+          Gid.fromJson(target),
+          ModelLink.Kind.Stable.V3.fromJson(kind),
+          Option.fromJson(label, Int.fromJson),
+        )
+        ->Or_error.both5
+        ->Or_error.map(((linkId, source, target, kind, label)) => LinkNodes({
+          linkId: linkId,
+          source: source,
+          target: target,
+          kind: kind,
+          label: label,
+        }))
+      | ("DeleteLink", [id]) => id->Gid.fromJson->Or_error.map(id => DeleteLink(id))
+      | ("Graph", [g]) => g->Graph.fromJson->Or_error.map(g => Graph(g))
+      | ("Slots", [id, s]) =>
+        (Gid.fromJson(id), Slots.fromJson(s))
+        ->Or_error.both
+        ->Or_error.map(((id, s)) => Slots(id, s))
+      | ("Seq", ts) => ts->Array.map(fromJson)->Or_error.allArray->Or_error.map(ts => Seq(ts))
+      | _ => Or_error.error_s("Unrecognised Event.Model.t JSON")
+      }
+    )
 }
 
 type t =
   | Model(Gid.t, Model.t)
   | File(File.t)
+  | StartRecording
+  | StopRecording
 
 let dispatch = (state, t) =>
   switch t {
   | Model(id, ev) => state->State.updateModel(id, Model.dispatch(_, ev))
   | File(ev) => File.dispatch(state, ev)
+  | StartRecording | StopRecording => state
   }
 
 let rec shouldTriggerIntelligence = e =>
   switch e {
   | File(File.Intelligence(Intelligence.Init)) => true // MUST be true
+  | StartRecording
+  | StopRecording
   | Model(_, Model.Graph(Graph.SetSelection(_)))
   | Model(_, Model.Graph(Graph.MoveNode(_, _, _)))
   | Model(_, Model.Rename(_))
@@ -507,3 +1007,27 @@ let rec shouldTriggerIntelligence = e =>
     vs->Array.map(v => Model(id, v))->Array.some(shouldTriggerIntelligence)
   | _ => true
   }
+
+let toJson = t =>
+  switch t {
+  | Model(id, m) => mkJson("Model", [Gid.toJson(id), Model.toJson(m)])
+  | File(f) => mkJson("File", [File.toJson(f)])
+  | StartRecording => mkJson("StartRecording", [])
+  | StopRecording => mkJson("StopRecording", [])
+  }
+
+let fromJson = json =>
+  json
+  ->readJson
+  ->Or_error.flatMap(((key, args)) =>
+    switch (key, args) {
+    | ("Model", [id_j, m_j]) =>
+      (Gid.fromJson(id_j), Model.fromJson(m_j))
+      ->Or_error.both
+      ->Or_error.map(((id, m)) => Model(id, m))
+    | ("File", [f]) => File.fromJson(f)->Or_error.map(f => File(f))
+    | ("StartRecording", []) => StartRecording->Or_error.create
+    | ("StopRecording", []) => StopRecording->Or_error.create
+    | _ => Or_error.error_s("Unrecognised Event.t JSON")
+    }
+  )

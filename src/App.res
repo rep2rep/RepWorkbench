@@ -82,12 +82,32 @@ module App = {
     ->Promise.then(_ => State.load())
     ->Promise.thenResolve(s => s->Option.getWithDefault(State.empty))
   let reducer = (state, action) => {
-    let newState = Event.dispatch(state, action)
-    State.store(newState)
-    if Event.shouldTriggerIntelligence(action) {
-      sendToIntelligence(newState)
+    if action === Event.StartRecording {
+      Recording.startRecording(state)
+      state
+    } else if action == Event.StopRecording {
+      let result = Recording.stopRecording()
+      Js.Console.log(result)
+      let json = Recording.toJson(result)
+      let content =
+        "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
+      let name = {
+        let date = Js.Date.make()
+        date->Js.Date.toLocaleDateString ++ " " ++ date->Js.Date.toLocaleTimeString
+      }
+      Downloader.download(name ++ ".risnrec", content)
+      state
     } else {
-      newState
+      if Recording.isRecording() {
+        Recording.record(action)
+      }
+      let newState = Event.dispatch(state, action)
+      State.store(newState)
+      if Event.shouldTriggerIntelligence(action) {
+        sendToIntelligence(newState)
+      } else {
+        newState
+      }
     }
   }
 
@@ -763,6 +783,15 @@ module App = {
           />
           <Button.Separator />
           <a href="manual.html" target="_blank"> {React.string("Manual")} </a>
+          <Button.Separator />
+          {(
+            () =>
+              if Recording.isRecording() {
+                <Button onClick={_ => dispatch(Event.StopRecording)} value="Stop Recording" />
+              } else {
+                <Button onClick={_ => dispatch(Event.StartRecording)} value="Start Recording" />
+              }
+          )()}
         </div>
         <div
           className="container"

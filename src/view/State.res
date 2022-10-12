@@ -586,6 +586,39 @@ let load = () => {
   })
 }
 
+let toJson = t => {
+  Js.Dict.fromArray([
+    ("currentModel", t.currentModel->Option.toJson(Gid.toJson)),
+    ("positions", t.positions->FileTree.Stable.V2.toJson(Gid.toJson)),
+    ("models", t.models->Gid.Map.toJson(model => Model.Stable.V5.toJson(model->UndoRedo.state))),
+  ])->Js.Json.object_
+}
+let fromJson = json =>
+  json
+  ->Js.Json.decodeObject
+  ->Or_error.fromOption_s("Failed to decode Model state object JSON")
+  ->Or_error.flatMap(dict => {
+    let getValue = (key, reader) =>
+      dict
+      ->Js.Dict.get(key)
+      ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+      ->Or_error.flatMap(reader)
+    let currentModel = getValue("currentModel", Option.fromJson(_, Gid.fromJson))
+    let positions = getValue("positions", FileTree.Stable.V2.fromJson(_, Gid.fromJson))
+    let models = getValue(
+      "models",
+      Gid.Map.fromJson(_, json => json->Model.Stable.V5.fromJson->Or_error.map(UndoRedo.create)),
+    )
+    (currentModel, positions, models)
+    ->Or_error.both3
+    ->Or_error.map(((currentModel, positions, models)) => {
+      models: models,
+      currentModel: currentModel,
+      positions: positions,
+      viewTransforms: Gid.Map.empty(),
+    })
+  })
+
 let empty = {
   models: Gid.Map.empty(),
   positions: FileTree.empty(),

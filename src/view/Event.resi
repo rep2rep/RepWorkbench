@@ -160,6 +160,16 @@ module Model: {
 type t =
   | Model(Gid.t, Model.t)
   | File(File.t)
+  | StartRecording
+  | StopRecording
 
 let dispatch: (State.t, t) => State.t
 let shouldTriggerIntelligence: t => bool
+
+// NOT STABLE
+// These JSON converters are not stable, so not suitable for long-term storage.
+// These are only used for recordings, which are internal to the RepSysLab; we
+// can manage the versioning here quite tightly, and build a Recording Player
+// for the specific version from the git repo.
+let toJson: t => Js.Json.t
+let fromJson: Js.Json.t => Or_error.t<t>
