@@ -3,7 +3,7 @@
 ROOT="$(npm root)"
 BASE=`dirname '$ROOT'`
 
-STATICS="index.html manual.html"
+STATICS="index.html player.html manual.html"
 VERSION_BASE="$(date '+%Y-%m-%d')"
 if [[ "${NODE_ENV}" == "production" ]]; then
     VERSION="${VERSION_BASE}"

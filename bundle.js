@@ -32,6 +32,14 @@ if (process.argv[2] === "bundle") {
     minify: false,
     format: 'cjs',
     external: ["react", "react-dom"],
+    entryPoints: [path.join(src, "Player.bs.js")],
+    outfile: path.join(dist, "player.js"),
+  });
+  esbuild.build({
+    ...cfg,
+    minify: false,
+    format: 'cjs',
+    external: ["react", "react-dom"],
     entryPoints: [path.join(src, "Intelligence.bs.js")],
     outfile: path.join(dist, "worker.js"),
   });
@@ -44,6 +52,14 @@ if (process.argv[2] === "bundle") {
     format: 'iife',
     entryPoints: [path.join(dist, "main.js")],
     outfile: path.join(dist, "main.js"),
+  });
+  esbuild.build({
+    ...cfg,
+    minify: mode === "production",
+    allowOverwrite: true,
+    format: 'iife',
+    entryPoints: [path.join(dist, "player.js")],
+    outfile: path.join(dist, "player.js"),
   });
   esbuild.build({
     ...cfg,
