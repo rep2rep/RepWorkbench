@@ -14,6 +14,8 @@ module Kind: {
     module V2: {
       type t = t
       let v1_to_v2: V1.t => t
+      let toJson: t => Js.Json.t
+      let fromJson: Js.Json.t => Or_error.t<t>
     }
   }
 }
