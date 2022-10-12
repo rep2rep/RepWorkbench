@@ -21,6 +21,8 @@ module Response: {
   }
 
   let empty: t
+  let toJson: t => Js.Json.t
+  let fromJson: Js.Json.t => Or_error.t<t>
 }
 
 type t
