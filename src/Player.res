@@ -122,7 +122,7 @@ module Player = {
   }
 
   @react.component
-  let make = (~recording) => {
+  let make = (~recording, ~onChangeRecording) => {
     let init = React.useMemo1(() => {
       Recording.unwind(recording)
     }, [recording])
@@ -327,6 +327,8 @@ module Player = {
           />
           <Button.Separator />
           <a href="manual.html" target="_blank"> {React.string("Manual")} </a>
+          <Button.Separator />
+          <Button onClick={onChangeRecording} value="Open Recording" />
         </div>
         <div
           className="container"
@@ -402,14 +404,17 @@ module Uploader = {
       style={ReactDOM.Style.make(
         ~textAlign="center",
         ~fontFamily="sans-serif",
-        ~margin="2rem auto",
+        ~margin="2rem auto ",
         ~padding="1rem",
         (),
       )}>
-      <div>
-        <h1 style={ReactDOM.Style.make(~margin="3rem 0", ())}>
+      <div style={ReactDOM.Style.make(~margin="2rem auto", ())}>
+        <h1 style={ReactDOM.Style.make(~margin="3rem 0 0.5rem 0", ())}>
           {React.string("RISE Playback Viewer")}
         </h1>
+        <div style={ReactDOM.Style.make(~fontSize="0.7rem", ~fontWeight="bold", ())}>
+          {React.string("##VERSION##")}
+        </div>
       </div>
       {switch error {
       | None => React.null
@@ -428,6 +433,9 @@ module Uploader = {
           {React.string(msg)}
         </div>
       }}
+      <p style={ReactDOM.Style.make(~padding="1rem", ())}>
+        {React.string("Please upload a .risnrec file recorded using the usual RISN Editor.")}
+      </p>
       <input
         type_="file"
         accept=".risnrec"
@@ -467,7 +475,8 @@ module Loader = {
     switch recording {
     | NoRecording => <Uploader onUpload />
     | RecordingError(error) => <Uploader onUpload error />
-    | Recording(recording) => <Player recording />
+    | Recording(recording) =>
+      <Player recording onChangeRecording={_ => setRecording(_ => NoRecording)} />
     }
   }
 }
