@@ -55,10 +55,7 @@ let fromJson = json =>
           let events = events_json->Array.fromJson(eventFromJson)
           (start, events)->Or_error.both
         }
-      | _ => {
-          Dialog.alert("Bad recording version, ask Aaron to produce a new viewer for you!")
-          Or_error.error_s("Bad recording version")
-        }
+      | _ => Or_error.error_s("Bad recording version, ask Aaron to produce a new viewer for you!")
       }
     }
   | Or_error.Ok(_) => Or_error.error_s("Recording JSON malformed.")

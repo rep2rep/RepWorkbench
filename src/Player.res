@@ -83,9 +83,9 @@ module Player = {
     let make = (~playing, ~timestamp, ~onPlay, ~onPause, ~onScrub, ~maxTime) => {
       <>
         {if playing {
-          <Button onClick=onPause value="Pause" />
+          <Button onClick=onPause value="Pause" style={ReactDOM.Style.make(~width="4em", ())} />
         } else {
-          <Button onClick=onPlay value="Play" />
+          <Button onClick=onPlay value="Play" style={ReactDOM.Style.make(~width="4em", ())} />
         }}
         <input
           type_="range"
@@ -161,6 +161,9 @@ module Player = {
       playInterval := None
     }
     let onPlay = _ => {
+      if timestamp >= maxTime {
+        setTimestamp(_ => 0.)
+      }
       setPlaying(_ => true)
       playInterval := Some(Js.Global.setInterval(() => {
             setTimestamp(t => {
@@ -296,7 +299,7 @@ module Player = {
           <input
             type_="number"
             min="0.1"
-            max="5"
+            max="100"
             step={0.1}
             value={Float.toString(playspeed)}
             onChange={e => setPlayspeed(ReactEvent.Form.target(e)["value"])}
@@ -395,10 +398,35 @@ module Player = {
 module Uploader = {
   @react.component
   let make = (~onUpload, ~error=?) => {
-    <div>
+    <div
+      style={ReactDOM.Style.make(
+        ~textAlign="center",
+        ~fontFamily="sans-serif",
+        ~margin="2rem auto",
+        ~padding="1rem",
+        (),
+      )}>
+      <div>
+        <h1 style={ReactDOM.Style.make(~margin="3rem 0", ())}>
+          {React.string("RISE Playback Viewer")}
+        </h1>
+      </div>
       {switch error {
       | None => React.null
-      | Some(msg) => <div> {React.string(msg)} </div>
+      | Some(msg) =>
+        <div
+          style={ReactDOM.Style.make(
+            ~maxWidth="450px",
+            ~margin="1rem auto",
+            ~padding="1rem",
+            ~border="1px solid #a00",
+            ~borderRadius="5px",
+            ~background="#fdd",
+            ~color="#a00",
+            (),
+          )}>
+          {React.string(msg)}
+        </div>
       }}
       <input
         type_="file"
