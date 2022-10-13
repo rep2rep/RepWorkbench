@@ -791,14 +791,19 @@ module App = {
           <Button.Separator />
           <a href="manual.html" target="_blank"> {React.string("Manual")} </a>
           <Button.Separator />
-          {(
-            () =>
-              if isRecording {
-                <Button onClick={_ => setIsRecording(false)} value="Stop Recording" />
-              } else {
-                <Button onClick={_ => setIsRecording(true)} value="Start Recording" />
-              }
-          )()}
+          {if isRecording {
+            <span
+              onClick={_ => setIsRecording(false)}
+              style={ReactDOM.Style.make(~padding="0 0.5rem", ())}>
+              <svg width="10px" height="10px"> <rect width="10" height="10" fill="black" /> </svg>
+            </span>
+          } else {
+            <span
+              onClick={_ => setIsRecording(true)}
+              style={ReactDOM.Style.make(~padding="0 0.5rem", ())}>
+              <svg width="10px" height="10px"> <circle cx="5" cy="5" r="5" fill="red" /> </svg>
+            </span>
+          }}
         </div>
         <div
           className="container"
