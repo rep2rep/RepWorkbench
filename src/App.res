@@ -86,32 +86,15 @@ module App = {
     ->Promise.then(_ => State.load())
     ->Promise.thenResolve(s => s->Option.getWithDefault(State.empty))
   let reducer = (state, action) => {
-    if action === Event.StartRecording {
-      Recording.startRecording(state)
-      state
-    } else if action == Event.StopRecording {
-      let result = Recording.stopRecording()
-      Js.Console.log(result)
-      let json = Recording.toJson(result)
-      let content =
-        "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
-      let name = {
-        let date = Js.Date.make()
-        date->Js.Date.toLocaleDateString ++ " " ++ date->Js.Date.toLocaleTimeString
-      }
-      Downloader.download(name ++ ".risnrec", content)
-      state
+    if Recording.isRecording() {
+      Recording.record(action)
+    }
+    let newState = Event.dispatch(state, action, ~atTime=perfNow(performance))
+    State.store(newState)
+    if Event.shouldTriggerIntelligence(action) {
+      sendToIntelligence(newState)
     } else {
-      if Recording.isRecording() {
-        Recording.record(action)
-      }
-      let newState = Event.dispatch(state, action, ~atTime=perfNow(performance))
-      State.store(newState)
-      if Event.shouldTriggerIntelligence(action) {
-        sendToIntelligence(newState)
-      } else {
-        newState
-      }
+      newState
     }
   }
 
@@ -158,6 +141,25 @@ module App = {
   @react.component
   let make = (~init) => {
     let (state, dispatch) = React.useReducer(reducer, init)
+
+    let (isRecording, setIsRecording_) = React.useState(_ => false)
+    let setIsRecording = b => {
+      if b && !isRecording {
+        Recording.startRecording(state)
+        setIsRecording_(_ => b)
+      } else {
+        let result = Recording.stopRecording()
+        let json = Recording.toJson(result)
+        let content =
+          "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
+        let name = {
+          let date = Js.Date.make()
+          date->Js.Date.toLocaleDateString ++ " " ++ date->Js.Date.toLocaleTimeString
+        }
+        Downloader.download(name ++ ".risnrec", content)
+        setIsRecording_(_ => b)
+      }
+    }
 
     let intelligenceListener = React.useCallback1((response: Intelligence_Intf.Response.t) => {
       dispatch(Event.Intelligence.Response(response)->Event.File.Intelligence->Event.File)
@@ -790,10 +792,10 @@ module App = {
           <Button.Separator />
           {(
             () =>
-              if Recording.isRecording() {
-                <Button onClick={_ => dispatch(Event.StopRecording)} value="Stop Recording" />
+              if isRecording {
+                <Button onClick={_ => setIsRecording(false)} value="Stop Recording" />
               } else {
-                <Button onClick={_ => dispatch(Event.StartRecording)} value="Start Recording" />
+                <Button onClick={_ => setIsRecording(true)} value="Start Recording" />
               }
           )()}
         </div>

@@ -971,21 +971,16 @@ module Model = {
 type t =
   | Model(Gid.t, Model.t)
   | File(File.t)
-  | StartRecording
-  | StopRecording
 
 let dispatch = (state, t, ~atTime) =>
   switch t {
   | Model(id, ev) => state->State.updateModel(id, Model.dispatch(_, ev), ~atTime)
   | File(ev) => File.dispatch(state, ev)
-  | StartRecording | StopRecording => state
   }
 
 let rec shouldTriggerIntelligence = e =>
   switch e {
   | File(File.Intelligence(Intelligence.Init)) => true // MUST be true
-  | StartRecording
-  | StopRecording
   | Model(_, Model.Graph(Graph.SetSelection(_)))
   | Model(_, Model.Graph(Graph.MoveNode(_, _, _)))
   | Model(_, Model.Rename(_))
@@ -1010,8 +1005,6 @@ let toJson = t =>
   switch t {
   | Model(id, m) => mkJson("Model", [Gid.toJson(id), Model.toJson(m)])
   | File(f) => mkJson("File", [File.toJson(f)])
-  | StartRecording => mkJson("StartRecording", [])
-  | StopRecording => mkJson("StopRecording", [])
   }
 
 let fromJson = json =>
@@ -1024,8 +1017,6 @@ let fromJson = json =>
       ->Or_error.both
       ->Or_error.map(((id, m)) => Model(id, m))
     | ("File", [f]) => File.fromJson(f)->Or_error.map(f => File(f))
-    | ("StartRecording", []) => StartRecording->Or_error.create
-    | ("StopRecording", []) => StopRecording->Or_error.create
     | _ => Or_error.error_s("Unrecognised Event.t JSON")
     }
   )

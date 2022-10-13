@@ -160,8 +160,6 @@ module Model: {
 type t =
   | Model(Gid.t, Model.t)
   | File(File.t)
-  | StartRecording
-  | StopRecording
 
 let dispatch: (State.t, t, ~atTime: float) => State.t
 let shouldTriggerIntelligence: t => bool
