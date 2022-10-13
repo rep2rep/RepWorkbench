@@ -1,3 +1,7 @@
+type performance
+@val external performance: performance = "performance"
+@send external perfNow: performance => float = "now"
+
 module App = {
   module BoolStore = LocalStorage.MakeJsonable(Bool)
   module K = GlobalKeybindings.KeyBinding
@@ -101,7 +105,7 @@ module App = {
       if Recording.isRecording() {
         Recording.record(action)
       }
-      let newState = Event.dispatch(state, action)
+      let newState = Event.dispatch(state, action, ~atTime=perfNow(performance))
       State.store(newState)
       if Event.shouldTriggerIntelligence(action) {
         sendToIntelligence(newState)

@@ -234,8 +234,8 @@ module Player = {
     let graphStyle = React.useMemo0(() => ReactDOM.Style.make(~flexGrow="1", ()))
 
     let viewTransform =
-        focused
-        ->Option.flatMap(state->State.viewTransform(_))
+      focused
+      ->Option.flatMap(state->State.viewTransform(_))
       ->Option.getWithDefault(ViewTransform.init)
 
     let ignore2 = (_, _) => ()

@@ -974,9 +974,9 @@ type t =
   | StartRecording
   | StopRecording
 
-let dispatch = (state, t) =>
+let dispatch = (state, t, ~atTime) =>
   switch t {
-  | Model(id, ev) => state->State.updateModel(id, Model.dispatch(_, ev))
+  | Model(id, ev) => state->State.updateModel(id, Model.dispatch(_, ev), ~atTime)
   | File(ev) => File.dispatch(state, ev)
   | StartRecording | StopRecording => state
   }

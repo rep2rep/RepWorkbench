@@ -13,6 +13,10 @@ let _global = {
   epoch: 0.,
 }
 
+type performance
+@val external performance: performance = "performance"
+@send external perfNow: performance => float = "now"
+
 type t = (State.t, array<(timestamp, Event.t)>)
 
 let start = ((start, _)) => start
@@ -67,7 +71,7 @@ let startRecording = state =>
     _global.isRecording = true
     _global.actions = []
     _global.start = state
-    _global.epoch = Js.Date.now()
+    _global.epoch = perfNow(performance)
   }
 
 let stopRecording = () => {
@@ -83,13 +87,13 @@ let stopRecording = () => {
 
 let isRecording = () => _global.isRecording
 let record = event =>
-  _global.actions->Js.Array2.push((Js.Date.now() -. _global.epoch, event))->ignore
+  _global.actions->Js.Array2.push((perfNow(performance) -. _global.epoch, event))->ignore
 
 let unwind = ((start, events)) => {
   let result = [(0., start)]
   let now = ref(start)
   events->Array.forEach(((time, event)) => {
-    now := Event.dispatch(now.contents, event)
+    now := Event.dispatch(now.contents, event, ~atTime=time)
     result->Js.Array2.push((time, now.contents))->ignore
   })
   result

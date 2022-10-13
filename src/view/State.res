@@ -1,5 +1,9 @@
 let db = SetOnce.create()
 
+type performance
+@val external performance: performance = "performance"
+@send external perfNow: performance => float = "now"
+
 module Model = {
   type t = {
     info: InspectorState.Model.t,
@@ -559,7 +563,7 @@ let load = () => {
         arr
         ->Array.keepMap(((id, model)) =>
           switch model->Or_error.match {
-          | Or_error.Ok(m) => (id, UndoRedo.create(m))->Some
+          | Or_error.Ok(m) => (id, UndoRedo.create(m, ~atTime=perfNow(performance)))->Some
           | Or_error.Err(e) => {
               Dialog.alert("Error loading model: " ++ Error.messages(e)->Js.Array2.joinWith(";"))
               None
@@ -608,7 +612,11 @@ let fromJson = json =>
     let positions = getValue("positions", FileTree.Stable.V2.fromJson(_, Gid.fromJson))
     let models = getValue(
       "models",
-      Gid.Map.fromJson(_, json => json->Model.Stable.V5.fromJson->Or_error.map(UndoRedo.create)),
+      Gid.Map.fromJson(_, json =>
+        json
+        ->Model.Stable.V5.fromJson
+        ->Or_error.map(UndoRedo.create(_, ~atTime=perfNow(performance)))
+      ),
     )
     let viewTransforms = getValue(
       "viewTransforms",
@@ -640,7 +648,10 @@ let model = (t, id) => t.models->Gid.Map.get(id)->Option.map(UndoRedo.state)
 
 let createModel = (t, id, path) => {
   ...t,
-  models: t.models->Gid.Map.set(id, Model.create("Model")->UndoRedo.create),
+  models: t.models->Gid.Map.set(
+    id,
+    Model.create("Model")->UndoRedo.create(~atTime=perfNow(performance)),
+  ),
   positions: t.positions->FileTree.insertFile(~path, ~position=-1, id)->Option.getExn,
   currentModel: Some(id),
 }
@@ -702,7 +713,10 @@ let duplicateModel = (t, ~existing, ~new_) => {
   let (path, position) =
     t.positions->FileTree.getFilePathAndPosition(id => id === existing)->Option.getExn
   let oldModel = t.models->Gid.Map.get(existing)->Option.getExn->UndoRedo.state
-  let newModel = oldModel->Model.duplicate(oldModel.info.name ++ " (Copy)")->UndoRedo.create
+  let newModel =
+    oldModel
+    ->Model.duplicate(oldModel.info.name ++ " (Copy)")
+    ->UndoRedo.create(~atTime=perfNow(performance))
   {
     ...t,
     currentModel: Some(new_),
@@ -714,7 +728,7 @@ let duplicateModel = (t, ~existing, ~new_) => {
 let importModel = (t, model, path) => {
   // Duplicate the model to ensure fresh ids
   let newId = Gid.create()
-  let model = Model.duplicate(model, model.info.name)->UndoRedo.create
+  let model = Model.duplicate(model, model.info.name)->UndoRedo.create(~atTime=perfNow(performance))
   {
     ...t,
     currentModel: Some(newId),
@@ -733,12 +747,12 @@ let renameFolder = (t, id, name) => {
   positions: t.positions->FileTree.renameFolder(id, name),
 }
 
-let updateModel = (t, id, f) => {
+let updateModel = (t, id, f, ~atTime) => {
   ...t,
   models: t.models->Gid.Map.update(id, model =>
     model->Option.map(model => {
       let newModel = model->UndoRedo.state->f
-      model->UndoRedo.step(newModel)
+      model->UndoRedo.step(newModel, ~atTime)
     })
   ),
 }

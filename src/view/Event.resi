@@ -163,7 +163,7 @@ type t =
   | StartRecording
   | StopRecording
 
-let dispatch: (State.t, t) => State.t
+let dispatch: (State.t, t, ~atTime: float) => State.t
 let shouldTriggerIntelligence: t => bool
 
 // NOT STABLE

@@ -80,7 +80,7 @@ let importModel: (t, Model.t, FileTree.Path.t) => t
 let reorderModels: (t, FileTree.t<Gid.t>) => t
 let renameFolder: (t, Gid.t, string) => t
 
-let updateModel: (t, Gid.t, Model.t => Model.t) => t
+let updateModel: (t, Gid.t, Model.t => Model.t, ~atTime: float) => t
 let updateModelBypassUndoRedo: (t, Gid.t, Model.t => Model.t) => t
 let undo: (t, Gid.t) => t
 let redo: (t, Gid.t) => t
