@@ -1,9 +1,5 @@
 let db = SetOnce.create()
 
-type performance
-@val external performance: performance = "performance"
-@send external perfNow: performance => float = "now"
-
 module Model = {
   type t = {
     info: InspectorState.Model.t,
@@ -537,7 +533,7 @@ let store = t => {
   t.models->Gid.Map.forEach((id, model) => Model.store(model->UndoRedo.state, id))
 }
 
-let load = () => {
+let load = (~atTime) => {
   let currentModel = LocalStorage.Raw.getItem("RepNotation:CurrentModel")->Option.flatMap(s => {
     let json = try Or_error.create(Js.Json.parseExn(s)) catch {
     | _ => Or_error.error_s("Badly stored currentModel")
@@ -563,7 +559,7 @@ let load = () => {
         arr
         ->Array.keepMap(((id, model)) =>
           switch model->Or_error.match {
-          | Or_error.Ok(m) => (id, UndoRedo.create(m, ~atTime=perfNow(performance)))->Some
+          | Or_error.Ok(m) => (id, UndoRedo.create(m, ~atTime))->Some
           | Or_error.Err(e) => {
               Dialog.alert("Error loading model: " ++ Error.messages(e)->Js.Array2.joinWith(";"))
               None
@@ -598,7 +594,7 @@ let toJson = t => {
     ("viewTransforms", t.viewTransforms->Gid.Map.toJson(ViewTransform.Stable.V1.toJson)),
   ])->Js.Json.object_
 }
-let fromJson = json =>
+let fromJson = (json, ~atTime) =>
   json
   ->Js.Json.decodeObject
   ->Or_error.fromOption_s("Failed to decode Model state object JSON")
@@ -613,9 +609,7 @@ let fromJson = json =>
     let models = getValue(
       "models",
       Gid.Map.fromJson(_, json =>
-        json
-        ->Model.Stable.V5.fromJson
-        ->Or_error.map(UndoRedo.create(_, ~atTime=perfNow(performance)))
+        json->Model.Stable.V5.fromJson->Or_error.map(UndoRedo.create(_, ~atTime))
       ),
     )
     let viewTransforms = getValue(
@@ -646,12 +640,9 @@ let models = t =>
 
 let model = (t, id) => t.models->Gid.Map.get(id)->Option.map(UndoRedo.state)
 
-let createModel = (t, id, path) => {
+let createModel = (t, id, path, ~atTime) => {
   ...t,
-  models: t.models->Gid.Map.set(
-    id,
-    Model.create("Model")->UndoRedo.create(~atTime=perfNow(performance)),
-  ),
+  models: t.models->Gid.Map.set(id, Model.create("Model")->UndoRedo.create(~atTime)),
   positions: t.positions->FileTree.insertFile(~path, ~position=-1, id)->Option.getExn,
   currentModel: Some(id),
 }
@@ -709,14 +700,12 @@ let focusModel = (t, id) => {
   currentModel: id,
 }
 
-let duplicateModel = (t, ~existing, ~new_) => {
+let duplicateModel = (t, ~existing, ~new_, ~atTime) => {
   let (path, position) =
     t.positions->FileTree.getFilePathAndPosition(id => id === existing)->Option.getExn
   let oldModel = t.models->Gid.Map.get(existing)->Option.getExn->UndoRedo.state
   let newModel =
-    oldModel
-    ->Model.duplicate(oldModel.info.name ++ " (Copy)")
-    ->UndoRedo.create(~atTime=perfNow(performance))
+    oldModel->Model.duplicate(oldModel.info.name ++ " (Copy)")->UndoRedo.create(~atTime)
   {
     ...t,
     currentModel: Some(new_),
@@ -725,10 +714,10 @@ let duplicateModel = (t, ~existing, ~new_) => {
   }
 }
 
-let importModel = (t, model, path) => {
+let importModel = (t, model, path, ~atTime) => {
   // Duplicate the model to ensure fresh ids
   let newId = Gid.create()
-  let model = Model.duplicate(model, model.info.name)->UndoRedo.create(~atTime=perfNow(performance))
+  let model = Model.duplicate(model, model.info.name)->UndoRedo.create(~atTime)
   {
     ...t,
     currentModel: Some(newId),

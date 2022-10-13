@@ -65,15 +65,15 @@ module File = {
     | ViewTransform(Gid.t, ViewTransform.t)
     | Intelligence(Intelligence.t)
 
-  let dispatch = (state, t) =>
+  let dispatch = (state, t, ~atTime) =>
     switch t {
-    | NewModel(id, path) => state->State.createModel(id, path)
+    | NewModel(id, path) => state->State.createModel(id, path, ~atTime)
     | NewFolder(id, path) => state->State.createFolder(id, path)
     | DeleteModel(id) => state->State.deleteModel(id)
     | DeleteFolder(id) => state->State.deleteFolder(id)
     | FocusModel(id) => state->State.focusModel(id)
-    | DuplicateModel(existing, new_) => state->State.duplicateModel(~existing, ~new_)
-    | ImportModel(model, path) => state->State.importModel(model, path)
+    | DuplicateModel(existing, new_) => state->State.duplicateModel(~existing, ~new_, ~atTime)
+    | ImportModel(model, path) => state->State.importModel(model, path, ~atTime)
     | ReorderModels(order) => state->State.reorderModels(order)
     | RenameFolder(id, name) => state->State.renameFolder(id, name)
     | Undo(id) => state->State.undo(id)
@@ -975,7 +975,7 @@ type t =
 let dispatch = (state, t, ~atTime) =>
   switch t {
   | Model(id, ev) => state->State.updateModel(id, Model.dispatch(_, ev), ~atTime)
-  | File(ev) => File.dispatch(state, ev)
+  | File(ev) => File.dispatch(state, ev, ~atTime)
   }
 
 let rec shouldTriggerIntelligence = e =>

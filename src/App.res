@@ -83,13 +83,14 @@ module App = {
   })
   let init =
     db_ready
-    ->Promise.then(_ => State.load())
+    ->Promise.then(_ => State.load(~atTime=perfNow(performance)))
     ->Promise.thenResolve(s => s->Option.getWithDefault(State.empty))
   let reducer = (state, action) => {
+    let atTime = perfNow(performance)
     if Recording.isRecording() {
-      Recording.record(action)
+      Recording.record(action, ~atTime)
     }
-    let newState = Event.dispatch(state, action, ~atTime=perfNow(performance))
+    let newState = Event.dispatch(state, action, ~atTime)
     State.store(newState)
     if Event.shouldTriggerIntelligence(action) {
       sendToIntelligence(newState)
@@ -145,7 +146,7 @@ module App = {
     let (isRecording, setIsRecording_) = React.useState(_ => false)
     let setIsRecording = b => {
       if b && !isRecording {
-        Recording.startRecording(state)
+        Recording.startRecording(state, ~atTime=perfNow(performance))
         setIsRecording_(_ => b)
       } else {
         let result = Recording.stopRecording()

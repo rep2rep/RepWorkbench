@@ -57,10 +57,10 @@ type t
 let setDB: (IndexedDB.t, string) => unit
 
 let store: t => unit
-let load: unit => Promise.t<option<t>>
+let load: (~atTime: float) => Promise.t<option<t>>
 
 let toJson: t => Js.Json.t
-let fromJson: Js.Json.t => Or_error.t<t>
+let fromJson: (Js.Json.t, ~atTime: float) => Or_error.t<t>
 
 let empty: t
 
@@ -70,13 +70,13 @@ let models: t => FileTree.t<(Gid.t, Model.t)>
 let focused: t => option<Gid.t>
 let model: (t, Gid.t) => option<Model.t>
 
-let createModel: (t, Gid.t, FileTree.Path.t) => t
+let createModel: (t, Gid.t, FileTree.Path.t, ~atTime: float) => t
 let createFolder: (t, Gid.t, FileTree.Path.t) => t
 let deleteModel: (t, Gid.t) => t
 let deleteFolder: (t, Gid.t) => t
 let focusModel: (t, option<Gid.t>) => t
-let duplicateModel: (t, ~existing: Gid.t, ~new_: Gid.t) => t
-let importModel: (t, Model.t, FileTree.Path.t) => t
+let duplicateModel: (t, ~existing: Gid.t, ~new_: Gid.t, ~atTime: float) => t
+let importModel: (t, Model.t, FileTree.Path.t, ~atTime: float) => t
 let reorderModels: (t, FileTree.t<Gid.t>) => t
 let renameFolder: (t, Gid.t, string) => t
 

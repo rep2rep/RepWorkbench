@@ -13,10 +13,6 @@ let _global = {
   epoch: 0.,
 }
 
-type performance
-@val external performance: performance = "performance"
-@send external perfNow: performance => float = "now"
-
 type t = (State.t, array<(timestamp, Event.t)>)
 
 let start = ((start, _)) => start
@@ -41,7 +37,7 @@ let fromJson = json =>
       let version = String.fromJson(version)
       switch version->Or_error.match {
       | Or_error.Ok("##VERSION##") => {
-          let start = State.fromJson(start_json)
+          let start = State.fromJson(start_json, ~atTime=0.)
           let eventFromJson = json =>
             switch json->Array.fromJson(Or_error.create)->Or_error.match {
             | Or_error.Ok([ts_j, ev_j]) => {
@@ -62,13 +58,13 @@ let fromJson = json =>
   | Or_error.Err(e) => Or_error.error(e)
   }
 
-let startRecording = state =>
+let startRecording = (state, ~atTime) =>
   if !_global.isRecording {
     Js.Console.log("Started recording...")
     _global.isRecording = true
     _global.actions = []
     _global.start = state
-    _global.epoch = perfNow(performance)
+    _global.epoch = atTime
   }
 
 let stopRecording = () => {
@@ -83,8 +79,8 @@ let stopRecording = () => {
 }
 
 let isRecording = () => _global.isRecording
-let record = event =>
-  _global.actions->Js.Array2.push((perfNow(performance) -. _global.epoch, event))->ignore
+let record = (event, ~atTime) =>
+  _global.actions->Js.Array2.push((atTime -. _global.epoch, event))->ignore
 
 let unwind = ((start, events)) => {
   let result = [(0., start)]
