@@ -591,6 +591,7 @@ let toJson = t => {
     ("currentModel", t.currentModel->Option.toJson(Gid.toJson)),
     ("positions", t.positions->FileTree.Stable.V2.toJson(Gid.toJson)),
     ("models", t.models->Gid.Map.toJson(model => Model.Stable.V5.toJson(model->UndoRedo.state))),
+    ("viewTransforms", t.viewTransforms->Gid.Map.toJson(ViewTransform.Stable.V1.toJson)),
   ])->Js.Json.object_
 }
 let fromJson = json =>
@@ -609,13 +610,17 @@ let fromJson = json =>
       "models",
       Gid.Map.fromJson(_, json => json->Model.Stable.V5.fromJson->Or_error.map(UndoRedo.create)),
     )
-    (currentModel, positions, models)
-    ->Or_error.both3
-    ->Or_error.map(((currentModel, positions, models)) => {
+    let viewTransforms = getValue(
+      "viewTransforms",
+      Gid.Map.fromJson(_, ViewTransform.Stable.V1.fromJson),
+    )
+    (currentModel, positions, models, viewTransforms)
+    ->Or_error.both4
+    ->Or_error.map(((currentModel, positions, models, viewTransforms)) => {
       models: models,
       currentModel: currentModel,
       positions: positions,
-      viewTransforms: Gid.Map.empty(),
+      viewTransforms: viewTransforms,
     })
   })
 

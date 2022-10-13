@@ -62,7 +62,7 @@ module File = {
     | RenameFolder(Gid.t, string)
     | Undo(Gid.t)
     | Redo(Gid.t)
-    | ViewTransform(Gid.t, ReactD3Graph.Graph.ViewTransform.t)
+    | ViewTransform(Gid.t, ViewTransform.t)
     | Intelligence(Intelligence.t)
 
   let dispatch = (state, t) =>
@@ -81,9 +81,6 @@ module File = {
     | ViewTransform(id, vt) => state->State.setViewTransform(id, vt)
     | Intelligence(i) => state->Intelligence.dispatch(i)
     }
-
-  let viewTransformToJson = _ => Js.Json.null
-  let viewTransformFromJson = _ => ReactD3Graph.Graph.ViewTransform.init->Or_error.create
 
   let toJson = t =>
     switch t {
@@ -105,7 +102,8 @@ module File = {
     | RenameFolder(id, name) => mkJson("RenameFolder", [Gid.toJson(id), String.toJson(name)])
     | Undo(id) => mkJson("Undo", [Gid.toJson(id)])
     | Redo(id) => mkJson("Redo", [Gid.toJson(id)])
-    | ViewTransform(id, vt) => mkJson("ViewTransform", [Gid.toJson(id), viewTransformToJson(vt)])
+    | ViewTransform(id, vt) =>
+      mkJson("ViewTransform", [Gid.toJson(id), ViewTransform.Stable.V1.toJson(vt)])
     | Intelligence(i) => mkJson("Intelligence", [Intelligence.toJson(i)])
     }
 
@@ -143,7 +141,7 @@ module File = {
       | ("Undo", [id]) => id->Gid.fromJson->Or_error.map(id => Undo(id))
       | ("Redo", [id]) => id->Gid.fromJson->Or_error.map(id => Redo(id))
       | ("ViewTransform", [id, vt]) =>
-        (Gid.fromJson(id), viewTransformFromJson(vt))
+        (Gid.fromJson(id), ViewTransform.Stable.V1.fromJson(vt))
         ->Or_error.both
         ->Or_error.map(((id, vt)) => ViewTransform(id, vt))
       | ("Intelligence", [i]) => i->Intelligence.fromJson->Or_error.map(i => Intelligence(i))

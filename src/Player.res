@@ -13,21 +13,6 @@ module Player = {
   type state = State.t
   type action = Event.t
 
-  let old = ref(None)
-  let ifChanged = (f, v) => {
-    switch old.contents {
-    | None => {
-        old := Some(v)
-        f()
-      }
-    | Some(v') =>
-      if v !== v' {
-        old := Some(v)
-        f()
-      }
-    }
-  }
-
   exception RecordingError(Error.t)
   let reducer = ((states, i), next_i) =>
     if next_i >= Array.length(states) || next_i < 0 {
@@ -138,7 +123,10 @@ module Player = {
 
   @react.component
   let make = (~recording) => {
-    let ((states, index), dispatch) = React.useReducer(reducer, (Recording.unwind(recording), 0))
+    let init = React.useMemo1(() => {
+      Recording.unwind(recording)
+    }, [recording])
+    let ((states, index), dispatch) = React.useReducer(reducer, (init, 0))
     let (stateTimestamp, state) = states->Array.get(index)->Option.getExn
 
     let (timestamp, setTimestamp) = React.useState(_ => stateTimestamp)
@@ -245,14 +233,10 @@ module Player = {
     let active = React.useMemo1(() => State.focused(state), [State.focused(state)])
     let graphStyle = React.useMemo0(() => ReactDOM.Style.make(~flexGrow="1", ()))
 
-    let viewTransform = ref(None)
-    ifChanged(() => {
-      viewTransform :=
+    let viewTransform =
         focused
         ->Option.flatMap(state->State.viewTransform(_))
-        ->Option.getWithDefault(ReactD3Graph.Graph.ViewTransform.init)
-        ->Some
-    }, focused)
+      ->Option.getWithDefault(ViewTransform.init)
 
     let ignore2 = (_, _) => ()
 
@@ -365,7 +349,7 @@ module Player = {
               config
               data={graphData}
               selection
-              viewTransform=?{viewTransform.contents}
+              viewTransform
               onSelectionChange={(~oldSelection as _, ~newSelection as _) => ()}
               onNodePositionChange={(_, ~x as _, ~y as _) => ()}
               onZoomChange={(~oldZoom as _, ~newZoom as _) => ()}
