@@ -648,7 +648,9 @@ let createModel = (t, id, path, ~atTime) => {
 }
 
 let deleteModel = (t, id) => {
-  Model.delete(id)
+  if db->SetOnce.isSet {
+    Model.delete(id)
+  }
   let currentModel = if (
     t.currentModel->Option.map(current => current == id)->Option.getWithDefault(false)
   ) {
