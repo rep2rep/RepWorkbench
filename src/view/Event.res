@@ -57,7 +57,7 @@ module File = {
     | DeleteFolder(Gid.t)
     | FocusModel(option<Gid.t>)
     | DuplicateModel(Gid.t, Gid.t)
-    | ImportModel(State.Model.t, FileTree.Path.t)
+    | ImportModel(Gid.t, State.Model.t, FileTree.Path.t)
     | ReorderModels(FileTree.t<Gid.t>)
     | RenameFolder(Gid.t, string)
     | Undo(Gid.t)
@@ -73,7 +73,7 @@ module File = {
     | DeleteFolder(id) => state->State.deleteFolder(id)
     | FocusModel(id) => state->State.focusModel(id)
     | DuplicateModel(existing, new_) => state->State.duplicateModel(~existing, ~new_, ~atTime)
-    | ImportModel(model, path) => state->State.importModel(model, path, ~atTime)
+    | ImportModel(id, model, path) => state->State.importModel(id, model, path, ~atTime)
     | ReorderModels(order) => state->State.reorderModels(order)
     | RenameFolder(id, name) => state->State.renameFolder(id, name)
     | Undo(id) => state->State.undo(id)
@@ -93,10 +93,10 @@ module File = {
     | FocusModel(id) => mkJson("FocusModel", [id->Option.toJson(Gid.toJson)])
     | DuplicateModel(existing, new_) =>
       mkJson("DuplicateModel", [Gid.toJson(existing), Gid.toJson(new_)])
-    | ImportModel(model, path) =>
+    | ImportModel(id, model, path) =>
       mkJson(
         "ImportModel",
-        [State.Model.Stable.V5.toJson(model), FileTree.Path.Stable.V1.toJson(path)],
+        [Gid.toJson(id), State.Model.Stable.V5.toJson(model), FileTree.Path.Stable.V1.toJson(path)],
       )
     | ReorderModels(tree) => mkJson("ReorderModels", [tree->FileTree.Stable.V2.toJson(Gid.toJson)])
     | RenameFolder(id, name) => mkJson("RenameFolder", [Gid.toJson(id), String.toJson(name)])
@@ -128,10 +128,14 @@ module File = {
         (Gid.fromJson(existing), Gid.fromJson(new_))
         ->Or_error.both
         ->Or_error.map(((existing, new_)) => DuplicateModel(existing, new_))
-      | ("ImportModel", [model, path]) =>
-        (State.Model.Stable.V5.fromJson(model), FileTree.Path.Stable.V1.fromJson(path))
-        ->Or_error.both
-        ->Or_error.map(((model, path)) => ImportModel(model, path))
+      | ("ImportModel", [id, model, path]) =>
+        (
+          Gid.fromJson(id),
+          State.Model.Stable.V5.fromJson(model),
+          FileTree.Path.Stable.V1.fromJson(path),
+        )
+        ->Or_error.both3
+        ->Or_error.map(((id, model, path)) => ImportModel(id, model, path))
       | ("ReorderModels", [tree]) =>
         tree->FileTree.Stable.V2.fromJson(Gid.fromJson)->Or_error.map(tree => ReorderModels(tree))
       | ("RenameFolder", [id, name]) =>

@@ -714,9 +714,8 @@ let duplicateModel = (t, ~existing, ~new_, ~atTime) => {
   }
 }
 
-let importModel = (t, model, path, ~atTime) => {
+let importModel = (t, newId, model, path, ~atTime) => {
   // Duplicate the model to ensure fresh ids
-  let newId = Gid.create()
   let model = Model.duplicate(model, model.info.name)->UndoRedo.create(~atTime)
   {
     ...t,

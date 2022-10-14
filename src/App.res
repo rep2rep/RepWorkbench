@@ -545,7 +545,7 @@ module App = {
                   "\n*** Imported " ++ Js.Date.make()->Js.Date.toString ++ " ***",
                 )
 
-              dispatch(Event.File.ImportModel(model, path)->Event.File)
+              dispatch(Event.File.ImportModel(Gid.create(), model, path)->Event.File)
             }
           | Or_error.Err(e) => {
               Js.Console.log(e)

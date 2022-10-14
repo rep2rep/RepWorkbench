@@ -13,7 +13,7 @@ module File: {
     | DeleteFolder(Gid.t)
     | FocusModel(option<Gid.t>)
     | DuplicateModel(Gid.t, Gid.t)
-    | ImportModel(State.Model.t, FileTree.Path.t)
+    | ImportModel(Gid.t, State.Model.t, FileTree.Path.t)
     | ReorderModels(FileTree.t<Gid.t>)
     | RenameFolder(Gid.t, string)
     | Undo(Gid.t)
