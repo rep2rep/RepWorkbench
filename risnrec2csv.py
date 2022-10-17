@@ -3,6 +3,7 @@
 import json
 import sys
 import csv
+import zipfile
 import pprint
 
 def make_data(key, args, data):
@@ -167,8 +168,9 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Please specify the .risnrec file to convert to CSVs")
         sys.exit(1)
-    with open(sys.argv[1]) as f:
-        raw = json.load(f)
+    with zipfile.ZipFile(sys.argv[1]) as z:
+        with z.open("0") as f:
+            raw = json.load(f)
     print("RISN Recording from Editor Version ", raw[0])
     events = normalise_events_seq(raw[2])
     models = find_known_models(raw[1], events)
