@@ -587,12 +587,12 @@ module App = {
             let name = model->State.Model.info->InspectorState.Model.name ++ ".risn"
             let contents = model->State.Model.Stable.V5.toJson->Js.Json.stringify
             stack[Array.length(stack) - 1]->Option.iter(folder =>
-              folder->Zip.Folder.file(name, contents)
+              folder->Zip.Folder.createFile(name, contents)
             )
           }
         | FileTree.FileOrFolder.Folder(name, _) =>
           stack[Array.length(stack) - 1]->Option.iter(folder => {
-            let newf = folder->Zip.Folder.folder(name)
+            let newf = folder->Zip.Folder.createFolder(name)
             stack->Js.Array2.push(newf)->ignore
           })
         | FileTree.FileOrFolder.EndFolder(_, _) => stack->Js.Array2.pop->ignore
@@ -600,7 +600,7 @@ module App = {
       )
       zip
       ->Zip.root
-      ->Zip.Folder.file(
+      ->Zip.Folder.createFile(
         "README",
         "RISN Editor all models, exported " ++ Js.Date.make()->Js.Date.toString,
       )
