@@ -154,13 +154,19 @@ module App = {
       } else {
         let result = Recording.stopRecording()
         let json = Recording.toJson(result)
-        let content =
-          "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
         let name = {
           let date = Js.Date.make()
           date->Js.Date.toLocaleDateString ++ " " ++ date->Js.Date.toLocaleTimeString
         }
-        Downloader.download(name ++ ".risnrec", content)
+        let zip = Zip.create()
+        zip->Zip.root->Zip.Folder.createFile("0", json->Js.Json.stringify)
+        zip
+        ->Zip.generateAsync
+        ->Promise.thenResolve(base64 => {
+          let content = "data:application/zip;base64," ++ base64
+          Downloader.download(name ++ ".risnrec", content)
+        })
+        ->ignore
         setIsRecording_(_ => b)
       }
     }

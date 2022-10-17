@@ -510,12 +510,28 @@ module Loader = {
     let (recording, setRecording) = React.useState(_ => NoRecording)
     let onUpload = file => {
       file
-      ->File.text
-      ->Promise.thenResolve(text => {
-        switch text->Js.Json.parseExn->Recording.fromJson->Or_error.match {
-        | Or_error.Ok(r) => Recording(file->File.name, r)
-        | Or_error.Err(e) => e->Error.toString->RecordingError
-        }->(f => setRecording(_ => f))
+      ->File.arrayBuffer
+      ->Promise.thenResolve(bytes => {
+        bytes
+        ->Zip.loadAsync
+        ->Promise.thenResolve(zip => {
+          zip
+          ->Zip.root
+          ->Zip.Folder.get("0")
+          ->Option.iter(file => {
+            Js.Console.log(file)
+            file
+            ->Zip.File.text
+            ->Promise.thenResolve(text => {
+              switch text->Js.Json.parseExn->Recording.fromJson->Or_error.match {
+              | Or_error.Ok(r) => Recording(file->Zip.File.name, r)
+              | Or_error.Err(e) => e->Error.toString->RecordingError
+              }->(f => setRecording(_ => f))
+            })
+            ->ignore
+          })
+        })
+        ->ignore
       })
       ->ignore
     }
