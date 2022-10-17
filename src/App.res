@@ -2,6 +2,9 @@ type performance
 @val external performance: performance = "performance"
 @send external perfNow: performance => float = "now"
 
+type window
+@val external window: window = "window"
+
 module App = {
   module BoolStore = LocalStorage.MakeJsonable(Bool)
   module K = GlobalKeybindings.KeyBinding
@@ -544,7 +547,6 @@ module App = {
                 model->State.Model.addToplevelNote(
                   "\n*** Imported " ++ Js.Date.make()->Js.Date.toString ++ " ***",
                 )
-
               dispatch(Event.File.ImportModel(Gid.create(), model, path)->Event.File)
             }
           | Or_error.Err(e) => {
@@ -572,6 +574,44 @@ module App = {
         Downloader.download(name ++ ".risn", content)
       })
     }, [stateHash])
+
+    Obj.magic(window)["downloadAllModels"] = () => {
+      let zip = Zip.create()
+      let stack = [zip->Zip.root]
+      state
+      ->State.models
+      ->FileTree.asFlat
+      ->Array.forEach(f =>
+        switch f {
+        | FileTree.FileOrFolder.File((_, model)) => {
+            let name = model->State.Model.info->InspectorState.Model.name ++ ".risn"
+            let contents = model->State.Model.Stable.V5.toJson->Js.Json.stringify
+            stack[Array.length(stack) - 1]->Option.iter(folder =>
+              folder->Zip.Folder.file(name, contents)
+            )
+          }
+        | FileTree.FileOrFolder.Folder(name, _) =>
+          stack[Array.length(stack) - 1]->Option.iter(folder => {
+            let newf = folder->Zip.Folder.folder(name)
+            stack->Js.Array2.push(newf)->ignore
+          })
+        | FileTree.FileOrFolder.EndFolder(_, _) => stack->Js.Array2.pop->ignore
+        }
+      )
+      zip
+      ->Zip.root
+      ->Zip.Folder.file(
+        "README",
+        "RISN Editor all models, exported " ++ Js.Date.make()->Js.Date.toString,
+      )
+      zip
+      ->Zip.generateAsync
+      ->Promise.thenResolve(base64 => {
+        let content = "data:application/zip;base64," ++ base64
+        Downloader.download("RISE Models.zip", content)
+      })
+      ->ignore
+    }
 
     React.useEffect2(() => {
       GlobalKeybindings.set([

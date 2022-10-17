@@ -122,7 +122,7 @@ module Player = {
   }
 
   @react.component
-  let make = (~recording, ~onChangeRecording) => {
+  let make = (~recording, ~filename, ~onChangeRecording) => {
     let init = React.useMemo1(() => {
       Recording.unwind(recording)
     }, [recording])
@@ -236,6 +236,51 @@ module Player = {
     let active = React.useMemo1(() => State.focused(state), [State.focused(state)])
     let graphStyle = React.useMemo0(() => ReactDOM.Style.make(~flexGrow="1", ()))
 
+    let downloadAllModels = () => {
+      let zip = Zip.create()
+      let stack = [zip->Zip.root]
+      state
+      ->State.models
+      ->FileTree.asFlat
+      ->Array.forEach(f =>
+        switch f {
+        | FileTree.FileOrFolder.File((_, model)) => {
+            let name = model->State.Model.info->InspectorState.Model.name ++ ".risn"
+            let contents = model->State.Model.Stable.V5.toJson->Js.Json.stringify
+            stack[Array.length(stack) - 1]->Option.iter(folder =>
+              folder->Zip.Folder.file(name, contents)
+            )
+          }
+        | FileTree.FileOrFolder.Folder(name, _) =>
+          stack[Array.length(stack) - 1]->Option.iter(folder => {
+            let newf = folder->Zip.Folder.folder(name)
+            stack->Js.Array2.push(newf)->ignore
+          })
+        | FileTree.FileOrFolder.EndFolder(_, _) => stack->Js.Array2.pop->ignore
+        }
+      )
+      zip
+      ->Zip.root
+      ->Zip.Folder.file(
+        "README",
+        "RISN Editor all models, exported " ++ Js.Date.make()->Js.Date.toString,
+      )
+      zip
+      ->Zip.generateAsync
+      ->Promise.thenResolve(base64 => {
+        let content = "data:application/zip;base64," ++ base64
+        Downloader.download(
+          filename ++
+          " " ++
+          Int.toString(index + 1) ++
+          "_of_" ++
+          Int.toString(Array.length(states) - 1) ++ ".zip",
+          content,
+        )
+      })
+      ->ignore
+    }
+
     let viewTransform =
       focused
       ->Option.flatMap(state->State.viewTransform(_))
@@ -312,6 +357,10 @@ module Player = {
           <Button onClick={_ => dispatch(index + 1)} value={">"} />
           <Button onClick={_ => dispatch(Array.length(states) - 1)} value={">>"} />
           <Button.Separator />
+          <Button onClick={_ => downloadAllModels()} value="Download all models at current time" />
+          <Button.Separator />
+          <Button onClick={onChangeRecording} value="Open Recording" />
+          <Button.Separator />
           <label htmlFor="gridToggle"> {React.string("Grid")} </label>
           <input
             type_="checkbox"
@@ -327,8 +376,6 @@ module Player = {
           />
           <Button.Separator />
           <a href="manual.html" target="_blank"> {React.string("Manual")} </a>
-          <Button.Separator />
-          <Button onClick={onChangeRecording} value="Open Recording" />
         </div>
         <div
           className="container"
@@ -456,7 +503,7 @@ module Loader = {
   type state =
     | NoRecording
     | RecordingError(string)
-    | Recording(Recording.t)
+    | Recording(string, Recording.t)
 
   @react.component
   let make = () => {
@@ -466,7 +513,7 @@ module Loader = {
       ->File.text
       ->Promise.thenResolve(text => {
         switch text->Js.Json.parseExn->Recording.fromJson->Or_error.match {
-        | Or_error.Ok(r) => Recording(r)
+        | Or_error.Ok(r) => Recording(file->File.name, r)
         | Or_error.Err(e) => e->Error.toString->RecordingError
         }->(f => setRecording(_ => f))
       })
@@ -475,8 +522,8 @@ module Loader = {
     switch recording {
     | NoRecording => <Uploader onUpload />
     | RecordingError(error) => <Uploader onUpload error />
-    | Recording(recording) =>
-      <Player recording onChangeRecording={_ => setRecording(_ => NoRecording)} />
+    | Recording(filename, recording) =>
+      <Player recording filename onChangeRecording={_ => setRecording(_ => NoRecording)} />
     }
   }
 }
