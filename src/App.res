@@ -841,7 +841,7 @@ module App = {
             <span
               onClick={_ => setIsRecording(true)}
               style={ReactDOM.Style.make(~padding="0 0.5rem", ())}>
-              <svg width="10px" height="10px"> <circle cx="5" cy="5" r="5" fill="red" /> </svg>
+              <svg width="10px" height="10px"> <circle cx="5" cy="5" r="5" fill="#b00" /> </svg>
             </span>
           }}
         </div>
