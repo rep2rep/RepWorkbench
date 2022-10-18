@@ -511,27 +511,26 @@ module Loader = {
     let onUpload = file => {
       file
       ->File.arrayBuffer
-      ->Promise.thenResolve(bytes => {
-        bytes
-        ->Zip.loadAsync
-        ->Promise.thenResolve(zip => {
-          zip
-          ->Zip.root
-          ->Zip.Folder.get("0")
-          ->Option.iter(file => {
-            file
-            ->Zip.File.text
-            ->Promise.thenResolve(text => {
-              switch text->Js.Json.parseExn->Recording.fromJson->Or_error.match {
-              | Or_error.Ok(r) => Recording(file->Zip.File.name, r)
-              | Or_error.Err(e) => e->Error.toString->RecordingError
-              }->(f => setRecording(_ => f))
-            })
-            ->ignore
+      ->Promise.then(Zip.loadAsync)
+      ->Promise.thenResolve(zip =>
+        zip
+        ->Zip.root
+        ->Zip.Folder.get("0")
+        ->Option.iter(file =>
+          file
+          ->Zip.File.text
+          ->Promise.thenResolve(text => {
+            switch text->Js.Json.parseExn->Recording.fromJson->Or_error.match {
+            | Or_error.Ok(r) => Recording(file->Zip.File.name, r)
+            | Or_error.Err(e) => e->Error.toString->RecordingError
+            }
+            ->((x, _) => x)
+            ->setRecording
           })
-        })
+          ->ignore
+        )
         ->ignore
-      })
+      )
       ->ignore
     }
     switch recording {
