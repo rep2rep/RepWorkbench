@@ -519,7 +519,6 @@ module Loader = {
           ->Zip.root
           ->Zip.Folder.get("0")
           ->Option.iter(file => {
-            Js.Console.log(file)
             file
             ->Zip.File.text
             ->Promise.thenResolve(text => {
