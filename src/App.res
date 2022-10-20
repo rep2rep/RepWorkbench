@@ -5,18 +5,17 @@ type performance
 type window
 @val external window: window = "window"
 
+module BoolStore = LocalStorage.MakeJsonable(Bool)
+module K = GlobalKeybindings.KeyBinding
+module FP = {
+  include FilePanel
+  let make = React.memo(make)
+}
+module Graph = {
+  include ReactD3Graph.Graph
+  let make = React.memo(make)
+}
 module App = {
-  module BoolStore = LocalStorage.MakeJsonable(Bool)
-  module K = GlobalKeybindings.KeyBinding
-  module FP = {
-    include FilePanel
-    let make = React.memo(make)
-  }
-  module Graph = {
-    include ReactD3Graph.Graph
-    let make = React.memo(make)
-  }
-
   type state = State.t
   type action = Event.t
 
@@ -75,19 +74,24 @@ module App = {
   }
 
   let db_store = "RISN"
-  let db_ready = IndexedDB.open_(~name="risn", ~version=1, ~onUpgradeNeeded=db =>
-    db->IndexedDB.createObjectStore(db_store)
-  )->Promise.thenResolve(db => {
-    db->IndexedDB.onError(e => {
-      Js.Console.log(e)
-      Dialog.alert("Database Error!")
-    })
-    State.setDB(db, db_store)
-  })
   let init =
-    db_ready
+    IndexedDB.open_(~name="risn", ~version=1, ~onUpgradeNeeded=db =>
+      db->IndexedDB.createObjectStore(db_store)
+    )
+    ->Promise.thenResolve(db => {
+      db->IndexedDB.onError(e => {
+        Js.Console.log2("OnError!", e)
+        Dialog.alert("Database Error!\nSee the console for more information.")
+      })
+      State.setDB(db, db_store)
+    })
     ->Promise.then(_ => State.load(~atTime=perfNow(performance)))
     ->Promise.thenResolve(s => s->Option.getWithDefault(State.empty))
+    ->Promise.catch(e => {
+      Js.Console.log2("Caught!", e)
+      Dialog.alert("Database Error!\nSee the console for more information.")
+      Promise.reject(e)
+    })
   let reducer = (state, action) => {
     let atTime = perfNow(performance)
     if Recording.isRecording() {
