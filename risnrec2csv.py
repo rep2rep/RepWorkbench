@@ -183,21 +183,21 @@ def make_event_csv(events, filename):
     if maxlen > 32767:
         print("CSV HAS CELLS TOO LARGE FOR EXCEL.")
         print("EXCEL VERSION CREATED WITH MISSING DATA.")
-    with open(filename.replace(".csv", "_EXCEL.csv"), 'w', newline='') as f:
-        writer = csv.writer(f, quoting=csv.QUOTE_ALL)
-        writer.writerow(["timestamp", "event", "model_id", "data"])
-        for (timestamp, event, data) in events:
-            if "model_id" in data:
-                model_id = data["model_id"]
-                data = {**data}
-                del data["model_id"]
-            else:
-                model_id = None
-            d = json.dumps(data)
-            if len(d) > 25000:
-                writer.writerow([timestamp, event, model_id, "DATA OMITTED FOR EXCEL"])
-            else:
-                writer.writerow([timestamp, event, model_id, d])
+        with open(filename.replace(".csv", "_EXCEL.csv"), 'w', newline='') as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+            writer.writerow(["timestamp", "event", "model_id", "data"])
+            for (timestamp, event, data) in events:
+                if "model_id" in data:
+                    model_id = data["model_id"]
+                    data = {**data}
+                    del data["model_id"]
+                else:
+                    model_id = None
+                    d = json.dumps(data)
+                if len(d) > 25000:
+                    writer.writerow([timestamp, event, model_id, "DATA OMITTED FOR EXCEL"])
+                else:
+                    writer.writerow([timestamp, event, model_id, d])
 
 
 if __name__ == "__main__":
