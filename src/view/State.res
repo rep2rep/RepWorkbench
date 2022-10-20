@@ -406,6 +406,8 @@ module Model = {
           if Or_error.isOk(extant) {
             Js.Console.log("Loaded " ++ key ++ " from LocalStorage. Removing old version.")
             OldStorage.delete(key)
+          } else {
+            Js.Console.log("Failed to find " ++ key ++ " in LocalStorage.")
           }
           Promise.resolve(extant)
         })
@@ -419,7 +421,7 @@ module Model = {
         db
         ->IndexedDB.delete(~store, ~key)
         ->Promise.catch(e => {
-          Js.Console.log(e)
+          Js.Console.log3("Storage.Delete key", key, e)
           Dialog.alert("Failed to delete model!")
           Promise.resolve()
         })
@@ -430,9 +432,18 @@ module Model = {
   module Storage = StorageMkr(Stable.V5)
 
   let prefix = "RepNotation:Model:"
-  let store = (t, id) => Storage.set(prefix ++ Gid.toString(id), t)
-  let load = id => Storage.get(prefix ++ Gid.toString(id))
-  let delete = id => Storage.delete(prefix ++ Gid.toString(id))
+  let store = (t, id) => {
+    Js.Console.log3("MODEL.STORE T ID", t, id)
+    Storage.set(prefix ++ Gid.toString(id), t)
+  }
+  let load = id => {
+    Js.Console.log2("MODEL.LOAD ID", id)
+    Storage.get(prefix ++ Gid.toString(id))
+  }
+  let delete = id => {
+    Js.Console.log2("MODEL.DELETE ID", id)
+    Storage.delete(prefix ++ Gid.toString(id))
+  }
 
   let info = t => t.info
   let graph = t => t.graph
@@ -534,12 +545,14 @@ let store = t => {
 }
 
 let load = (~atTime) => {
+  Js.Console.log("Starting to load from storage...")
   let currentModel = LocalStorage.Raw.getItem("RepNotation:CurrentModel")->Option.flatMap(s => {
     let json = try Or_error.create(Js.Json.parseExn(s)) catch {
     | _ => Or_error.error_s("Badly stored currentModel")
     }
     json->Or_error.flatMap(json => json->Option.fromJson(Gid.fromJson))->Or_error.toOption
   })
+  Js.Console.log2("currentModel", currentModel)
   let positions = LocalStorage.Raw.getItem("RepNotation:AllModels")->Option.flatMap(s => {
     let json = try Or_error.create(Js.Json.parseExn(s)) catch {
     | _ => Or_error.error_s("Badly stored allModels")
@@ -548,12 +561,21 @@ let load = (~atTime) => {
     ->Or_error.flatMap(json => json->FileTree.Stable.V2.fromJson(Gid.fromJson))
     ->Or_error.toOption
   })
+  Js.Console.log2("positions", positions)
   let models =
     positions
     ->Option.map(positions => {
       positions
       ->FileTree.flatten
-      ->Array.map(id => Model.load(id)->Promise.thenResolve(m => (id, m)))
+      ->Array.map(id =>
+        Model.load(id)
+        ->Promise.thenResolve(m => (id, m))
+        ->Promise.catch(e => {
+          Js.Console.log3("model.load error", id, e)
+          Dialog.alert("Failed to load model with ID: " ++ Gid.toString(id))
+          Promise.reject(e)
+        })
+      )
       ->Promise.all
       ->Promise.thenResolve(arr =>
         arr
@@ -569,8 +591,14 @@ let load = (~atTime) => {
         ->Gid.Map.fromArray
         ->Some
       )
+      ->Promise.catch(e => {
+        Js.Console.log2("State.load model all", e)
+        Dialog.alert("Failed to load all models.")
+        Promise.reject(e)
+      })
     })
     ->Option.getWithDefault(Promise.resolve(None))
+  Js.Console.log2("models", models)
 
   models->Promise.thenResolve(models => {
     Option.both3((currentModel, positions, models))->Option.map(((

@@ -929,5 +929,13 @@ module App = {
 
 switch ReactDOM.querySelector("#root") {
 | None => ()
-| Some(e) => App.init->Promise.thenResolve(init => ReactDOM.render(<App init />, e))->ignore
+| Some(e) =>
+  App.init
+  ->Promise.thenResolve(init => ReactDOM.render(<App init />, e))
+  ->Promise.catch(e => {
+    Js.Console.log2("INIT", e)
+    Dialog.alert("Unable to load state")
+    Promise.reject(e)
+  })
+  ->ignore
 }
