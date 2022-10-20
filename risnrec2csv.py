@@ -29,8 +29,7 @@ def make_data(key, args, data):
         del data["version"]
         return data
     elif key == "File.Intelligence.Response":
-        data = {**data, **args[0], "model_id": args[0]["model"]}
-        del data["model"]
+        data = {**data, **args[0]}
         return data
     elif key == "File.Intelligence.Focus":
         return {**data, "model_id": args[0], "intel_id": args[1]}
@@ -75,6 +74,22 @@ def normalise_events(time, prefix, event_json, data):
         return normalise_events(time, key, args[1], {**data, "model_id": args[0]})
     elif prefix == "File" and key == "Intelligence":
         return normalise_events(time, prefix + "." + key, args[0], data)
+    elif prefix == "File.Intelligence" and key == "Response":
+        # We need to handle "Intelligence Responses" carefully to 'smear' them for easy searching.
+        response = args[0]
+        events = []
+        base = {
+            "id": response["id"],
+            "model_id": response["model"],
+            "killed": response["killed"],
+        }
+        for e in response["errors"]:
+            events.append({**base, "kind": "error", "intel": e})
+        for w in response["warnings"]:
+            events.append({**base, "kind": "warning", "intel": w})
+        for i in response["insights"]:
+            events.append({**base, "kind": "insight", "intel": i})
+        return [(time, prefix + "." + key, make_data(prefix + "." + key, [ev], data)) for ev in events]
     elif prefix == "Model" and key == "Seq":
         return [e2 for e in args for e2 in normalise_events(time, prefix, e, data)]
     elif prefix == "Model" and key == "Graph":
@@ -94,12 +109,33 @@ def normalise_events(time, prefix, event_json, data):
         return [(time, key, make_data(key, args, data))]
 
 
+def dedup_intel(events):
+    """ Intel events are spread across time for easier search, but this tends
+        to result in A LOT of duplication. We find 'runs' of intel events with
+        the same ID, and remove all but the first occurrence in that run.
+    """
+    # Runs is a nested dict. For each "response" event, we store the event indices
+    # of when each event is seen, recording the first time individually, then
+    # all the duplicates.
+    runs = {}
+    for i, (_, key, data) in enumerate(events):
+        if key == "File.Intelligence.Response":
+            if data["id"] not in runs:
+                runs[data["id"]] = {}
+            if data["intel"]["id"] not in runs[data["id"]]:
+                runs[data["id"]][data["intel"]["id"]] = (i, set())
+            else:
+                runs[data["id"]][data["intel"]["id"]][1].add(i)
+    # We now go through and filter out every event that is a "duplicate"
+    dups = set(i for res in runs.values() for ev in res.values() for i in ev[1])
+    return [ev for i, ev in enumerate(events) if i not in dups]
+
 def normalise_events_seq(events_json):
     """ Flatten the sequence into a nice list of events """
     events = []
     for [time, event] in events_json:
        events.extend(normalise_events(time, "", event, {}))
-    return events
+    return dedup_intel(events)
 
 
 def find_known_models(state_json, events_json):
