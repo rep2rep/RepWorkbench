@@ -927,11 +927,16 @@ module App = {
   }
 }
 
+type root
+@module("react-dom/client")
+external createRoot: Dom.element => root = "createRoot"
+@send external render: (root, React.element) => unit = "render"
+
 switch ReactDOM.querySelector("#root") {
 | None => ()
 | Some(e) =>
   App.init
-  ->Promise.thenResolve(init => ReactDOM.render(<App init />, e))
+  ->Promise.thenResolve(init => createRoot(e)->render(<App init />))
   ->Promise.catch(e => {
     Js.Console.log2("INIT", e)
     Dialog.alert("Unable to load state")
