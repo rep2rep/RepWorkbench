@@ -247,3 +247,5 @@ type t =
   | Schema(Gid.t, Schema.t)
   | Link(Gid.t, Link.t)
   | Multiple(array<(Gid.t, SchemaOrLink.t)>)
+
+let isValid: t => Result.t<unit, array<string>>

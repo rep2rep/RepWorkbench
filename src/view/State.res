@@ -521,6 +521,292 @@ module Model = {
         ),
     ),
   )
+
+  let isValid = t => {
+    let checkSchemaMatches = (slots, node) =>
+      switch (slots, node->ModelNode.kind) {
+      | (InspectorState.Schema.Representation(slots), ModelNode.Kind.Representation) => {
+          let payload = ModelNode.payload(node)
+          let domainValid = if slots.domain === payload.name {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "Representation schema (" ++
+              Gid.toString(ModelNode.id(node)) ++
+              ") has mismatched domain: " ++
+              slots.domain ++
+              " vs " ++
+              payload.name,
+            ])
+          }
+          let displayValid = if slots.display === payload.reference {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "Representation schema (" ++
+              Gid.toString(ModelNode.id(node)) ++
+              ") has mismatched display: " ++
+              slots.display ++
+              " vs " ++
+              payload.reference,
+            ])
+          }
+          [domainValid, displayValid]->Result.allUnit(Array.concatMany)
+        }
+      | (InspectorState.Schema.Scheme(slots), ModelNode.Kind.Scheme) => {
+          let payload = ModelNode.payload(node)
+          let conceptValid = if slots.concept_structure === payload.name {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "R-Scheme schema (" ++
+              Gid.toString(ModelNode.id(node)) ++
+              ") has mismatched concept structure: " ++
+              slots.concept_structure ++
+              " vs " ++
+              payload.name,
+            ])
+          }
+          let graphicValid = if slots.graphic_structure === payload.reference {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "R-Scheme schema (" ++
+              Gid.toString(ModelNode.id(node)) ++
+              ") has mismatched graphic structure: " ++
+              slots.graphic_structure ++
+              " vs " ++
+              payload.reference,
+            ])
+          }
+          [conceptValid, graphicValid]->Result.allUnit(Array.concatMany)
+        }
+      | (InspectorState.Schema.Dimension(slots), ModelNode.Kind.Dimension) => {
+          let payload = ModelNode.payload(node)
+          let conceptValid = if slots.concept === payload.name {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "R-Dimension schema (" ++
+              Gid.toString(ModelNode.id(node)) ++
+              ") has mismatched concept: " ++
+              slots.concept ++
+              " vs " ++
+              payload.name,
+            ])
+          }
+          let graphicValid = if slots.graphic === payload.reference {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "R-Dimension schema (" ++
+              Gid.toString(ModelNode.id(node)) ++
+              ") has mismatched graphic: " ++
+              slots.graphic ++
+              " vs " ++
+              payload.reference,
+            ])
+          }
+          let conceptQSValid = if (
+            slots.concept_scale
+            ->Option.map(Quantity_scale.toString)
+            ->Option.map(String.slice(_, ~from=0, ~to_=1))
+            ->Option.getWithDefault("-")
+            ->Some === payload.name_suffix
+          ) {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "R-Dimension schema (" ++
+              Gid.toString(ModelNode.id(node)) ++
+              ") has mismatched concept scale: " ++
+              slots.concept_scale
+              ->Option.map(Quantity_scale.toString)
+              ->Option.map(String.slice(_, ~from=0, ~to_=1))
+              ->Option.getWithDefault("-") ++
+              " vs " ++
+              payload.name_suffix->Option.getWithDefault("<unspecified>"),
+            ])
+          }
+          let graphicQSValid = if (
+            slots.graphic_scale
+            ->Option.map(Quantity_scale.toString)
+            ->Option.map(String.slice(_, ~from=0, ~to_=1))
+            ->Option.getWithDefault("-")
+            ->Some === payload.reference_suffix
+          ) {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "R-Dimension schema (" ++
+              Gid.toString(ModelNode.id(node)) ++
+              ") has mismatched graphic scale: " ++
+              slots.graphic_scale
+              ->Option.map(Quantity_scale.toString)
+              ->Option.map(String.slice(_, ~from=0, ~to_=1))
+              ->Option.getWithDefault("-") ++
+              " vs " ++
+              payload.reference_suffix->Option.getWithDefault("<unspecified>"),
+            ])
+          }
+          [conceptValid, graphicValid, conceptQSValid, graphicQSValid]->Result.allUnit(
+            Array.concatMany,
+          )
+        }
+      | (InspectorState.Schema.Token(slots), ModelNode.Kind.Token) => {
+          let payload = ModelNode.payload(node)
+          let conceptValid = if slots.concept === payload.name {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "R-Symbol schema (" ++
+              Gid.toString(ModelNode.id(node)) ++
+              ") has mismatched concept: " ++
+              slots.concept ++
+              " vs " ++
+              payload.name,
+            ])
+          }
+          let graphicValid = if slots.graphic === payload.reference {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "R-Symbol schema (" ++
+              Gid.toString(ModelNode.id(node)) ++
+              ") has mismatched graphic: " ++
+              slots.graphic ++
+              " vs " ++
+              payload.reference,
+            ])
+          }
+          let dashedValid = if slots.is_class->Option.getWithDefault(false) === payload.dashed {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "R-Symbol schema (" ++
+              Gid.toString(ModelNode.id(node)) ++
+              ") has mismatched class-ness: " ++
+              Bool.toString(slots.is_class->Option.getWithDefault(false)) ++
+              " vs " ++
+              Bool.toString(payload.dashed),
+            ])
+          }
+          [conceptValid, graphicValid, dashedValid]->Result.allUnit(Array.concatMany)
+        }
+      | (InspectorState.Schema.Placeholder(slots), ModelNode.Kind.Placeholder) => {
+          let payload = ModelNode.payload(node)
+          if slots.description === payload.name {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "Placeholder schema (" ++
+              Gid.toString(ModelNode.id(node)) ++
+              ") has mismatched value: " ++
+              slots.description ++
+              " vs " ++
+              payload.name,
+            ])
+          }
+        }
+      | _ => Result.Error(["Graphical node and slots do not agree on schema kind!"])
+      }
+
+    let checkLinkMatches = (slots, link) =>
+      switch (slots, link->ModelLink.kind) {
+      | (InspectorState.Link.Hierarchy(slots), ModelLink.Kind.Hierarchy) => {
+          let label = link->ModelLink.payload->Option.flatMap(ModelLink.Payload.label)
+          if slots.order == label {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "Hierarchical link (" ++
+              link->ModelLink.id->Gid.toString ++
+              ") has mismatched label: " ++
+              Option.toString(slots.order, Int.toString) ++
+              " vs " ++
+              Option.toString(label, Int.toString),
+            ])
+          }
+        }
+      | (InspectorState.Link.Anchor(slots), ModelLink.Kind.Anchor) => {
+          let label = link->ModelLink.payload->Option.flatMap(ModelLink.Payload.label)
+          if slots.order == label {
+            Result.Ok()
+          } else {
+            Result.Error([
+              "Anchor link (" ++
+              link->ModelLink.id->Gid.toString ++
+              ") has mismatched label: " ++
+              Option.toString(slots.order, Int.toString) ++
+              " vs " ++
+              Option.toString(label, Int.toString),
+            ])
+          }
+        }
+
+      | (InspectorState.Link.Generic(_), ModelLink.Kind.Generic) => Result.Ok()
+      | _ => Result.Error(["Graphical link and slots do not agree on link kind!"])
+      }
+
+    let infoValid = InspectorState.isValid(InspectorState.Global(t.info))
+    let graphValid = ModelState.isValid(t.graph)
+    let slotsValid =
+      t.slots
+      ->Gid.Map.toArray
+      ->Array.map(((id, slots)) =>
+        switch slots {
+        | InspectorState.SchemaOrLink.Schema(slots) =>
+          [
+            InspectorState.isValid(InspectorState.Schema(id, slots)),
+            t.graph
+            ->ModelState.nodeWithId(id)
+            ->Option.map(checkSchemaMatches(slots, _))
+            ->Option.getWithDefault(
+              Result.Error(["Graph has no schema with ID " ++ Gid.toString(id)]),
+            ),
+          ]->Result.allUnit(Array.concatMany)
+        | InspectorState.SchemaOrLink.Link(slots) =>
+          [
+            InspectorState.isValid(InspectorState.Link(id, slots)),
+            t.graph
+            ->ModelState.linkWithId(id)
+            ->Option.map(checkLinkMatches(slots, _))
+            ->Option.getWithDefault(
+              Result.Error(["Graph has no link with ID " ++ Gid.toString(id)]),
+            ),
+          ]->Result.allUnit(Array.concatMany)
+        }
+      )
+      ->Result.allUnit(Array.concatMany)
+    let allNodesHaveSlots =
+      t.graph
+      ->ModelState.graph
+      ->ModelGraph.nodes
+      ->Array.map(node =>
+        if t.slots->Gid.Map.has(ModelNode.id(node)) {
+          Result.Ok()
+        } else {
+          Result.Error(["Graph node has no associated slots: " ++ Gid.toString(ModelNode.id(node))])
+        }
+      )
+      ->Result.allUnit(Array.concatMany)
+    let allLinksHaveSlots =
+      t.graph
+      ->ModelState.graph
+      ->ModelGraph.links
+      ->Array.map(link =>
+        if t.slots->Gid.Map.has(ModelLink.id(link)) {
+          Result.Ok()
+        } else {
+          Result.Error(["Graph link has no associated slots: " ++ Gid.toString(ModelLink.id(link))])
+        }
+      )
+      ->Result.allUnit(Array.concatMany)
+
+    [infoValid, graphValid, slotsValid, allNodesHaveSlots, allLinksHaveSlots]->Result.allUnit(
+      Array.concatMany,
+    )
+  }
 }
 
 let setDB = (newDB, store) => db->SetOnce.set((newDB, store))
@@ -653,6 +939,52 @@ let fromJson = (json, ~atTime) =>
       viewTransforms: viewTransforms,
     })
   })
+
+let isValid = t => {
+  let positionsValid =
+    t.positions
+    ->FileTree.flatten
+    ->Array.keepMap(id =>
+      if t.models->Gid.Map.has(id) {
+        None
+      } else {
+        Some(id)
+      }
+    )
+    ->(
+      arr =>
+        switch arr {
+        | [] => Result.Ok()
+        | ids =>
+          ids
+          ->Array.map(id => "FileTree references unknown model: " ++ Gid.toString(id))
+          ->Result.Error
+        }
+    )
+  let modelsValid =
+    t.models
+    ->Gid.Map.toArray
+    ->Array.map(((id, cons)) =>
+      if t.positions->FileTree.flatten->Array.includes(id) {
+        cons->UndoRedo.state->Model.isValid
+      } else {
+        Result.Error(["Model found that is not in FileTree: " ++ Gid.toString(id)])
+      }
+    )
+    ->Result.allUnit(Array.concatMany)
+  let vtsValid =
+    t.viewTransforms
+    ->Gid.Map.keys
+    ->Array.map(id =>
+      if t.models->Gid.Map.has(id) {
+        Result.Ok()
+      } else {
+        Result.Error(["ViewTransform exists for unknown model: " ++ Gid.toString(id)])
+      }
+    )
+    ->Result.allUnit(Array.concatMany)
+  [positionsValid, modelsValid, vtsValid]->Result.allUnit(Array.concatMany)
+}
 
 let empty = {
   models: Gid.Map.empty(),
@@ -812,3 +1144,27 @@ let hash = t =>
     ->Hash.combine,
     t.positions->FileTree.hash(Gid.hash),
   ]->Hash.combine
+
+let removePhantomEdges = t => {
+  ...t,
+  models: t.models->Gid.Map.map(model =>
+    model->UndoRedo.replace(
+      model
+      ->UndoRedo.state
+      ->(
+        model => {
+          ...model,
+          Model.slots: model.Model.slots->Gid.Map.mapPartial((id, slots) =>
+            switch slots {
+            | InspectorState.SchemaOrLink.Link(slots) =>
+              model.graph
+              ->ModelState.linkWithId(id)
+              ->Option.map(_ => InspectorState.SchemaOrLink.Link(slots))
+            | _ => Some(slots)
+            }
+          ),
+        }
+      ),
+    )
+  ),
+}

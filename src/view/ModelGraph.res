@@ -194,20 +194,46 @@ let duplicate = (t, newIdMap) => {
     t.nodes->Array.map(node =>
       node->ModelNode.dupWithNewId(newIdMap->Gid.Map.get(ModelNode.id(node))->Option.getExn)
     )
-  let links = t.links->Array.map(link => {
-    let linkId = newIdMap->Gid.Map.get(ModelLink.id(link))->Option.getExn
-    let sourceId = newIdMap->Gid.Map.get(ModelLink.source(link))->Option.getExn
-    let source = nodes->Array.find(node => ModelNode.id(node) == sourceId)->Option.getExn
-    let targetId = newIdMap->Gid.Map.get(ModelLink.target(link))->Option.getExn
-    let target = nodes->Array.find(node => ModelNode.id(node) == targetId)->Option.getExn
-    let kind = ModelLink.kind(link)
-    let label = ModelLink.label(link)
-    ModelLink.create(~linkId, ~source, ~target, kind, ~label)
-  })
+  let links = t.links->Array.map(ModelLink.duplicate(_, newIdMap, nodes))
   {
     nodes: nodes,
     links: links,
   }
+}
+
+let isValid = t => {
+  let nodesValid = t.nodes->Array.map(ModelNode.isValid)->Result.allUnit(Array.concatMany)
+  let linksValid = t.links->Array.map(ModelLink.isValid)->Result.allUnit(Array.concatMany)
+  let linkEndsExist =
+    t.links
+    ->Array.map(link => {
+      let sourceExists = t.nodes->Array.some(node => node->ModelNode.id == link->ModelLink.source)
+      let targetExists = t.nodes->Array.some(node => node->ModelNode.id == link->ModelLink.target)
+      [
+        if sourceExists {
+          Result.Ok()
+        } else {
+          Result.Error([
+            "Link (" ++
+            Gid.toString(ModelLink.id(link)) ++
+            ") source does not exist: " ++
+            Gid.toString(ModelLink.source(link)),
+          ])
+        },
+        if targetExists {
+          Result.Ok()
+        } else {
+          Result.Error([
+            "Link (" ++
+            Gid.toString(ModelLink.id(link)) ++
+            ") target does not exist: " ++
+            Gid.toString(ModelLink.target(link)),
+          ])
+        },
+      ]->Result.allUnit(Array.concatMany)
+    })
+    ->Result.allUnit(Array.concatMany)
+  [nodesValid, linksValid, linkEndsExist]->Result.allUnit(Array.concatMany)
 }
 
 let empty = {

@@ -945,6 +945,9 @@ module Schema = {
     | Placeholder(_) => ""
     }
 
+  // TODO: Check things
+  let isValid = _ => Result.Ok()
+
   let r_const = Hash.unique()
   let s_const = Hash.unique()
   let d_const = Hash.unique()
@@ -1196,6 +1199,9 @@ module Link = {
     | Hierarchy(Hierarchy.t)
     | Anchor(Anchor.t)
     | Generic(Generic.t)
+
+  // TODO: Check things
+  let isValid = _ => Result.Ok()
 
   let empty = kind =>
     switch kind {
@@ -1554,6 +1560,8 @@ module SchemaOrLink = {
 module Model = {
   type t = {name: string, notes: string}
 
+  let isValid = _ => Result.Ok()
+
   module Stable = {
     module V1 = {
       type t = t = {name: string, notes: string}
@@ -1610,3 +1618,20 @@ type t =
   | Schema(Gid.t, Schema.t)
   | Link(Gid.t, Link.t)
   | Multiple(array<(Gid.t, SchemaOrLink.t)>)
+
+let isValid = t =>
+  switch t {
+  | Empty => Result.Ok()
+  | Global(s) => Model.isValid(s)
+  | Schema(_, s) => Schema.isValid(s)
+  | Link(_, s) => Link.isValid(s)
+  | Multiple(ss) =>
+    ss
+    ->Array.map(((_, s)) =>
+      switch s {
+      | SchemaOrLink.Schema(s) => Schema.isValid(s)
+      | SchemaOrLink.Link(s) => Link.isValid(s)
+      }
+    )
+    ->Result.allUnit(Array.concatMany)
+  }

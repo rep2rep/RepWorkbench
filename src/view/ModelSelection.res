@@ -56,6 +56,8 @@ let duplicate = (t, newIdMap) => {
   links: [], // Links are hard! So we ignore them :)
 }
 
+let isValid = _ => Result.Ok()
+
 let empty = ReactD3Graph.Graph.Selection.empty
 
 let ofNodes = nodeIds => {

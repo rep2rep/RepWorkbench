@@ -2,6 +2,7 @@ type t
 
 let hash: t => Hash.t
 let duplicate: (t, Gid.Map.t<Gid.t>) => t
+let isValid: t => Result.t<unit, array<string>>
 
 let empty: t
 

@@ -1,6 +1,7 @@
 type t = ReactD3Graph.Graph.Selection.t
 
 let duplicate: (t, Gid.Map.t<Gid.t>) => t
+let isValid: t => Result.t<unit, array<string>>
 
 let empty: t
 let ofNodes: array<Gid.t> => t

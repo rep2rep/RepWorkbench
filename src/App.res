@@ -86,7 +86,39 @@ module App = {
       State.setDB(db, db_store)
     })
     ->Promise.then(_ => State.load(~atTime=perfNow(performance)))
-    ->Promise.thenResolve(s => s->Option.getWithDefault(State.empty))
+    ->Promise.thenResolve(s =>
+      s
+      ->Option.map(s => {
+        let isValid = if "##VERSION##"->String.endsWith("-DEV") {
+          State.isValid(s)
+        } else {
+          Result.Ok()
+        }
+        if isValid->Result.isError {
+          let s2 = switch isValid {
+          | Result.Ok() => s
+          | Result.Error(errs) =>
+            if errs->Array.every(String.startsWith(_, "Graph has no link with ID ")) {
+              Js.Console.log("Attempting to repair state...")
+              State.removePhantomEdges(s)
+            } else {
+              s
+            }
+          }
+          let isValid2 = State.isValid(s2)
+          if isValid2->Result.isError {
+            Dialog.alert("State is (still) starting invalid, oh no!")
+            Js.Console.log2(s2, isValid2)
+            s
+          } else {
+            s2
+          }
+        } else {
+          s
+        }
+      })
+      ->Option.getWithDefault(State.empty)
+    )
     ->Promise.catch(e => {
       Js.Console.log2("Caught!", e)
       Dialog.alert("Database Error!\nSee the console for more information.")
@@ -94,15 +126,26 @@ module App = {
     })
   let reducer = (state, action) => {
     let atTime = perfNow(performance)
-    if Recording.isRecording() {
-      Recording.record(action, ~atTime)
-    }
     let newState = Event.dispatch(state, action, ~atTime)
-    State.store(newState)
-    if Event.shouldTriggerIntelligence(action) {
-      sendToIntelligence(newState)
+    let isValid = if "##VERSION##"->String.endsWith("-DEV") {
+      State.isValid(newState)
     } else {
-      newState
+      Result.Ok()
+    }
+    if isValid->Result.isError {
+      Dialog.alert("State became invalid, abandoning event!")
+      Js.Console.log2(newState, isValid)
+      state
+    } else {
+      if Recording.isRecording() {
+        Recording.record(action, ~atTime)
+      }
+      State.store(newState)
+      if Event.shouldTriggerIntelligence(action) {
+        sendToIntelligence(newState)
+      } else {
+        newState
+      }
     }
   }
 

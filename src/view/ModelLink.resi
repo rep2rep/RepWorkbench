@@ -37,6 +37,8 @@ module Payload: {
   type t
 
   let create: Kind.t => t
+  let kind: t => Kind.t
+  let label: t => option<int>
   let setLabel: (t, option<int>) => t
 
   module Stable: {
@@ -61,6 +63,8 @@ module Payload: {
 type t
 
 let hash: t => Hash.t
+let duplicate: (t, Gid.Map.t<Gid.t>, array<ModelNode.t>) => t
+let isValid: t => Result.t<unit, array<string>>
 let data: t => array<ReactD3Graph.Link.t<Payload.t>>
 
 let create: (
@@ -75,6 +79,7 @@ let id: t => Gid.t
 let source: t => Gid.t
 let target: t => Gid.t
 let kind: t => Kind.t
+let payload: t => option<Payload.t>
 let label: t => option<int>
 let updatePayload: (t, Payload.t => Payload.t) => t
 

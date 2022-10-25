@@ -117,6 +117,8 @@ module Kind = {
 module Payload = {
   type t = {kind: Kind.t, label: option<int>}
 
+  let kind = t => t.kind
+  let label = t => t.label
   let setLabel = (t, l) => {...t, label: l}
 
   let hash: t => Hash.t = Hash.record2(("kind", Kind.hash), ("label", Option.hash(_, Int.hash)))
@@ -313,6 +315,20 @@ let hash = t =>
     Gid.hash(target(t)),
     payload(t)->Option.hash(Payload.hash),
   ])
+
+let duplicate = (t, idMap, nodes) => {
+  let linkId = idMap->Gid.Map.get(id(t))->Option.getExn
+  let sourceId = idMap->Gid.Map.get(source(t))->Option.getExn
+  let source = nodes->Array.find(node => ModelNode.id(node) == sourceId)->Option.getExn
+  let targetId = idMap->Gid.Map.get(target(t))->Option.getExn
+  let target = nodes->Array.find(node => ModelNode.id(node) == targetId)->Option.getExn
+  let kind = kind(t)
+  let label = label(t)
+  create(~linkId, ~source, ~target, kind, ~label)
+}
+
+// TODO: Check something!
+let isValid = _ => Result.Ok()
 
 module Stable = {
   module V1 = {

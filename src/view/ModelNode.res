@@ -799,7 +799,8 @@ let create = (~name, ~reference, ~x, ~y, kind, id) => {
 }
 
 let id = t => t->ReactD3Graph.Node.id->ReactD3Graph.Node.Id.toString->Gid.fromString
-let kind = t => t->ReactD3Graph.Node.payload->Option.getExn->Payload.kind
+let payload = t => t->ReactD3Graph.Node.payload->Option.getExn
+let kind = t => t->payload->Payload.kind
 let position = t => (t->ReactD3Graph.Node.x, t->ReactD3Graph.Node.y)
 let setPosition = (t, ~x, ~y) => t->ReactD3Graph.Node.setX(x)->ReactD3Graph.Node.setY(y)
 let updateConfig = (t, f) => t->ReactD3Graph.Node.updateConfig(f)
@@ -813,6 +814,9 @@ let hash = t => {
   let payload = t->ReactD3Graph.Node.payload
   Hash.combine([Gid.hash(id(t)), Float.hash(x), Float.hash(y), Option.hash(payload, Payload.hash)])
 }
+
+// TODO: Check something!
+let isValid = _ => Result.Ok()
 
 let dupWithNewId = (t, id) =>
   ReactD3Graph.Node.setId(t, id->Gid.toString->ReactD3Graph.Node.Id.ofString)->updatePayload(p => p)

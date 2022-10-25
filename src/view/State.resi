@@ -58,6 +58,7 @@ let setDB: (IndexedDB.t, string) => unit
 
 let store: t => unit
 let load: (~atTime: float) => Promise.t<option<t>>
+let isValid: t => Result.t<unit, array<string>>
 
 let toJson: t => Js.Json.t
 let fromJson: (Js.Json.t, ~atTime: float) => Or_error.t<t>
@@ -89,3 +90,5 @@ let canRedo: (t, Gid.t) => bool
 
 let viewTransform: (t, Gid.t) => option<ReactD3Graph.Graph.ViewTransform.t>
 let setViewTransform: (t, Gid.t, ReactD3Graph.Graph.ViewTransform.t) => t
+
+let removePhantomEdges: t => t

@@ -282,6 +282,38 @@ module Stable = {
 
 let hash = Hash.record1("graph", ModelGraph.hash)
 
+let isValid = t => {
+  let graphValid = t.graph->ModelGraph.isValid
+  let selectionValid = t.selection->ModelSelection.isValid
+  let allSelectionNodesExist =
+    t.selection
+    ->ModelSelection.nodes
+    ->Array.map(id => {
+      let nodeExists = t.graph->ModelGraph.nodes->Array.some(node => ModelNode.id(node) == id)
+      if nodeExists {
+        Result.Ok()
+      } else {
+        Result.Error(["Selected node does not exist! " ++ Gid.toString(id)])
+      }
+    })
+    ->Result.allUnit(Array.concatMany)
+  let allSelectionLinksExist =
+    t.selection
+    ->ModelSelection.links
+    ->Array.map(id => {
+      let linkExists = t.graph->ModelGraph.links->Array.some(link => ModelLink.id(link) == id)
+      if linkExists {
+        Result.Ok()
+      } else {
+        Result.Error(["Selected link does not exist! " ++ Gid.toString(id)])
+      }
+    })
+    ->Result.allUnit(Array.concatMany)
+  [graphValid, selectionValid, allSelectionNodesExist, allSelectionLinksExist]->Result.allUnit(
+    Array.concatMany,
+  )
+}
+
 let duplicate = (t, newIdMap) => {
   graph: t.graph->ModelGraph.duplicate(newIdMap),
   selection: t.selection->ModelSelection.duplicate(newIdMap),
@@ -301,6 +333,9 @@ let data = t => {
 
 let nodeWithId = (t, nodeId) =>
   t.graph->ModelGraph.nodes->Array.find(node => ModelNode.id(node) == nodeId)
+
+let linkWithId = (t, linkId) =>
+  t.graph->ModelGraph.links->Array.find(link => ModelLink.id(link) == linkId)
 
 let addNode = (t, node) => {
   ...t,

@@ -6,6 +6,7 @@ let empty: t
 let data: t => ReactD3Graph.Data.t<ModelNode.Payload.t, ModelLink.Payload.t>
 
 let hash: t => Hash.t
+let isValid: t => Result.t<unit, array<string>>
 
 let graph: t => ModelGraph.t
 let addNode: (t, ModelNode.t) => t
@@ -19,6 +20,7 @@ let moveNode: (t, Gid.t, ~x: float, ~y: float) => t
 let updateNodes: (t, ModelNode.t => ModelNode.t) => t
 let updateLinks: (t, ModelLink.t => ModelLink.t) => t
 let nodeWithId: (t, Gid.t) => option<ModelNode.t>
+let linkWithId: (t, Gid.t) => option<ModelLink.t>
 let incidentLinks: (t, ~nodeId: Gid.t) => {"incoming": Gid.Set.t, "outgoing": Gid.Set.t}
 let linksConnectingNodes: (t, array<Gid.t>) => array<Gid.t>
 
