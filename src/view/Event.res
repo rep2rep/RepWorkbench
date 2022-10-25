@@ -781,6 +781,13 @@ module Model = {
     | DeleteNode(id) => {
         let graph = state->State.Model.graph->Graph.dispatch(Graph.DeleteNode(id))
         let allSlots = state->State.Model.slots->Gid.Map.remove(id)
+        let allSlots =
+          state
+          ->State.Model.graph
+          ->ModelState.incidentLinks(~nodeId=id)
+          ->(links =>
+            Array.concat(links["incoming"]->Gid.Set.toArray, links["outgoing"]->Gid.Set.toArray))
+          ->Array.reduce(allSlots, (slots, id) => slots->Gid.Map.remove(id))
         state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
       }
     | Duplicate(idMap) => {
