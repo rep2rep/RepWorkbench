@@ -384,8 +384,9 @@ module Model = {
       | Some((db, store)) =>
         db
         ->IndexedDB.put(~store, ~key, str)
-        ->Promise.catch(_ => {
+        ->Promise.catch(e => {
           Dialog.alert("Failed to save! Couldn't write data")
+          Js.Console.log(e)
           Promise.resolve(str)
         })
         ->ignore
@@ -400,8 +401,9 @@ module Model = {
         db
         ->IndexedDB.get(~store, ~key)
         ->Promise.thenResolve(s => s->Js.Json.parseExn->J.fromJson)
-        ->Promise.catch(_ => {
+        ->Promise.catch(e => {
           Js.Console.log("Failed to load model " ++ key ++ ", checking LocalStorage.")
+          Js.Console.log(e)
           let extant = OldStorage.get(key)
           if Or_error.isOk(extant) {
             Js.Console.log("Loaded " ++ key ++ " from LocalStorage. Removing old version.")
