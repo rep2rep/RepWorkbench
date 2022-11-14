@@ -564,7 +564,7 @@ module App = {
       fs->Array.forEach(f => {
         File.text(f)
         |> Js.Promise.then_(text => {
-          let model = try text->Js.Json.parseExn->State.Model.Stable.V6.fromJson catch {
+          let model = try text->Js.Json.parseExn->State.Model.Stable.Latest.fromJson catch {
           | _ => Or_error.error_s("fail")
           }
           switch model->Or_error.match {
@@ -594,7 +594,7 @@ module App = {
             "\n=== Exported " ++ Js.Date.make()->Js.Date.toString ++ " ===",
           )
         let name = State.Model.info(model).name
-        let json = State.Model.Stable.V6.toJson(model)
+        let json = State.Model.Stable.Latest.toJson(model)
         let content =
           "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
         Downloader.download(name ++ ".risn", content)
@@ -611,7 +611,7 @@ module App = {
         switch f {
         | FileTree.FileOrFolder.File((_, model)) => {
             let name = model->State.Model.info->InspectorState.Model.name ++ ".risn"
-            let contents = model->State.Model.Stable.V6.toJson->Js.Json.stringify
+            let contents = model->State.Model.Stable.Latest.toJson->Js.Json.stringify
             stack[Array.length(stack) - 1]->Option.iter(folder =>
               folder->Zip.Folder.createFile(name, contents)
             )

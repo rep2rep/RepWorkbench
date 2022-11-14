@@ -476,6 +476,8 @@ module Model = {
           }
         })
     }
+
+    module Latest = V6
   }
 
   module StorageMkr = (J: LocalStorage.Jsonable) => {
@@ -534,7 +536,7 @@ module Model = {
       }
     }
   }
-  module Storage = StorageMkr(Stable.V6)
+  module Storage = StorageMkr(Stable.Latest)
 
   let prefix = "RepNotation:Model:"
   let store = (t, id) => Storage.set(prefix ++ Gid.toString(id), t)
@@ -996,7 +998,10 @@ let toJson = t => {
   Js.Dict.fromArray([
     ("currentModel", t.currentModel->Option.toJson(Gid.toJson)),
     ("positions", t.positions->FileTree.Stable.V2.toJson(Gid.toJson)),
-    ("models", t.models->Gid.Map.toJson(model => Model.Stable.V6.toJson(model->UndoRedo.state))),
+    (
+      "models",
+      t.models->Gid.Map.toJson(model => Model.Stable.Latest.toJson(model->UndoRedo.state)),
+    ),
     ("viewTransforms", t.viewTransforms->Gid.Map.toJson(ViewTransform.Stable.V1.toJson)),
   ])->Js.Json.object_
 }
@@ -1015,7 +1020,7 @@ let fromJson = (json, ~atTime) =>
     let models = getValue(
       "models",
       Gid.Map.fromJson(_, json =>
-        json->Model.Stable.V6.fromJson->Or_error.map(UndoRedo.create(_, ~atTime))
+        json->Model.Stable.Latest.fromJson->Or_error.map(UndoRedo.create(_, ~atTime))
       ),
     )
     let viewTransforms = getValue(

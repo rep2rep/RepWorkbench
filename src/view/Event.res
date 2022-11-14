@@ -96,7 +96,11 @@ module File = {
     | ImportModel(id, model, path) =>
       mkJson(
         "ImportModel",
-        [Gid.toJson(id), State.Model.Stable.V6.toJson(model), FileTree.Path.Stable.V1.toJson(path)],
+        [
+          Gid.toJson(id),
+          State.Model.Stable.Latest.toJson(model),
+          FileTree.Path.Stable.V1.toJson(path),
+        ],
       )
     | ReorderModels(tree) => mkJson("ReorderModels", [tree->FileTree.Stable.V2.toJson(Gid.toJson)])
     | RenameFolder(id, name) => mkJson("RenameFolder", [Gid.toJson(id), String.toJson(name)])

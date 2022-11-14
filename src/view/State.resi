@@ -55,6 +55,8 @@ module Model: {
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>
     }
+
+    module Latest = V6
   }
 }
 
