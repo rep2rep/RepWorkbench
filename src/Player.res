@@ -246,7 +246,7 @@ module Player = {
         switch f {
         | FileTree.FileOrFolder.File((_, model)) => {
             let name = model->State.Model.info->InspectorState.Model.name ++ ".risn"
-            let contents = model->State.Model.Stable.V5.toJson->Js.Json.stringify
+            let contents = model->State.Model.Stable.V6.toJson->Js.Json.stringify
             stack[Array.length(stack) - 1]->Option.iter(folder =>
               folder->Zip.Folder.createFile(name, contents)
             )

@@ -1558,13 +1558,13 @@ module SchemaOrLink = {
 }
 
 module Model = {
-  type t = {name: string, notes: string}
+  type t = {name: string, notes: string, metrics: ModelMetrics.t}
 
-  let isValid = _ => Result.Ok()
+  let isValid = t => t.metrics->ModelMetrics.isValid
 
   module Stable = {
     module V1 = {
-      type t = t = {name: string, notes: string}
+      type t = {name: string, notes: string}
 
       let toJson = t =>
         Js.Dict.fromList(list{
@@ -1602,14 +1602,68 @@ module Model = {
           )
         })
     }
+
+    module V2 = {
+      type t = t = {name: string, notes: string, metrics: ModelMetrics.Stable.V1.t}
+
+      let v1_to_v2 = v1 => {
+        name: v1.V1.name,
+        notes: v1.V1.notes,
+        metrics: ModelMetrics.empty,
+      }
+
+      let toJson = t =>
+        Js.Dict.fromList(list{
+          ("version", Int.toJson(2)),
+          ("name", String.toJson(t.name)),
+          ("notes", String.toJson(t.notes)),
+          ("metrics", ModelMetrics.Stable.V1.toJson(t.metrics)),
+        })->Js.Json.object_
+
+      let fromJson = json =>
+        json
+        ->Js.Json.decodeObject
+        ->Or_error.fromOption_s("Failed to decode Model slots object JSON")
+        ->Or_error.flatMap(dict => {
+          let getValue = (key, reader) =>
+            dict
+            ->Js.Dict.get(key)
+            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
+            ->Or_error.flatMap(reader)
+          let version = getValue("version", Int.fromJson)
+          switch version->Or_error.match {
+          | Or_error.Ok(2) => {
+              let name = getValue("name", String.fromJson)
+              let notes = getValue("notes", String.fromJson)
+              let metrics = getValue("metrics", ModelMetrics.Stable.V1.fromJson)
+              (name, notes, metrics)
+              ->Or_error.both3
+              ->Or_error.map(((name, notes, metrics)) => {
+                name: name,
+                notes: notes,
+                metrics: metrics,
+              })
+            }
+          | Or_error.Ok(1) => V1.fromJson(json)->Or_error.map(v1_to_v2)
+          | Or_error.Ok(v) =>
+            Or_error.error_ss(["Unable to decode Model Slots version ", Int.toString(v), "."])
+          | Or_error.Err(err) => Or_error.error(err)
+          }
+        })
+    }
   }
 
-  let hash: t => Hash.t = Hash.record2(("name", String.hash), ("notes", String.hash))
+  let hash: t => Hash.t = Hash.record3(
+    ("name", String.hash),
+    ("notes", String.hash),
+    ("metrics", ModelMetrics.hash),
+  )
 
   let name = t => t.name
   let notes = t => t.notes
+  let metrics = t => t.metrics
 
-  let create = (~name) => {name: name, notes: ""}
+  let create = (~name) => {name: name, notes: "", metrics: ModelMetrics.empty}
 }
 
 type t =
