@@ -135,7 +135,7 @@ module File = {
       | ("ImportModel", [id, model, path]) =>
         (
           Gid.fromJson(id),
-          State.Model.Stable.V6.fromJson(model),
+          State.Model.Stable.Latest.fromJson(model),
           FileTree.Path.Stable.V1.fromJson(path),
         )
         ->Or_error.both3
@@ -746,6 +746,7 @@ module Model = {
   type rec t =
     | Rename(string)
     | SetNotes(string)
+    | SetMetrics(ModelMetrics.t)
     | CreateNode(Gid.t, float, float, ModelNode.Kind.t)
     | DeleteNode(Gid.t)
     | Duplicate(Gid.Map.t<Gid.t>)
@@ -771,6 +772,10 @@ module Model = {
     | SetNotes(notes) =>
       state->State.Model.updateInfo(
         state->State.Model.info->(i => {...i, InspectorState.Model.notes: notes}),
+      )
+    | SetMetrics(metrics) =>
+      state->State.Model.updateInfo(
+        state->State.Model.info->(i => {...i, InspectorState.Model.metrics: metrics}),
       )
     | CreateNode(id, x, y, kind) => {
         let slots = InspectorState.Schema.empty(kind)
@@ -847,6 +852,7 @@ module Model = {
     switch t {
     | Rename(_)
     | SetNotes(_)
+    | SetMetrics(_)
     | CreateNode(_, _, _, _)
     | DeleteNode(_)
     | Duplicate(_)
@@ -912,6 +918,7 @@ module Model = {
     switch t {
     | Rename(s) => mkJson("Rename", [String.toJson(s)])
     | SetNotes(s) => mkJson("SetNotes", [String.toJson(s)])
+    | SetMetrics(s) => mkJson("SetMetrics", [ModelMetrics.Stable.V1.toJson(s)])
     | CreateNode(id, x, y, kind) =>
       mkJson(
         "CreateNode",
@@ -1000,6 +1007,7 @@ let rec shouldTriggerIntelligence = e =>
   | Model(_, Model.Graph(Graph.MoveNode(_, _, _)))
   | Model(_, Model.Rename(_))
   | Model(_, Model.SetNotes(_))
+  | Model(_, Model.SetMetrics(_))
   | Model(_, Model.Slots(_, Slots.Representation(Slots.Representation.Notes(_))))
   | Model(_, Model.Slots(_, Slots.Scheme(Slots.Scheme.Notes(_))))
   | Model(_, Model.Slots(_, Slots.Dimension(Slots.Dimension.Notes(_))))

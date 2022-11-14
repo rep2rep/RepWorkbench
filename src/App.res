@@ -108,6 +108,7 @@ module App = {
       Dialog.alert("Database Error!\nSee the console for more information.")
       Promise.reject(e)
     })
+
   let reducer = (state, action) => {
     let atTime = perfNow(performance)
     let newState = Event.dispatch(state, action, ~atTime)
@@ -116,6 +117,18 @@ module App = {
     }
     State.store(newState)
     if Event.shouldTriggerIntelligence(action) {
+      let id = newState->State.focused
+      id
+      ->Option.flatMap(State.model(newState, _))
+      ->Option.map(State.Model.graph)
+      ->Option.map(ModelMetrics.compute)
+      ->(metrics => (metrics, id))
+      ->Option.both
+      ->Option.iter(((p, id)) =>
+        p
+        ->Promise.thenResolve(m => NativeEvent.create("metrics", (m, id))->NativeEvent.dispatch)
+        ->ignore
+      )
       sendToIntelligence(newState)
     } else {
       newState
@@ -234,6 +247,15 @@ module App = {
       e => focused->Option.iter(focused => dispatch(Event.Model(focused, e))),
       (focused, dispatch),
     )
+
+    React.useEffect1(() => {
+      let handler = ((metrics, id)) => {
+        Js.Console.log3("METRICS", id, metrics)
+        dispatch(Event.Model(id, Event.Model.SetMetrics(metrics)))
+      }
+      let listener = NativeEvent.listen("metrics", handler)
+      Some(() => NativeEvent.remove(listener))
+    }, [dispatch])
 
     // Node Inline Editing
     React.useEffect1(() => {
