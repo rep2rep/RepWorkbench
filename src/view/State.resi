@@ -11,6 +11,11 @@ module Model: {
   let updateGraph: (t, ModelState.t) => t
   let updateSlots: (t, Gid.Map.t<InspectorState.SchemaOrLink.t>) => t
 
+  let toSlotsAndLinks: t => (
+    Gid.Map.t<InspectorState.Schema.t>,
+    array<(Gid.t, Gid.t, ModelLink.Kind.t)>,
+  )
+
   let intelligence: t => option<Intelligence_Intf.Response.t>
   let requestedIntelligence: t => option<Gid.t>
   let focusedIntelligence: t => option<Gid.t>

@@ -42,28 +42,13 @@ module App = {
     ->State.focused
     ->Option.map(focused =>
       state->State.updateModelBypassUndoRedo(focused, model => {
-        let slots = State.Model.slots(model)
-        let links =
-          State.Model.graph(model)
-          ->ModelState.graph
-          ->ModelGraph.links
-          ->Array.map(link => (
-            ModelLink.source(link),
-            ModelLink.target(link),
-            ModelLink.kind(link),
-          ))
+        let (slots, links) = State.Model.toSlotsAndLinks(model)
         let id = Gid.create()
-
         intelTimeout := Js.Global.setTimeout(() =>
             intelligence->IntelligencePool.post({
               id: id,
               model: focused,
-              slots: slots->Gid.Map.mapPartial((_, slot) =>
-                switch slot {
-                | InspectorState.SchemaOrLink.Schema(s) => Some(s)
-                | _ => None
-                }
-              ),
+              slots: slots,
               links: links,
             })
           , 500)->Some
@@ -122,21 +107,7 @@ module App = {
       id
       ->Option.flatMap(State.model(newState, _))
       ->Option.map(model => {
-        let slots = State.Model.slots(model)->Gid.Map.mapPartial((_, v) =>
-          switch v {
-          | InspectorState.SchemaOrLink.Schema(v) => Some(v)
-          | _ => None
-          }
-        )
-        let links =
-          State.Model.graph(model)
-          ->ModelState.graph
-          ->ModelGraph.links
-          ->Array.map(link => (
-            ModelLink.source(link),
-            ModelLink.target(link),
-            ModelLink.kind(link),
-          ))
+        let (slots, links) = State.Model.toSlotsAndLinks(model)
         Metrics.compute(slots, links)
       })
       ->(metrics => (metrics, id))
@@ -233,7 +204,6 @@ module App = {
 
     React.useEffect1(() => {
       let handler = ((metrics, id, t)) => {
-        Js.Console.log4("METRICS", id, metrics, t)
         dispatch(Event.Model(id, Event.Model.SetMetrics(metrics, t)))
       }
       let listener = NativeEvent.listen("metrics", handler)

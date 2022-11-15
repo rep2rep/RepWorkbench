@@ -451,6 +451,21 @@ module Model = {
 
   let addToplevelNote = (t, note) => {...t, info: {...t.info, notes: t.info.notes ++ note}}
 
+  let toSlotsAndLinks = t => {
+    let slots = t.slots->Gid.Map.mapPartial((_, v) =>
+      switch v {
+      | InspectorState.SchemaOrLink.Schema(v) => Some(v)
+      | _ => None
+      }
+    )
+    let links =
+      t.graph
+      ->ModelState.graph
+      ->ModelGraph.links
+      ->Array.map(link => (ModelLink.source(link), ModelLink.target(link), ModelLink.kind(link)))
+    (slots, links)
+  }
+
   let intelligence = t => t.intelligence
   let requestedIntelligence = t => t.requestedIntelligence
   let focusedIntelligence = t => t.focusedIntelligence
