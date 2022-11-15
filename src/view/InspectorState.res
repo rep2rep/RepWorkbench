@@ -1558,9 +1558,13 @@ module SchemaOrLink = {
 }
 
 module Model = {
-  type t = {name: string, notes: string, metrics: ModelMetrics.t}
+  type t = {name: string, notes: string, metrics: option<ModelMetrics.t>, metricsSeqNo: float}
 
-  let isValid = t => t.metrics->ModelMetrics.isValid
+  let isValid = t =>
+    switch t.metrics {
+    | None => Result.Ok()
+    | Some(metrics) => ModelMetrics.isValid(metrics)
+    }
 
   module Stable = {
     module V1 = {
@@ -1604,12 +1608,18 @@ module Model = {
     }
 
     module V2 = {
-      type t = t = {name: string, notes: string, metrics: ModelMetrics.Stable.V1.t}
+      type t = t = {
+        name: string,
+        notes: string,
+        metrics: option<ModelMetrics.Stable.V1.t>,
+        metricsSeqNo: float,
+      }
 
       let v1_to_v2 = v1 => {
         name: v1.V1.name,
         notes: v1.V1.notes,
-        metrics: ModelMetrics.empty,
+        metrics: None,
+        metricsSeqNo: -1.,
       }
 
       let toJson = t =>
@@ -1617,7 +1627,8 @@ module Model = {
           ("version", Int.toJson(2)),
           ("name", String.toJson(t.name)),
           ("notes", String.toJson(t.notes)),
-          ("metrics", ModelMetrics.Stable.V1.toJson(t.metrics)),
+          ("metrics", t.metrics->Option.toJson(ModelMetrics.Stable.V1.toJson)),
+          ("metricsSeqNo", Float.toJson(t.metricsSeqNo)),
         })->Js.Json.object_
 
       let fromJson = json =>
@@ -1635,13 +1646,15 @@ module Model = {
           | Or_error.Ok(2) => {
               let name = getValue("name", String.fromJson)
               let notes = getValue("notes", String.fromJson)
-              let metrics = getValue("metrics", ModelMetrics.Stable.V1.fromJson)
-              (name, notes, metrics)
-              ->Or_error.both3
-              ->Or_error.map(((name, notes, metrics)) => {
+              let metrics = getValue("metrics", Option.fromJson(_, ModelMetrics.Stable.V1.fromJson))
+              let metricsSeqNo = getValue("metricsSeqNo", Float.fromJson)
+              (name, notes, metrics, metricsSeqNo)
+              ->Or_error.both4
+              ->Or_error.map(((name, notes, metrics, metricsSeqNo)) => {
                 name: name,
                 notes: notes,
                 metrics: metrics,
+                metricsSeqNo: metricsSeqNo,
               })
             }
           | Or_error.Ok(1) => V1.fromJson(json)->Or_error.map(v1_to_v2)
@@ -1653,17 +1666,23 @@ module Model = {
     }
   }
 
-  let hash: t => Hash.t = Hash.record3(
+  let hash: t => Hash.t = Hash.record4(
     ("name", String.hash),
     ("notes", String.hash),
-    ("metrics", ModelMetrics.hash),
+    ("metrics", Option.hash(_, ModelMetrics.hash)),
+    ("metricsSeqNo", Float.hash),
   )
 
   let name = t => t.name
   let notes = t => t.notes
   let metrics = t => t.metrics
 
-  let create = (~name) => {name: name, notes: "", metrics: ModelMetrics.empty}
+  let create = (~name) => {
+    name: name,
+    notes: "",
+    metrics: Some(ModelMetrics.empty),
+    metricsSeqNo: -1.,
+  }
 }
 
 type t =

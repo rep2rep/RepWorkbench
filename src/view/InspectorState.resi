@@ -223,7 +223,7 @@ module SchemaOrLink: {
 }
 
 module Model: {
-  type t = {name: string, notes: string, metrics: ModelMetrics.t}
+  type t = {name: string, notes: string, metrics: option<ModelMetrics.t>, metricsSeqNo: float}
 
   module Stable: {
     module V1: {
@@ -243,7 +243,7 @@ module Model: {
 
   let name: t => string
   let notes: t => string
-  let metrics: t => ModelMetrics.t
+  let metrics: t => option<ModelMetrics.t>
 
   let create: (~name: string) => t
 }

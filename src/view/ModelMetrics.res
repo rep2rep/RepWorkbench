@@ -5,8 +5,6 @@ let isValid = _ => Result.Ok()
 
 let empty = []
 
-let compute = _ => Promise.resolve(empty)
-
 module Stable = {
   module V1 = {
     type t = array<(string, string)>

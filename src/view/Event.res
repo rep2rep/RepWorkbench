@@ -746,7 +746,7 @@ module Model = {
   type rec t =
     | Rename(string)
     | SetNotes(string)
-    | SetMetrics(ModelMetrics.t)
+    | SetMetrics(option<ModelMetrics.t>, float)
     | CreateNode(Gid.t, float, float, ModelNode.Kind.t)
     | DeleteNode(Gid.t)
     | Duplicate(Gid.Map.t<Gid.t>)
@@ -773,9 +773,18 @@ module Model = {
       state->State.Model.updateInfo(
         state->State.Model.info->(i => {...i, InspectorState.Model.notes: notes}),
       )
-    | SetMetrics(metrics) =>
+    | SetMetrics(metrics, seqNo) =>
       state->State.Model.updateInfo(
-        state->State.Model.info->(i => {...i, InspectorState.Model.metrics: metrics}),
+        state
+        ->State.Model.info
+        ->(
+          i =>
+            if i.InspectorState.Model.metricsSeqNo > seqNo {
+              i
+            } else {
+              {...i, InspectorState.Model.metrics: metrics, metricsSeqNo: seqNo}
+            }
+        ),
       )
     | CreateNode(id, x, y, kind) => {
         let slots = InspectorState.Schema.empty(kind)
@@ -852,7 +861,7 @@ module Model = {
     switch t {
     | Rename(_)
     | SetNotes(_)
-    | SetMetrics(_)
+    | SetMetrics(_, _)
     | CreateNode(_, _, _, _)
     | DeleteNode(_)
     | Duplicate(_)
@@ -918,7 +927,8 @@ module Model = {
     switch t {
     | Rename(s) => mkJson("Rename", [String.toJson(s)])
     | SetNotes(s) => mkJson("SetNotes", [String.toJson(s)])
-    | SetMetrics(s) => mkJson("SetMetrics", [ModelMetrics.Stable.V1.toJson(s)])
+    | SetMetrics(s, t) =>
+      mkJson("SetMetrics", [s->Option.toJson(ModelMetrics.Stable.V1.toJson), Float.toJson(t)])
     | CreateNode(id, x, y, kind) =>
       mkJson(
         "CreateNode",
@@ -950,6 +960,10 @@ module Model = {
       switch (key, args) {
       | ("Rename", [s]) => s->String.fromJson->Or_error.map(s => Rename(s))
       | ("SetNotes", [s]) => s->String.fromJson->Or_error.map(s => SetNotes(s))
+      | ("SetMetrics", [m, t]) =>
+        (m->Option.fromJson(ModelMetrics.Stable.V1.fromJson), t->Float.fromJson)
+        ->Or_error.both
+        ->Or_error.map(((m, t)) => SetMetrics(m, t))
       | ("CreateNode", [id, x, y, kind]) =>
         (
           Gid.fromJson(id),

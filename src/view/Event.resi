@@ -137,7 +137,7 @@ module Model: {
   type rec t =
     | Rename(string)
     | SetNotes(string)
-    | SetMetrics(ModelMetrics.t)
+    | SetMetrics(option<ModelMetrics.t>, float)
     | CreateNode(Gid.t, float, float, ModelNode.Kind.t)
     | DeleteNode(Gid.t)
     | Duplicate(Gid.Map.t<Gid.t>)
