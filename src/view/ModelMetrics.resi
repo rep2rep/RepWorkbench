@@ -5,6 +5,8 @@ let isValid: t => Result.t<unit, array<string>>
 
 let empty: t
 
+let results: t => array<(string, string)>
+
 module Stable: {
   module V1: {
     type t = t

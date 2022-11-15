@@ -4,6 +4,7 @@ let hash = t => t->Array.hash(((a, b)) => Array.hash([a, b], String.hash))
 let isValid = _ => Result.Ok()
 
 let empty = []
+let results = t => t
 
 module Stable = {
   module V1 = {

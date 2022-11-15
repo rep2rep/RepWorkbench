@@ -656,6 +656,75 @@ module Generic = {
 }
 
 module Model = {
+  module Metrics = {
+    module BoolStore = LocalStorage.MakeStringable(Bool)
+
+    let tabulate = entries => {
+      if entries == [] {
+        React.string("No metrics.")
+      } else {
+        let longestKey = entries->Array.map(((k, _)) => String.length(k))->Array.reduce(0, Int.max)
+        entries
+        ->Array.map(((k, v)) => String.padRight(k, ~length=longestKey, ~fill=" ") ++ " " ++ v)
+        ->Array.joinWith("\n")
+        ->React.string
+      }
+    }
+
+    @react.component
+    let make = (~value, ~help=?) => {
+      let (showMetrics, setShowMetrics) = React.useState(_ =>
+        BoolStore.get("REP-SHOW-METRICS")->Option.getWithDefault(false)
+      )
+      let arrow =
+        <span
+          style={ReactDOM.Style.make(
+            ~position="relative",
+            ~top="-0.1em",
+            ~display="inline-block",
+            ~width="1rem",
+            ~fontSize="0.6rem",
+            ~color="rgba(150, 150, 150, 1)",
+            (),
+          )}
+          onClick={_ => {
+            let show = !showMetrics
+            BoolStore.set("REP-SHOW-METRICS", show)
+            setShowMetrics(_ => show)
+          }}>
+          {if showMetrics {
+            String.fromCodePoint(9660)
+          } else {
+            String.fromCodePoint(9654)
+          }->React.string}
+        </span>
+
+      <>
+        <Row> {arrow} <Label ?help> {React.string("Metrics")} </Label> </Row>
+        {if showMetrics {
+          switch value {
+          | None =>
+            <span style={ReactDOM.Style.make(~padding="0 1rem", ~fontSize="0.75rem", ())}>
+              {React.string("Unable to compute metrics for models with errors.")}
+            </span>
+          | Some(metrics) =>
+            <pre
+              style={ReactDOM.Style.make(
+                ~padding="0.25rem 1rem",
+                ~fontSize="0.9rem",
+                ~fontFamily="monospace",
+                (),
+              )}>
+              {tabulate(ModelMetrics.results(metrics))}
+            </pre>
+          }
+        } else {
+          React.null
+        }}
+      </>
+    }
+  }
+
   @react.component
   let make = (~slots: InspectorState.Model.t, ~onChange) => {
     <>
@@ -676,6 +745,7 @@ module Model = {
         value={slots.notes}
         help="Add any other comments about this model here."
       />
+      <Metrics value={slots.metrics} help="Various metrics about the RISN model." />
     </>
   }
 }
