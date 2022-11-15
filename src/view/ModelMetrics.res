@@ -4,6 +4,8 @@ let hash = t => t->Array.hash(((a, b)) => Array.hash([a, b], String.hash))
 let isValid = _ => Result.Ok()
 
 let empty = []
+let add = (t, k, v) => Array.push(t, (k, v))
+let addMany = Array.concat
 let results = t => t
 
 module Stable = {
