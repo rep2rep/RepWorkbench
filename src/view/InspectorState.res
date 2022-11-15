@@ -1568,7 +1568,12 @@ module Model = {
 
   module Stable = {
     module V1 = {
-      type t = {name: string, notes: string}
+      type t = t = {
+        name: string,
+        notes: string,
+        metrics: option<ModelMetrics.Stable.V1.t>,
+        metricsSeqNo: float,
+      }
 
       let toJson = t =>
         Js.Dict.fromList(list{
@@ -1601,67 +1606,11 @@ module Model = {
               Or_error.both((name, notes))->Or_error.map(((name, notes)) => {
                 name: name,
                 notes: notes,
+                metrics: Some(ModelMetrics.empty),
+                metricsSeqNo: -1.,
               })
             }
           )
-        })
-    }
-
-    module V2 = {
-      type t = t = {
-        name: string,
-        notes: string,
-        metrics: option<ModelMetrics.Stable.V1.t>,
-        metricsSeqNo: float,
-      }
-
-      let v1_to_v2 = v1 => {
-        name: v1.V1.name,
-        notes: v1.V1.notes,
-        metrics: None,
-        metricsSeqNo: -1.,
-      }
-
-      let toJson = t =>
-        Js.Dict.fromList(list{
-          ("version", Int.toJson(2)),
-          ("name", String.toJson(t.name)),
-          ("notes", String.toJson(t.notes)),
-          ("metrics", t.metrics->Option.toJson(ModelMetrics.Stable.V1.toJson)),
-          ("metricsSeqNo", Float.toJson(t.metricsSeqNo)),
-        })->Js.Json.object_
-
-      let fromJson = json =>
-        json
-        ->Js.Json.decodeObject
-        ->Or_error.fromOption_s("Failed to decode Model slots object JSON")
-        ->Or_error.flatMap(dict => {
-          let getValue = (key, reader) =>
-            dict
-            ->Js.Dict.get(key)
-            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
-            ->Or_error.flatMap(reader)
-          let version = getValue("version", Int.fromJson)
-          switch version->Or_error.match {
-          | Or_error.Ok(2) => {
-              let name = getValue("name", String.fromJson)
-              let notes = getValue("notes", String.fromJson)
-              let metrics = getValue("metrics", Option.fromJson(_, ModelMetrics.Stable.V1.fromJson))
-              let metricsSeqNo = getValue("metricsSeqNo", Float.fromJson)
-              (name, notes, metrics, metricsSeqNo)
-              ->Or_error.both4
-              ->Or_error.map(((name, notes, metrics, metricsSeqNo)) => {
-                name: name,
-                notes: notes,
-                metrics: metrics,
-                metricsSeqNo: metricsSeqNo,
-              })
-            }
-          | Or_error.Ok(1) => V1.fromJson(json)->Or_error.map(v1_to_v2)
-          | Or_error.Ok(v) =>
-            Or_error.error_ss(["Unable to decode Model Slots version ", Int.toString(v), "."])
-          | Or_error.Err(err) => Or_error.error(err)
-          }
         })
     }
   }

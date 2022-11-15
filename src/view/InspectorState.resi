@@ -227,13 +227,12 @@ module Model: {
 
   module Stable: {
     module V1: {
-      type t = {name: string, notes: string}
-      let toJson: t => Js.Json.t
-      let fromJson: Js.Json.t => Or_error.t<t>
-    }
-    module V2: {
-      type t = t
-      let v1_to_v2: V1.t => t
+      type t = t = {
+        name: string,
+        notes: string,
+        metrics: option<ModelMetrics.Stable.V1.t>,
+        metricsSeqNo: float,
+      }
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>
     }

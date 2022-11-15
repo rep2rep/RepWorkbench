@@ -45,18 +45,12 @@ module Model: {
     }
 
     module V5: {
-      type t
-      let toJson: t => Js.Json.t
-      let fromJson: Js.Json.t => Or_error.t<t>
-    }
-
-    module V6: {
       type t = t
       let toJson: t => Js.Json.t
       let fromJson: Js.Json.t => Or_error.t<t>
     }
 
-    module Latest = V6
+    module Latest = V5
   }
 }
 

@@ -61,7 +61,12 @@ module Model = {
       }
 
       let v1_to_v2 = t => {
-        info: {InspectorState.Model.Stable.V1.name: t.V1.name, notes: ""},
+        info: {
+          InspectorState.Model.Stable.V1.name: t.V1.name,
+          notes: "",
+          metrics: Some(ModelMetrics.empty),
+          metricsSeqNo: -1.,
+        },
         graph: t.V1.model->ModelState.Stable.V2.v1_to_v2,
         slots: t.V1.slots,
       }
@@ -280,7 +285,7 @@ module Model = {
     }
 
     module V5 = {
-      type t = {
+      type t = t = {
         info: InspectorState.Model.Stable.V1.t,
         graph: ModelState.Stable.V5.t,
         slots: Gid.Map.t<InspectorState.SchemaOrLink.Stable.V2.t>,
@@ -374,110 +379,7 @@ module Model = {
         })
     }
 
-    module V6 = {
-      type t = t = {
-        info: InspectorState.Model.Stable.V2.t,
-        graph: ModelState.Stable.V5.t,
-        slots: Gid.Map.t<InspectorState.SchemaOrLink.Stable.V2.t>,
-        intelligence: option<Intelligence_Intf.Response.t>,
-        requestedIntelligence: option<Gid.t>,
-        focusedIntelligence: option<Gid.t>,
-      }
-
-      let v5_to_v6 = t => {
-        {
-          info: t.V5.info->InspectorState.Model.Stable.V2.v1_to_v2,
-          graph: t.V5.graph,
-          slots: t.V5.slots,
-          intelligence: None,
-          requestedIntelligence: None,
-          focusedIntelligence: None,
-        }
-      }
-
-      let toJson = t =>
-        Js.Dict.fromList(list{
-          ("version", Int.toJson(6)),
-          ("info", t.info->InspectorState.Model.Stable.V2.toJson),
-          ("graph", t.graph->ModelState.Stable.V5.toJson),
-          ("slots", t.slots->Gid.Map.toJson(InspectorState.SchemaOrLink.Stable.V2.toJson)),
-        })->Js.Json.object_
-
-      let fromJson = json =>
-        json
-        ->Js.Json.decodeObject
-        ->Or_error.fromOption_s("Failed to decode Model state object JSON")
-        ->Or_error.flatMap(dict => {
-          let getValue = (key, reader) =>
-            dict
-            ->Js.Dict.get(key)
-            ->Or_error.fromOption_ss(["Unable to find key '", key, "'"])
-            ->Or_error.flatMap(reader)
-          let version = getValue("version", Int.fromJson)
-          switch version->Or_error.match {
-          | Or_error.Err(_) => {
-              Js.Console.log("Attempting to upgrade model from V1 to V6")
-              V1.fromJson(json)
-              ->Or_error.map(V2.v1_to_v2)
-              ->Or_error.map(V3.v2_to_v3)
-              ->Or_error.map(V4.v3_to_v4)
-              ->Or_error.map(V5.v4_to_v5)
-              ->Or_error.map(v5_to_v6)
-            }
-          | Or_error.Ok(2) => {
-              Js.Console.log("Attempting to upgrade model from V2 to V6")
-              V2.fromJson(json)
-              ->Or_error.map(V3.v2_to_v3)
-              ->Or_error.map(V4.v3_to_v4)
-              ->Or_error.map(V5.v4_to_v5)
-              ->Or_error.map(v5_to_v6)
-            }
-          | Or_error.Ok(3) => {
-              Js.Console.log("Attempting to upgrade model from V3 to V6")
-              V3.fromJson(json)
-              ->Or_error.map(V4.v3_to_v4)
-              ->Or_error.map(V5.v4_to_v5)
-              ->Or_error.map(v5_to_v6)
-            }
-          | Or_error.Ok(4) => {
-              Js.Console.log("Attempting to upgrade model from V4 to V6")
-              V4.fromJson(json)->Or_error.map(V5.v4_to_v5)->Or_error.map(v5_to_v6)
-            }
-          | Or_error.Ok(5) => {
-              Js.Console.log("Attempting to upgrade model from V5 to V6")
-              V5.fromJson(json)->Or_error.map(v5_to_v6)
-            }
-
-          | Or_error.Ok(6) => {
-              let info = getValue("info", InspectorState.Model.Stable.V2.fromJson)
-              let graph = getValue("graph", ModelState.Stable.V5.fromJson)
-              let slots = getValue(
-                "slots",
-                Gid.Map.fromJson(_, InspectorState.SchemaOrLink.Stable.V2.fromJson),
-              )
-
-              (info, graph, slots)
-              ->Or_error.both3
-              ->Or_error.map(((info, graph, slots)) => {
-                info: info,
-                graph: graph,
-                slots: slots,
-                intelligence: None,
-                requestedIntelligence: None,
-                focusedIntelligence: None,
-              })
-            }
-          | Or_error.Ok(v) =>
-            Or_error.error_ss([
-              "Attempting to load unsupported Model version ",
-              Int.toString(v),
-              "!",
-            ])
-          }
-        })
-    }
-
-    module Latest = V6
+    module Latest = V5
   }
 
   module StorageMkr = (J: LocalStorage.Jsonable) => {
