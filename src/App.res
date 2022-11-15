@@ -118,15 +118,32 @@ module App = {
     State.store(newState)
     if Event.shouldTriggerIntelligence(action) {
       let id = newState->State.focused
+      let t = perfNow(performance)
       id
       ->Option.flatMap(State.model(newState, _))
-      ->Option.map(State.Model.graph)
-      ->Option.map(ModelMetrics.compute)
+      ->Option.map(model => {
+        let slots = State.Model.slots(model)->Gid.Map.mapPartial((_, v) =>
+          switch v {
+          | InspectorState.SchemaOrLink.Schema(v) => Some(v)
+          | _ => None
+          }
+        )
+        let links =
+          State.Model.graph(model)
+          ->ModelState.graph
+          ->ModelGraph.links
+          ->Array.map(link => (
+            ModelLink.source(link),
+            ModelLink.target(link),
+            ModelLink.kind(link),
+          ))
+        Metrics.compute(slots, links)
+      })
       ->(metrics => (metrics, id))
       ->Option.both
       ->Option.iter(((p, id)) =>
         p
-        ->Promise.thenResolve(m => NativeEvent.create("metrics", (m, id))->NativeEvent.dispatch)
+        ->Promise.thenResolve(m => NativeEvent.create("metrics", (m, id, t))->NativeEvent.dispatch)
         ->ignore
       )
       sendToIntelligence(newState)
@@ -214,6 +231,15 @@ module App = {
       None
     })
 
+    React.useEffect1(() => {
+      let handler = ((metrics, id, t)) => {
+        Js.Console.log4("METRICS", id, metrics, t)
+        dispatch(Event.Model(id, Event.Model.SetMetrics(metrics, t)))
+      }
+      let listener = NativeEvent.listen("metrics", handler)
+      Some(() => NativeEvent.remove(listener))
+    }, [dispatch])
+
     let stateHash = State.hash(state)
 
     let focused = React.useMemo1(
@@ -247,15 +273,6 @@ module App = {
       e => focused->Option.iter(focused => dispatch(Event.Model(focused, e))),
       (focused, dispatch),
     )
-
-    React.useEffect1(() => {
-      let handler = ((metrics, id)) => {
-        Js.Console.log3("METRICS", id, metrics)
-        dispatch(Event.Model(id, Event.Model.SetMetrics(metrics)))
-      }
-      let listener = NativeEvent.listen("metrics", handler)
-      Some(() => NativeEvent.remove(listener))
-    }, [dispatch])
 
     // Node Inline Editing
     React.useEffect1(() => {
