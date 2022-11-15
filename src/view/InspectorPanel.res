@@ -664,8 +664,14 @@ module Model = {
         React.string("No metrics.")
       } else {
         let longestKey = entries->Array.map(((k, _)) => String.length(k))->Array.reduce(0, Int.max)
+        let longestValue =
+          entries->Array.map(((_, v)) => String.length(v))->Array.reduce(0, Int.max)
         entries
-        ->Array.map(((k, v)) => String.padRight(k, ~length=longestKey, ~fill=" ") ++ " " ++ v)
+        ->Array.map(((k, v)) =>
+          String.padRight(k, ~length=longestKey, ~fill=" ") ++
+          "    " ++
+          String.padLeft(v, ~length=longestValue, ~fill=" ")
+        )
         ->Array.joinWith("\n")
         ->React.string
       }
