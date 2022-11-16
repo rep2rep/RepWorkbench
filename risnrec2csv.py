@@ -37,6 +37,8 @@ def make_data(key, args, data):
         return {**data, "name": args[0]}
     elif key == "Model.SetNotes":
         return {**data, "notes": args[0]}
+    elif key == "Model.SetMetrics":
+        return {**data, "metrics": args[0], "seqNo": args[1]}
     elif key == "Model.CreateNode":
         return {**data, "node_id": args[0], "x": args[1], "y": args[2], "kind": args[3]}
     elif key == "Model.DeleteNode" or key == "Model.Graph.DeleteNode":
