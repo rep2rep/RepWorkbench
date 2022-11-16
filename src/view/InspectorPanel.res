@@ -678,7 +678,7 @@ module Model = {
     }
 
     @react.component
-    let make = (~value, ~help=?) => {
+    let make = (~value, ~help=?, ~csvName=?) => {
       let (showMetrics, setShowMetrics) = React.useState(_ =>
         BoolStore.get("REP-SHOW-METRICS")->Option.getWithDefault(false)
       )
@@ -713,16 +713,27 @@ module Model = {
             <span style={ReactDOM.Style.make(~padding="0 1rem", ~fontSize="0.75rem", ())}>
               {React.string("Unable to compute metrics for models with errors.")}
             </span>
-          | Some(metrics) =>
-            <pre
-              style={ReactDOM.Style.make(
-                ~padding="0.25rem 1rem",
-                ~fontSize="0.9rem",
-                ~fontFamily="monospace",
-                (),
-              )}>
-              {tabulate(ModelMetrics.results(metrics))}
-            </pre>
+          | Some(metrics) => <>
+              <pre
+                style={ReactDOM.Style.make(
+                  ~padding="0.25rem 1rem",
+                  ~fontSize="0.9rem",
+                  ~fontFamily="monospace",
+                  (),
+                )}>
+                {tabulate(ModelMetrics.results(metrics))}
+              </pre>
+              <span style={ReactDOM.Style.make(~marginLeft="1rem", ())}>
+                <Button
+                  onClick={_ =>
+                    Downloader.download(
+                      csvName->Option.getWithDefault("metrics.csv"),
+                      ModelMetrics.toCSV(metrics),
+                    )}
+                  value="Download CSV"
+                />
+              </span>
+            </>
           }
         } else {
           React.null
@@ -751,7 +762,11 @@ module Model = {
         value={slots.notes}
         help="Add any other comments about this model here."
       />
-      <Metrics value={slots.metrics} help="Various metrics about the RISN model." />
+      <Metrics
+        value={slots.metrics}
+        csvName={slots.name ++ "_metrics.csv"}
+        help="Various metrics about the RISN model."
+      />
     </>
   }
 }

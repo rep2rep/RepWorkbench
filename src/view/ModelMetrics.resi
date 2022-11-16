@@ -5,9 +5,11 @@ let isValid: t => Result.t<unit, array<string>>
 
 let empty: t
 
-let results: t => array<(string, string)>
 let add: (t, string, string) => t
 let addMany: (t, array<(string, string)>) => t
+
+let results: t => array<(string, string)>
+let toCSV: t => string
 
 module Stable: {
   module V1: {

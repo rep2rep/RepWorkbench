@@ -6,7 +6,11 @@ let isValid = _ => Result.Ok()
 let empty = []
 let add = (t, k, v) => Array.push(t, (k, v))
 let addMany = Array.concat
+
 let results = t => t
+let toCSV = t =>
+  "data:text/csv;charset=utf-8," ++
+  t->Array.map(((k, v)) => k ++ "," ++ v)->Array.joinWith("\r\n")->Js.Global.encodeURIComponent
 
 module Stable = {
   module V1 = {
