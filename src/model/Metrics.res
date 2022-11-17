@@ -81,7 +81,11 @@ let countQuantityScales = schemas => {
   let keys = ["Nominal", "Ordinal", "Interval", "Ratio"]
   let counts = keys->Array.keepMap(k => counts->String.Map.get(k)->Option.map(v => (k, v)))
   Array.concat(
-    [("Quantity Scales", "")],
+    if counts->Array.length === 0 {
+      []
+    } else {
+      [("Quantity Scales", "")]
+    },
     counts->Array.flatMap(((k, (v1, v2))) =>
       [
         (indent ++ k, Int.toString(v1 + v2)),
