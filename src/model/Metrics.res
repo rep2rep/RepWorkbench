@@ -92,15 +92,26 @@ let countQuantityScales = schemas => {
   )
 }
 
-let compute = (slots, links) =>
-  switch Model.fromSlotsAndLinks(slots, links) {
-  | Result.Ok(model) =>
+let completenessRatio = (slots, links) => {
+  let n = slots->Gid.Map.size
+  let mst_count = Float.fromInt(n - 1)
+  let complete_count = Float.fromInt(n * (n - 1) / 2)
+  Js.Float.toFixedWithPrecision(
+    (Array.length(links)->Float.fromInt -. mst_count) /. (complete_count -. mst_count),
+    ~digits=4,
+  )
+}
+
+let compute = (slots, links) => {
+  let metrics =
     ModelMetrics.empty
     ->ModelMetrics.addMany(countNodeTypes(slots))
     ->ModelMetrics.addMany(countLinkTypes(links))
     ->ModelMetrics.addMany(countQuantityScales(slots))
-    ->Some
-    ->Promise.resolve
-  | Result.Error([], []) => Promise.resolve(Some(ModelMetrics.empty))
-  | Result.Error(_) => Promise.resolve(None)
+    ->ModelMetrics.add("Connectedness", completenessRatio(slots, links))
+  switch Model.fromSlotsAndLinks(slots, links) {
+  | Result.Ok(model) => Promise.resolve(metrics)
+  | Result.Error([], []) => Promise.resolve(metrics)
+  | Result.Error(_) => Promise.resolve(metrics)
   }
+}

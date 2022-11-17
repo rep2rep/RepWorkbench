@@ -204,7 +204,7 @@ module App = {
 
     React.useEffect1(() => {
       let handler = ((metrics, id, t)) => {
-        dispatch(Event.Model(id, Event.Model.SetMetrics(metrics, t)))
+        dispatch(Event.Model(id, Event.Model.SetMetrics(Some(metrics), t)))
       }
       let listener = NativeEvent.listen("metrics", handler)
       Some(() => NativeEvent.remove(listener))
