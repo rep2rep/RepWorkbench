@@ -57,6 +57,24 @@ module App = {
     )
     ->Option.getWithDefault(state)
   }
+  let computeMetrics = state => {
+    let id = state->State.focused
+    let t = perfNow(performance)
+    id
+    ->Option.flatMap(State.model(state, _))
+    ->Option.map(model => {
+      let (slots, links) = State.Model.toSlotsAndLinks(model)
+      let intelligence = State.Model.intelligence(model)
+      Metrics.compute(slots, links, intelligence)
+    })
+    ->(metrics => (metrics, id))
+    ->Option.both
+    ->Option.iter(((p, id)) =>
+      p
+      ->Promise.thenResolve(m => NativeEvent.create("metrics", (m, id, t))->NativeEvent.dispatch)
+      ->ignore
+    )
+  }
 
   let db_store = "RISN"
   let init =
@@ -101,22 +119,15 @@ module App = {
       Recording.record(action, ~atTime)
     }
     State.store(newState)
+    switch action {
+    | Event.File(Event.File.Intelligence(Event.Intelligence.Response(_))) =>
+      computeMetrics(newState)
+    | _ =>
+      if Event.shouldTriggerIntelligence(action) {
+        computeMetrics(newState)
+      }
+    }
     if Event.shouldTriggerIntelligence(action) {
-      let id = newState->State.focused
-      let t = perfNow(performance)
-      id
-      ->Option.flatMap(State.model(newState, _))
-      ->Option.map(model => {
-        let (slots, links) = State.Model.toSlotsAndLinks(model)
-        Metrics.compute(slots, links)
-      })
-      ->(metrics => (metrics, id))
-      ->Option.both
-      ->Option.iter(((p, id)) =>
-        p
-        ->Promise.thenResolve(m => NativeEvent.create("metrics", (m, id, t))->NativeEvent.dispatch)
-        ->ignore
-      )
       sendToIntelligence(newState)
     } else {
       newState

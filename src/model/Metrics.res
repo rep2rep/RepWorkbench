@@ -96,6 +96,60 @@ let countQuantityScales = schemas => {
   )
 }
 
+let countIdioms = intelligence =>
+  switch intelligence {
+  | None => []
+  | Some(intelligence) => {
+      let idiomCount = Array.length(intelligence.Intelligence_Intf.Response.insights)
+      if idiomCount == 0 {
+        []
+      } else {
+        let inc = o => o->Option.map(v => v + 1)->Option.getWithDefault(1)->Some
+        let counts =
+          intelligence.Intelligence_Intf.Response.insights->Array.reduce(String.Map.empty, (
+            counts,
+            i,
+          ) => {
+            let msg = ModelInsight.message(i)
+            if msg->String.includes(" Pick ") {
+              counts->String.Map.update("Pick", inc)
+            } else if msg->String.includes(" Filter ") {
+              counts->String.Map.update("Filter", inc)
+            } else if msg->String.includes(" For-each ") {
+              counts->String.Map.update("For-each", inc)
+            } else if msg->String.includes(" Reduce ") {
+              counts->String.Map.update("Reduce", inc)
+            } else if msg->String.includes("Sum R-dimension ") {
+              counts->String.Map.update("Sum Dims", inc)
+            } else if msg->String.includes("Product R-dimension ") {
+              counts->String.Map.update("Product Dims", inc)
+            } else if msg->String.includes("Explicit Coordinate System ") {
+              counts->String.Map.update("Expl. Co-Sys", inc)
+            } else if msg->String.includes("Implicit Coordinate System ") {
+              counts->String.Map.update("Impl. Co-Sys", inc)
+            } else {
+              counts
+            }
+          })
+        let keys = [
+          "Pick",
+          "Filter",
+          "For-each",
+          "Reduce",
+          "Sum Dims",
+          "Product Dims",
+          "Expl. Co-Sys",
+          "Impl. Co-Sys",
+        ]
+        let counts = keys->Array.keepMap(k => counts->String.Map.get(k)->Option.map(v => (k, v)))
+        Array.concat(
+          [("Idioms", Int.toString(idiomCount))],
+          counts->Array.map(((k, v)) => (indent ++ k, Int.toString(v))),
+        )
+      }
+    }
+  }
+
 let completenessRatio = (slots, links) => {
   let n = slots->Gid.Map.size
   let mst_count = Float.fromInt(n - 1)
@@ -106,12 +160,13 @@ let completenessRatio = (slots, links) => {
   )
 }
 
-let compute = (slots, links) => {
+let compute = (slots, links, intelligence) => {
   let metrics =
     ModelMetrics.empty
     ->ModelMetrics.addMany(countNodeTypes(slots))
     ->ModelMetrics.addMany(countLinkTypes(links))
     ->ModelMetrics.addMany(countQuantityScales(slots))
+    ->ModelMetrics.addMany(countIdioms(intelligence))
     ->ModelMetrics.add("Connectedness", completenessRatio(slots, links))
   switch Model.fromSlotsAndLinks(slots, links) {
   | Result.Ok(model) => Promise.resolve(metrics)
