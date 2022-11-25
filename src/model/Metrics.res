@@ -160,6 +160,57 @@ let completenessRatio = (slots, links) => {
   )
 }
 
+let statistics = data => {
+  let length = data->Array.length->Int.toFloat
+  let mean = data->Array.reduce(0, (a, b) => a + b)->Int.toFloat /. length
+  let stddev =
+    data
+    ->Array.map(x => Js.Math.pow_float(~base=Int.toFloat(x) -. mean, ~exp=2.0))
+    ->Array.reduce(0., (a, b) => a +. b) /. length
+  let min = data->Array.reduce(data[0]->Option.getWithDefault(0), Int.min)
+  let max = data->Array.reduce(0, Int.max)
+  {
+    "mean": mean,
+    "stddev": stddev,
+    "min": min,
+    "max": max,
+  }
+}
+
+let branchingFactor = model => {
+  let bfs = []
+  let seen = ref(Gid.Set.empty)
+  let rec f = s => {
+    let id = Schema.id(s)
+    if !(seen.contents->Gid.Set.has(id)) {
+      seen := seen.contents->Gid.Set.add(id)
+      let children = Schema.children(s)
+      bfs->Js.Array2.push(List.length(children))->ignore
+      children->List.forEach(f)
+    }
+  }
+  f(Model.root(model))
+  let bfs_nonzero = bfs->Array.filter(bf => bf > 0)
+  let stats = statistics(bfs)
+  let stats_nonzero = statistics(bfs_nonzero)
+  [
+    ("Branching factor", ""),
+    (indent ++ "Mean", Js.Float.toFixedWithPrecision(stats["mean"], ~digits=4)),
+    (indent ++ "StdDev", Js.Float.toFixedWithPrecision(stats["stddev"], ~digits=4)),
+    (indent ++ "Min", stats["min"]->Int.toString),
+    (indent ++ "Max", stats["max"]->Int.toString),
+    (
+      indent ++ "Mean (ignoring leaves)",
+      Js.Float.toFixedWithPrecision(stats_nonzero["mean"], ~digits=4),
+    ),
+    (
+      indent ++ "StdDev (ignoring leaves)",
+      Js.Float.toFixedWithPrecision(stats_nonzero["stddev"], ~digits=4),
+    ),
+    (indent ++ "Min (ignoring leaves)", stats_nonzero["min"]->Int.toString),
+  ]
+}
+
 let compute = (slots, links, intelligence) => {
   let metrics =
     ModelMetrics.empty
@@ -169,7 +220,7 @@ let compute = (slots, links, intelligence) => {
     ->ModelMetrics.addMany(countIdioms(intelligence))
     ->ModelMetrics.add("Connectedness", completenessRatio(slots, links))
   switch Model.fromSlotsAndLinks(slots, links) {
-  | Result.Ok(model) => Promise.resolve(metrics)
+  | Result.Ok(model) => metrics->ModelMetrics.addMany(branchingFactor(model))->Promise.resolve
   | Result.Error([], []) => Promise.resolve(metrics)
   | Result.Error(_) => Promise.resolve(metrics)
   }
