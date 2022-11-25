@@ -230,15 +230,54 @@ let depth = model => {
       }
     }
   }
-  Js.Console.log(depths)
   let stats = statistics(depths)
   [
     ("Depth", ""),
     (indent ++ "Min", stats["min"]->Int.toString),
     (indent ++ "Max", stats["max"]->Int.toString),
     (indent ++ "Mean", stats["mean"]->Js.Float.toFixedWithPrecision(~digits=4)),
-    (indent ++ "Stddev", stats["stddev"]->Js.Float.toFixedWithPrecision(~digits=4)),
+    (indent ++ "StdDev", stats["stddev"]->Js.Float.toFixedWithPrecision(~digits=4)),
   ]
+}
+
+// Note this only counts the *excess* paths --
+// if there are three ways to reach a schema, we count "two" excess paths.
+let parallelPaths = model => {
+  let seen = ref(Gid.Map.empty())
+  let queue = Belt.MutableQueue.make()
+  queue->Belt.MutableQueue.add(Model.root(model))
+  while !(queue->Belt.MutableQueue.isEmpty) {
+    let s = queue->Belt.MutableQueue.popExn
+    let id = Schema.id(s)
+    if !(seen.contents->Gid.Map.has(id)) {
+      seen := seen.contents->Gid.Map.set(id, 1)
+    } else {
+      seen := seen.contents->Gid.Map.update(id, Option.map(_, v => v + 1))
+    }
+    s->Schema.children->List.forEach(s' => queue->Belt.MutableQueue.add(s'))
+  }
+  let paths =
+    seen.contents
+    ->Gid.Map.values
+    ->Array.keepMap(v =>
+      if v >= 1 {
+        Some(v - 1)
+      } else {
+        None
+      }
+    )
+  if Array.length(paths) === 0 {
+    []
+  } else {
+    let stats = statistics(paths)
+    [
+      ("Parallel Paths", ""),
+      (indent ++ "Min", stats["min"]->Int.toString),
+      (indent ++ "Max", stats["max"]->Int.toString),
+      (indent ++ "Mean", stats["mean"]->Js.Float.toFixedWithPrecision(~digits=4)),
+      (indent ++ "StdDev", stats["stddev"]->Js.Float.toFixedWithPrecision(~digits=4)),
+    ]
+  }
 }
 
 let compute = (slots, links, intelligence) => {
@@ -254,6 +293,7 @@ let compute = (slots, links, intelligence) => {
     metrics
     ->ModelMetrics.addMany(branchingFactor(model))
     ->ModelMetrics.addMany(depth(model))
+    ->ModelMetrics.addMany(parallelPaths(model))
     ->Promise.resolve
   | Result.Error([], []) => Promise.resolve(metrics)
   | Result.Error(_) => Promise.resolve(metrics)
