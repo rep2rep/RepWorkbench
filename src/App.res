@@ -51,7 +51,7 @@ module App = {
               slots: slots,
               links: links,
             })
-          , 500)->Some
+          , 250)->Some
         model->State.Model.setRequestedIntelligence(Some(id))
       })
     )
