@@ -195,19 +195,49 @@ let branchingFactor = model => {
   let stats_nonzero = statistics(bfs_nonzero)
   [
     ("Branching factor", ""),
-    (indent ++ "Mean", Js.Float.toFixedWithPrecision(stats["mean"], ~digits=4)),
-    (indent ++ "StdDev", Js.Float.toFixedWithPrecision(stats["stddev"], ~digits=4)),
+    (indent ++ "Mean", stats["mean"]->Js.Float.toFixedWithPrecision(~digits=4)),
+    (indent ++ "StdDev", stats["stddev"]->Js.Float.toFixedWithPrecision(~digits=4)),
     (indent ++ "Min", stats["min"]->Int.toString),
     (indent ++ "Max", stats["max"]->Int.toString),
     (
       indent ++ "Mean (ignoring leaves)",
-      Js.Float.toFixedWithPrecision(stats_nonzero["mean"], ~digits=4),
+      stats_nonzero["mean"]->Js.Float.toFixedWithPrecision(~digits=4),
     ),
     (
       indent ++ "StdDev (ignoring leaves)",
-      Js.Float.toFixedWithPrecision(stats_nonzero["stddev"], ~digits=4),
+      stats_nonzero["stddev"]->Js.Float.toFixedWithPrecision(~digits=4),
     ),
     (indent ++ "Min (ignoring leaves)", stats_nonzero["min"]->Int.toString),
+  ]
+}
+
+// TODO: This finds each leaf via it's shortest path *only*. Do we actually want *every* path?
+let depth = model => {
+  let depths = []
+  let seen = ref(Gid.Set.empty)
+  let queue = Belt.MutableQueue.make()
+  queue->Belt.MutableQueue.add((Model.root(model), 0))
+  while !(queue->Belt.MutableQueue.isEmpty) {
+    let (s, d) = queue->Belt.MutableQueue.popExn
+    let id = Schema.id(s)
+    if !(seen.contents->Gid.Set.has(id)) {
+      seen := seen.contents->Gid.Set.add(id)
+      let children = Schema.children(s)
+      if List.isEmpty(children) {
+        depths->Js.Array2.push(d)->ignore
+      } else {
+        children->List.forEach(s' => queue->Belt.MutableQueue.add((s', d + 1)))
+      }
+    }
+  }
+  Js.Console.log(depths)
+  let stats = statistics(depths)
+  [
+    ("Depth", ""),
+    (indent ++ "Min", stats["min"]->Int.toString),
+    (indent ++ "Max", stats["max"]->Int.toString),
+    (indent ++ "Mean", stats["mean"]->Js.Float.toFixedWithPrecision(~digits=4)),
+    (indent ++ "Stddev", stats["stddev"]->Js.Float.toFixedWithPrecision(~digits=4)),
   ]
 }
 
@@ -220,7 +250,11 @@ let compute = (slots, links, intelligence) => {
     ->ModelMetrics.addMany(countIdioms(intelligence))
     ->ModelMetrics.add("Connectedness", completenessRatio(slots, links))
   switch Model.fromSlotsAndLinks(slots, links) {
-  | Result.Ok(model) => metrics->ModelMetrics.addMany(branchingFactor(model))->Promise.resolve
+  | Result.Ok(model) =>
+    metrics
+    ->ModelMetrics.addMany(branchingFactor(model))
+    ->ModelMetrics.addMany(depth(model))
+    ->Promise.resolve
   | Result.Error([], []) => Promise.resolve(metrics)
   | Result.Error(_) => Promise.resolve(metrics)
   }
