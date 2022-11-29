@@ -163,10 +163,11 @@ let completenessRatio = (slots, links) => {
 let statistics = data => {
   let length = data->Array.length->Int.toFloat
   let mean = data->Array.reduce(0, (a, b) => a + b)->Int.toFloat /. length
-  let stddev =
+  let variance =
     data
     ->Array.map(x => Js.Math.pow_float(~base=Int.toFloat(x) -. mean, ~exp=2.0))
     ->Array.reduce(0., (a, b) => a +. b) /. length
+  let stddev = Js.Math.sqrt(variance)
   let min = data->Array.reduce(data[0]->Option.getWithDefault(0), Int.min)
   let max = data->Array.reduce(0, Int.max)
   {
