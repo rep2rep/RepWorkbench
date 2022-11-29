@@ -6,6 +6,9 @@ type window
 @val external window: window = "window"
 
 module BoolStore = LocalStorage.MakeJsonable(Bool)
+module MetricsEvent = NativeEvent.Make({
+  type t = (ModelMetrics.t, Gid.t, float)
+})
 module K = GlobalKeybindings.KeyBinding
 module FP = {
   include FilePanel
@@ -71,7 +74,7 @@ module App = {
     ->Option.both
     ->Option.iter(((p, id)) =>
       p
-      ->Promise.thenResolve(m => NativeEvent.create("metrics", (m, id, t))->NativeEvent.dispatch)
+      ->Promise.thenResolve(m => MetricsEvent.create("metrics", (m, id, t))->MetricsEvent.dispatch)
       ->ignore
     )
   }
@@ -217,8 +220,8 @@ module App = {
       let handler = ((metrics, id, t)) => {
         dispatch(Event.Model(id, Event.Model.SetMetrics(Some(metrics), t)))
       }
-      let listener = NativeEvent.listen("metrics", handler)
-      Some(() => NativeEvent.remove(listener))
+      let listener = MetricsEvent.listen("metrics", handler)
+      Some(() => MetricsEvent.remove(listener))
     }, [dispatch])
 
     let stateHash = State.hash(state)
