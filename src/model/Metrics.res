@@ -272,7 +272,7 @@ let parallelPaths = model => {
   } else {
     let stats = statistics(paths)
     [
-      ("Parallel Paths", ""),
+      ("Parallel (additional) Paths", ""),
       (indent ++ "Min", stats["min"]->Int.toString),
       (indent ++ "Max", stats["max"]->Int.toString),
       (indent ++ "Mean", stats["mean"]->Js.Float.toFixedWithPrecision(~digits=4)),
