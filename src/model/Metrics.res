@@ -154,10 +154,20 @@ let completenessRatio = (slots, links) => {
   let n = slots->Gid.Map.size
   let mst_count = Float.fromInt(n - 1)
   let complete_count = Float.fromInt(n * (n - 1) / 2)
-  Js.Float.toFixedWithPrecision(
-    (Array.length(links)->Float.fromInt -. mst_count) /. (complete_count -. mst_count),
-    ~digits=4,
-  )
+  if complete_count == mst_count {
+    // Either 1 or 2 schemas
+    let l = Array.length(links)
+    if (n == 1 && l == 0) || (n == 2 && l == 1) {
+      Js.Float.toFixedWithPrecision(1.0, ~digits=4)
+    } else {
+      Js.Float.toFixedWithPrecision(0.0, ~digits=4)
+    }
+  } else {
+    Js.Float.toFixedWithPrecision(
+      (Array.length(links)->Float.fromInt -. mst_count) /. (complete_count -. mst_count),
+      ~digits=4,
+    )
+  }
 }
 
 let statistics = data => {
