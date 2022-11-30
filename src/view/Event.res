@@ -1010,6 +1010,8 @@ type t =
 
 let dispatch = (state, t, ~atTime) =>
   switch t {
+  | Model(id, Model.SetMetrics(_) as ev) =>
+    state->State.updateModelBypassUndoRedo(id, Model.dispatch(_, ev))
   | Model(id, ev) => state->State.updateModel(id, Model.dispatch(_, ev), ~atTime)
   | File(ev) => File.dispatch(state, ev, ~atTime)
   }
