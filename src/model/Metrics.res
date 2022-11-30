@@ -160,7 +160,7 @@ let completenessRatio = (slots, links) => {
     if (n == 1 && l == 0) || (n == 2 && l == 1) {
       Js.Float.toFixedWithPrecision(1.0, ~digits=4)
     } else {
-      Js.Float.toFixedWithPrecision(0.0, ~digits=4)
+      Js.Float.toFixedWithPrecision(-1.0, ~digits=4)
     }
   } else {
     Js.Float.toFixedWithPrecision(
