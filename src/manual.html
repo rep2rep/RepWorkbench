@@ -373,5 +373,20 @@
       <tr><th>Slot</th><th>Description</th></tr>
       <tr><td>Label</td><td>The &ldquo;order&rdquo; of the connection. Is either a positive number (1, 2, ...) or blank; can be &ldquo;blanked&rdquo; using the <button>Clear</button> button.</td></tr>
     </table>
+    <h2 id="metrics">Metrics</h2>
+    <p>The RISN model has properties we can compute, which have the potential to capture interesting information about the model. The metrics are shown under the &lsquo;Notes&rsquo; box in the Model Inspector, initially hidden but clicking the arrow left of the word &lsquo;Metrics&rsquo; toggles their visibility.</p>
+    <p>The table of Metrics can be downloaded using the <button>Download CSV</button> button.</p>
+    <p>The table summarises the kinds of metrics we compute, and any potential trap when interpreting the values.</p>
+    <table>
+      <tr><th>Metric</th><th>Description</th></tr>
+      <tr><td>Schemas</td><td>Schemas come in five flavours, so we count how often each occurs (along with the total number of schemas).</td></tr>
+      <tr><td>Connections</td><td>Connections come in three flavours, so we count how often each occurs (along with the total number of connections).</td></tr>
+      <tr><td>Quantity Scales</td><td>We count how often each quantity scale is used, both in the concept and in the graphic of R-Dimension schemas.</td></tr>
+      <tr><td>Idioms</td><td>As the intelligence engine computes idioms, we update the counts for each in the metrics.</td></tr>
+      <tr><td>Connectedness</td><td>If a model is just barely connected (i.e., removing any connection will result in a disconnected, invalid model), the connectedness is 0. If the model is entirely connected (that is, every schema is connected to every other schema) then the connectedness is 1. If the model is disconnected (and thus invalid) this metric may be negative; it may also be positive because there are sufficiently many connections that it <em>could</em> be connected, but happens to not be. Thus, if the model is disconnected, this metric should be read with caution.</td></tr>
+      <tr><td>Branching Factor</td><td>Schemas may have children, in which case they can be said to &lsquo;branch&rsquo;; the branching factor is the number of children it has. We compute the mean, standard deviation, minimum, and maximum branching factor across the entire model. We also compute these values when we ignore the &lsquo;leaves&rsquo; (which by definition have zero children).</td></tr>
+      <tr><td>Depth</td><td>Starting at the top Representation schema, we can travel through the model until we reach a schema with no children. The number of connections we travelled along to reach the leaf is the &lsquo;depth&rsquo;  &ndash; there are potentially many ways to reach the same leaf, so we only count the shortest way. If we repeat this for all leaves, we can compute the mean, standard deviation, minimum, and maximum depth of the model.</td></tr>
+      <tr><td>Parallel (additional) paths</td><td>Schemas can be accessed from the root Representation schema in at least one way, but there are potentially <em>more</em> ways than this. for example, an R-Dimension schema might be the product of two R-Dimensions, which are themselves reachable from the root. (For simplicity, assume they can be reached exactly one way from the root.) This means there are <em>two</em> ways to reach our product R-Dimension, and so we count this schema as having one additional &lsquo;parallel&rsquo; path. We compute the mean, standard deviation, minimum, and maximum number of additional parallel paths.</td></tr>
+    </table>
   </body>
 </html>
