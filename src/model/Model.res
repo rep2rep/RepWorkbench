@@ -260,6 +260,26 @@ module Conv = {
     let explicit = slots.explicit->Result.fromOption(() => ([ModelError.noExplicitError([id])], []))
     let scope = slots.scope->Result.fromOption(() => ([ModelError.noScopeError([id])], []))
     let organisation = Result.Ok(slots.organisation)
+    let conceptFunctionAgree__ = switch (concept_structure, function)->Result.both(
+      combineMessages,
+    ) {
+    | Result.Ok(("*NULL*", Function.Arbitrary)) => Result.Ok()
+    | Result.Ok((_, Function.Arbitrary as f))
+    | Result.Ok(("*NULL*", f)) =>
+      Result.Error(([], [ModelWarning.conceptFunctionWarning([id], #scheme, f)]))
+    | Result.Ok((_, _))
+    | Result.Error(_) =>
+      Result.Ok()
+    }
+    let graphicExplicitAgree__ = switch (graphic_structure, explicit)->Result.both(
+      combineMessages,
+    ) {
+    | Result.Ok(("*NULL*", false)) => Result.Ok()
+    | Result.Ok(("*NULL*", true as e))
+    | Result.Ok((_, false as e)) =>
+      Result.Error(([], [ModelWarning.graphicExplicitWarning([id], #scheme, e)]))
+    | Result.Ok((_, _)) | Result.Error(_) => Result.Ok()
+    }
     let tokens =
       filter(ModelNode.Kind.Token, (_, t) =>
         switch t {
@@ -298,7 +318,13 @@ module Conv = {
         ),
       ))->Result.allUnit(combineMessages)
     let anchors__ = hasAnchorsResult(id, anchored, schemas, #scheme)
-
+    let checks =
+      [
+        representations__,
+        anchors__,
+        conceptFunctionAgree__,
+        graphicExplicitAgree__,
+      ]->Result.allUnit(combineMessages)
     (
       concept_structure,
       graphic_structure,
@@ -309,10 +335,9 @@ module Conv = {
       dimensions,
       schemes,
       organisation,
-      representations__,
-      anchors__,
+      checks,
     )
-    ->Result.both11(combineMessages)
+    ->Result.both10(combineMessages)
     ->Result.map(((
       concept_structure,
       graphic_structure,
@@ -323,7 +348,6 @@ module Conv = {
       dimensions,
       schemes,
       organisation,
-      (),
       (),
     )) => Schema.Scheme({
       Schema.Scheme.id: id,
@@ -384,6 +408,22 @@ module Conv = {
     let explicit = slots.explicit->Result.fromOption(() => ([ModelError.noExplicitError([id])], []))
     let scope = slots.scope->Result.fromOption(() => ([ModelError.noScopeError([id])], []))
     let organisation = Result.Ok(slots.organisation)
+    let conceptFunctionAgree__ = switch (concept, function)->Result.both(combineMessages) {
+    | Result.Ok(("*NULL*", Function.Arbitrary)) => Result.Ok()
+    | Result.Ok((_, Function.Arbitrary as f))
+    | Result.Ok(("*NULL*", f)) =>
+      Result.Error(([], [ModelWarning.conceptFunctionWarning([id], #dimension, f)]))
+    | Result.Ok((_, _))
+    | Result.Error(_) =>
+      Result.Ok()
+    }
+    let graphicExplicitAgree__ = switch (graphic, explicit)->Result.both(combineMessages) {
+    | Result.Ok(("*NULL*", false)) => Result.Ok()
+    | Result.Ok(("*NULL*", true as e))
+    | Result.Ok((_, false as e)) =>
+      Result.Error(([], [ModelWarning.graphicExplicitWarning([id], #dimension, e)]))
+    | Result.Ok((_, _)) | Result.Error(_) => Result.Ok()
+    }
 
     let tokCount = ref(0)
     let dimCount = ref(0)
@@ -451,6 +491,15 @@ module Conv = {
         [],
       )
     }
+    let checks =
+      [
+        representations__,
+        schemes__,
+        anchors__,
+        at_least_one_token_or_dimension__,
+        conceptFunctionAgree__,
+        graphicExplicitAgree__,
+      ]->Result.allUnit(combineMessages)
     (
       concept,
       concept_scale,
@@ -464,12 +513,9 @@ module Conv = {
       tokens,
       dimensions,
       organisation,
-      representations__,
-      schemes__,
-      anchors__,
-      at_least_one_token_or_dimension__,
+      checks,
     )
-    ->Result.both16(combineMessages)
+    ->Result.both13(combineMessages)
     ->Result.map(((
       concept,
       concept_scale,
@@ -483,9 +529,6 @@ module Conv = {
       tokens,
       dimensions,
       organisation,
-      (),
-      (),
-      (),
       (),
     )) => Schema.Dimension({
       Schema.Dimension.id: id,
@@ -543,6 +586,22 @@ module Conv = {
       ))
     let function = slots.function->Result.fromOption(() => ([ModelError.noFunctionError([id])], []))
     let explicit = slots.explicit->Result.fromOption(() => ([ModelError.noExplicitError([id])], []))
+    let conceptFunctionAgree__ = switch (concept, function)->Result.both(combineMessages) {
+    | Result.Ok(("*NULL*", Function.Arbitrary)) => Result.Ok()
+    | Result.Ok((_, Function.Arbitrary as f))
+    | Result.Ok(("*NULL*", f)) =>
+      Result.Error(([], [ModelWarning.conceptFunctionWarning([id], #token, f)]))
+    | Result.Ok((_, _))
+    | Result.Error(_) =>
+      Result.Ok()
+    }
+    let graphicExplicitAgree__ = switch (graphic, explicit)->Result.both(combineMessages) {
+    | Result.Ok(("*NULL*", false)) => Result.Ok()
+    | Result.Ok(("*NULL*", true as e))
+    | Result.Ok((_, false as e)) =>
+      Result.Error(([], [ModelWarning.graphicExplicitWarning([id], #token, e)]))
+    | Result.Ok((_, _)) | Result.Error(_) => Result.Ok()
+    }
 
     let badNonAnchorError = (id', kind, anchor) =>
       ModelError.create(
@@ -641,7 +700,14 @@ module Conv = {
       )
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
-
+    let checks =
+      [
+        dimensions__,
+        schemes__,
+        representations__,
+        conceptFunctionAgree__,
+        graphicExplicitAgree__,
+      ]->Result.allUnit(combineMessages)
     (
       concept,
       graphic,
@@ -653,11 +719,9 @@ module Conv = {
       anchored_dimensions,
       anchored_schemes,
       anchored_representations,
-      dimensions__,
-      schemes__,
-      representations__,
+      checks,
     )
-    ->Result.both13(combineMessages)
+    ->Result.both11(combineMessages)
     ->Result.map(((
       concept,
       graphic,
@@ -669,8 +733,6 @@ module Conv = {
       anchored_dimensions,
       anchored_schemes,
       anchored_representations,
-      (),
-      (),
       (),
     )) => Schema.Token({
       Schema.Token.id: id,

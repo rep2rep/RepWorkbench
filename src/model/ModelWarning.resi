@@ -29,4 +29,14 @@ let defaultReferenceWarning: (
   string,
   [#representation | #scheme | #dimension | #token | #placeholder],
 ) => t
+let conceptFunctionWarning: (
+  array<Gid.t>,
+  [#representation | #scheme | #dimension | #token | #placeholder],
+  Function.t,
+) => t
+let graphicExplicitWarning: (
+  array<Gid.t>,
+  [#representation | #scheme | #dimension | #token | #placeholder],
+  bool,
+) => t
 let multipleRootsWarning: array<Gid.t> => t
