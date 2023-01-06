@@ -495,9 +495,9 @@ module Model = {
     ids->Array.mapPartial(id => t.slots->Gid.Map.get(id)->Option.map(slots => (id, slots)))
   }
 
-  let updateInfo = (t, info) => {...t, info: info}
-  let updateGraph = (t, graph) => {...t, graph: graph}
-  let updateSlots = (t, slots) => {...t, slots: slots}
+  let updateInfo = (t, f) => {...t, info: f(t.info)}
+  let updateGraph = (t, f) => {...t, graph: f(t.graph)}
+  let updateSlots = (t, f) => {...t, slots: f(t.slots)}
 
   let create = name => {
     info: InspectorState.Model.create(~name),

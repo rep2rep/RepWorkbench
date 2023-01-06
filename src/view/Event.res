@@ -765,39 +765,27 @@ module Model = {
   let rec dispatch = (state, t) =>
     switch t {
     | Seq(ts) => ts->Array.reduce(state, (state, t) => dispatch(state, t))
-    | Rename(name) =>
-      state->State.Model.updateInfo(
-        state->State.Model.info->(i => {...i, InspectorState.Model.name: name}),
-      )
+    | Rename(name) => state->State.Model.updateInfo(i => {...i, InspectorState.Model.name: name})
     | SetNotes(notes) =>
-      state->State.Model.updateInfo(
-        state->State.Model.info->(i => {...i, InspectorState.Model.notes: notes}),
-      )
+      state->State.Model.updateInfo(i => {...i, InspectorState.Model.notes: notes})
     | SetMetrics(metrics, seqNo) =>
-      state->State.Model.updateInfo(
-        state
-        ->State.Model.info
-        ->(
-          i =>
-            if i.InspectorState.Model.metricsSeqNo > seqNo {
-              i
-            } else {
-              {...i, InspectorState.Model.metrics: metrics, metricsSeqNo: seqNo}
-            }
-        ),
+      state->State.Model.updateInfo(i =>
+        if i.InspectorState.Model.metricsSeqNo > seqNo {
+          i
+        } else {
+          {...i, InspectorState.Model.metrics: metrics, metricsSeqNo: seqNo}
+        }
       )
     | CreateNode(id, x, y, kind) => {
         let slots = InspectorState.Schema.empty(kind)
         let name = InspectorState.Schema.name(slots)
         let reference = InspectorState.Schema.reference(slots)
         let node = ModelNode.create(~name, ~reference, ~x, ~y, kind, id)
-        let graph = state->State.Model.graph->Graph.dispatch(Graph.AddNode(node))
-        let allSlots =
-          state->State.Model.slots->Gid.Map.set(id, InspectorState.SchemaOrLink.Schema(slots))
-        state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
+        state
+        ->State.Model.updateGraph(Graph.dispatch(_, Graph.AddNode(node)))
+        ->State.Model.updateSlots(Gid.Map.set(_, id, InspectorState.SchemaOrLink.Schema(slots)))
       }
     | DeleteNode(id) => {
-        let graph = state->State.Model.graph->Graph.dispatch(Graph.DeleteNode(id))
         let allSlots = state->State.Model.slots->Gid.Map.remove(id)
         let allSlots =
           state
@@ -806,10 +794,11 @@ module Model = {
           ->(links =>
             Array.concat(links["incoming"]->Gid.Set.toArray, links["outgoing"]->Gid.Set.toArray))
           ->Array.reduce(allSlots, (slots, id) => slots->Gid.Map.remove(id))
-        state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
+        state
+        ->State.Model.updateGraph(Graph.dispatch(_, Graph.DeleteNode(id)))
+        ->State.Model.updateSlots(_ => allSlots)
       }
     | Duplicate(idMap) => {
-        let graph = state->State.Model.graph->Graph.dispatch(Graph.Duplicate(idMap))
         let allSlots =
           idMap
           ->Gid.Map.toArray
@@ -819,16 +808,17 @@ module Model = {
             ->Option.map(s => slots->Gid.Map.set(newId, InspectorState.SchemaOrLink.duplicate(s)))
             ->Option.getWithDefault(slots)
           })
-        state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
+        state
+        ->State.Model.updateGraph(Graph.dispatch(_, Graph.Duplicate(idMap)))
+        ->State.Model.updateSlots(_ => allSlots)
       }
     | LinkNodes({linkId, source, target, kind, label}) => {
         let slots = InspectorState.Link.empty(kind)->InspectorState.SchemaOrLink.Link
-        let allSlots = state->State.Model.slots->Gid.Map.set(linkId, slots)
-        let state = state->State.Model.updateSlots(allSlots)
-        let graph =
-          state
-          ->State.Model.graph
-          ->Graph.dispatch(
+        state
+        ->State.Model.updateSlots(Gid.Map.set(_, linkId, slots))
+        ->State.Model.updateGraph(
+          Graph.dispatch(
+            _,
             Graph.LinkNodes({
               linkId: linkId,
               source: source,
@@ -836,25 +826,22 @@ module Model = {
               kind: kind,
               label: label,
             }),
-          )
-        state->State.Model.updateGraph(graph)
+          ),
+        )
       }
-    | DeleteLink(linkId) => {
-        let graph = state->State.Model.graph->Graph.dispatch(Graph.DeleteLink(linkId))
-        let allSlots = state->State.Model.slots->Gid.Map.remove(linkId)
-        state->State.Model.updateGraph(graph)->State.Model.updateSlots(allSlots)
-      }
-    | Graph(ev) => {
-        let graph = state->State.Model.graph->Graph.dispatch(ev)
-        state->State.Model.updateGraph(graph)
-      }
-    | Slots(id, ev) => {
-        let slots = state->State.Model.slots
-        let s = slots->Gid.Map.get(id)
-        let s' = s->Option.map(Slots.dispatch(_, ev))
-        let slots' = s'->Option.map(s' => slots->Gid.Map.set(id, s'))->Option.getWithDefault(slots)
-        state->State.Model.updateSlots(slots')
-      }
+    | DeleteLink(linkId) =>
+      state
+      ->State.Model.updateGraph(Graph.dispatch(_, Graph.DeleteLink(linkId)))
+      ->State.Model.updateSlots(Gid.Map.remove(_, linkId))
+    | Graph(ev) => state->State.Model.updateGraph(Graph.dispatch(_, ev))
+    | Slots(id, ev) =>
+      state->State.Model.updateSlots(slots =>
+        slots
+        ->Gid.Map.get(id)
+        ->Option.map(Slots.dispatch(_, ev))
+        ->Option.map(s' => slots->Gid.Map.set(id, s'))
+        ->Option.getWithDefault(slots)
+      )
     }
 
   let rec graphEvent = t =>

@@ -7,9 +7,12 @@ module Model: {
   let slotsForSelection: (t, ModelSelection.t) => array<(Gid.t, InspectorState.SchemaOrLink.t)>
 
   let addToplevelNote: (t, string) => t
-  let updateInfo: (t, InspectorState.Model.t) => t
-  let updateGraph: (t, ModelState.t) => t
-  let updateSlots: (t, Gid.Map.t<InspectorState.SchemaOrLink.t>) => t
+  let updateInfo: (t, InspectorState.Model.t => InspectorState.Model.t) => t
+  let updateGraph: (t, ModelState.t => ModelState.t) => t
+  let updateSlots: (
+    t,
+    Gid.Map.t<InspectorState.SchemaOrLink.t> => Gid.Map.t<InspectorState.SchemaOrLink.t>,
+  ) => t
 
   let toSlotsAndLinks: t => (
     Gid.Map.t<InspectorState.Schema.t>,
