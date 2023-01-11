@@ -118,22 +118,48 @@ module App = {
   let reducer = (state, action) => {
     let atTime = perfNow(performance)
     let newState = Event.dispatch(state, action, ~atTime)
-    if Recording.isRecording() {
-      Recording.record(action, ~atTime)
-    }
-    State.store(newState)
-    switch action {
-    | Event.File(Event.File.Intelligence(Event.Intelligence.Response(_))) =>
-      computeMetrics(newState)
-    | _ =>
-      if Event.shouldTriggerIntelligence(action) {
-        computeMetrics(newState)
-      }
-    }
-    if Event.shouldTriggerIntelligence(action) {
-      sendToIntelligence(newState)
+    let isValid = if "##VERSION##"->String.endsWith("-DEV") {
+      State.isValid(newState)
     } else {
-      newState
+      Result.Ok()
+    }
+    switch isValid {
+    | Result.Ok() => {
+        if Recording.isRecording() {
+          Recording.record(action, ~atTime)
+        }
+        State.store(newState)
+        switch action {
+        | Event.File(Event.File.Intelligence(Event.Intelligence.Response(_))) =>
+          computeMetrics(newState)
+        | _ =>
+          if Event.shouldTriggerIntelligence(action) {
+            computeMetrics(newState)
+          }
+        }
+        if Event.shouldTriggerIntelligence(action) {
+          sendToIntelligence(newState)
+        } else {
+          newState
+        }
+      }
+    | Result.Error(errs) =>
+      if errs->Array.every(String.startsWith(_, "Graph has no link with ID ")) {
+        Js.Console.log("Attempting to repair state...")
+        let newState = State.removePhantomEdges(newState)
+        switch State.isValid(newState) {
+        | Result.Ok() => newState
+        | Result.Error(errs) => {
+            Js.Console.log2("ERROR", errs)
+            Dialog.alert("Error occurred, aborting action.")
+            state
+          }
+        }
+      } else {
+        Js.Console.log2("ERROR", errs)
+        Dialog.alert("Error occurred, aborting action.")
+        state
+      }
     }
   }
 
