@@ -638,15 +638,19 @@ module App = {
       state
       ->State.model(id)
       ->Option.iter(model => {
-        let model =
-          model->State.Model.addToplevelNote(
-            "\n=== Exported " ++ Js.Date.make()->Js.Date.toString ++ " ===",
-          )
+        let exportNote = "\n=== Exported " ++ Js.Date.make()->Js.Date.toString ++ " ==="
+        let model = model->State.Model.addToplevelNote(exportNote)
         let name = State.Model.info(model).name
         let json = State.Model.Stable.Latest.toJson(model)
         let content =
           "data:text/json;charset=utf-8," ++ json->Js.Json.stringify->Js.Global.encodeURIComponent
         Downloader.download(name ++ ".risn", content)
+        dispatch(
+          Event.Model(
+            id,
+            Event.Model.SetNotes(model->State.Model.info->InspectorState.Model.notes),
+          ),
+        )
       })
     }, [stateHash])
 
