@@ -5,6 +5,12 @@ module Conv = {
       Array.concat(warns, w),
     ))
 
+  let collectErrors = (ef, id', s) =>
+    switch s {
+    | Result.Error(e') => [ef(id'), Result.Error(e')]->Result.allUnit(combineMessages)->Some
+    | _ => Some(ef(id'))
+    }
+
   let toposort = (links, all_ids) => {
     let result = []
     let links =
@@ -311,12 +317,14 @@ module Conv = {
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
     let representations__ =
-      filter(~allowPlaceholders=false, ModelNode.Kind.Representation, (id', _) => Some(
-        Result.Error(
+      filter(
+        ~allowPlaceholders=false,
+        ModelNode.Kind.Representation,
+        collectErrors(id' => Result.Error(
           [ModelError.badHierarchyError([id, id'], ~parent=#scheme, ~child=#representation)],
           [],
-        ),
-      ))->Result.allUnit(combineMessages)
+        )),
+      )->Result.allUnit(combineMessages)
     let anchors__ = hasAnchorsResult(id, anchored, schemas, #scheme)
     let checks =
       [
@@ -461,20 +469,25 @@ module Conv = {
       )
       ->Result.all(combineMessages)
       ->Result.map(List.fromArray)
+
     let representations__ =
-      filter(~allowPlaceholders=false, ModelNode.Kind.Representation, (id', _) => Some(
-        Result.Error(
+      filter(
+        ~allowPlaceholders=false,
+        ModelNode.Kind.Representation,
+        collectErrors(id' => Result.Error(
           [ModelError.badHierarchyError([id, id'], ~parent=#dimension, ~child=#representation)],
           [],
-        ),
-      ))->Result.allUnit(combineMessages)
+        )),
+      )->Result.allUnit(combineMessages)
     let schemes__ =
-      filter(~allowPlaceholders=false, ModelNode.Kind.Scheme, (id', _) => Some(
-        Result.Error(
+      filter(
+        ~allowPlaceholders=false,
+        ModelNode.Kind.Scheme,
+        collectErrors(id' => Result.Error(
           [ModelError.badHierarchyError([id, id'], ~parent=#dimension, ~child=#scheme)],
           [],
-        ),
-      ))->Result.allUnit(combineMessages)
+        )),
+      )->Result.allUnit(combineMessages)
     let anchored_dimensions =
       filterAnchored(ModelNode.Kind.Dimension, (_, d) =>
         switch d {
@@ -512,17 +525,20 @@ module Conv = {
       )
 
     let anchored_representations__ =
-      filterAnchored(ModelNode.Kind.Representation, (id', _) => Some(
-        Result.Error([badDimAnchorError(id', "Representation")], []),
-      ))->Result.allUnit(combineMessages)
+      filterAnchored(
+        ModelNode.Kind.Representation,
+        collectErrors(id' => Result.Error([badDimAnchorError(id', "Representation")], [])),
+      )->Result.allUnit(combineMessages)
     let anchored_schemes__ =
-      filterAnchored(ModelNode.Kind.Scheme, (id', _) => Some(
-        Result.Error([badDimAnchorError(id', "R-Scheme")], []),
-      ))->Result.allUnit(combineMessages)
+      filterAnchored(
+        ModelNode.Kind.Scheme,
+        collectErrors(id' => Result.Error([badDimAnchorError(id', "R-Scheme")], [])),
+      )->Result.allUnit(combineMessages)
     let anchored_tokens__ =
-      filterAnchored(ModelNode.Kind.Token, (id', _) => Some(
-        Result.Error([badDimAnchorError(id', "R-Symbol")], []),
-      ))->Result.allUnit(combineMessages)
+      filterAnchored(
+        ModelNode.Kind.Token,
+        collectErrors(id' => Result.Error([badDimAnchorError(id', "R-Symbol")], [])),
+      )->Result.allUnit(combineMessages)
 
     let anchors__ =
       [anchored_representations__, anchored_schemes__, anchored_tokens__]->Result.allUnit(
@@ -702,19 +718,25 @@ module Conv = {
       ->Result.map(List.fromArray)
 
     let dimensions__ =
-      filter(~allowPlaceholders=false, ModelNode.Kind.Dimension, (id', _) => Some(
-        Result.Error([badNonAnchorError(id', "R-dimension", true)], []),
-      ))->Result.allUnit(combineMessages)
+      filter(
+        ~allowPlaceholders=false,
+        ModelNode.Kind.Dimension,
+        collectErrors(id' => Result.Error([badNonAnchorError(id', "R-dimension", true)], [])),
+      )->Result.allUnit(combineMessages)
 
     let schemes__ =
-      filter(~allowPlaceholders=false, ModelNode.Kind.Scheme, (id', _) => Some(
-        Result.Error([badNonAnchorError(id', "R-scheme", true)], []),
-      ))->Result.allUnit(combineMessages)
+      filter(
+        ~allowPlaceholders=false,
+        ModelNode.Kind.Scheme,
+        collectErrors(id' => Result.Error([badNonAnchorError(id', "R-scheme", true)], [])),
+      )->Result.allUnit(combineMessages)
 
     let representations__ =
-      filter(~allowPlaceholders=false, ModelNode.Kind.Representation, (id', _) => Some(
-        Result.Error([badNonAnchorError(id', "Representation", false)], []),
-      ))->Result.allUnit(combineMessages)
+      filter(
+        ~allowPlaceholders=false,
+        ModelNode.Kind.Representation,
+        collectErrors(id' => Result.Error([badNonAnchorError(id', "Representation", false)], [])),
+      )->Result.allUnit(combineMessages)
 
     let anchored_tokens =
       filterAnchored(ModelNode.Kind.Token, (_, t) =>
