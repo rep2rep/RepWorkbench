@@ -378,6 +378,7 @@ module Conv = {
   })
 
   let slots_to_dimension = (id, slots: InspectorState.Dimension.t, schemas, below, anchored) => {
+    let filterAnchored = (k, f) => filter(anchored, schemas, k, f)
     let filter = (~allowPlaceholders=true, k, f) => filter(~allowPlaceholders, below, schemas, k, f)
     let concept = switch slots.concept {
     | "#Dim#" =>
@@ -427,6 +428,7 @@ module Conv = {
 
     let tokCount = ref(0)
     let dimCount = ref(0)
+    let anchoredDimCount = ref(0)
     let tokens =
       filter(ModelNode.Kind.Token, (_, t) =>
         switch t {
@@ -473,9 +475,63 @@ module Conv = {
           [],
         ),
       ))->Result.allUnit(combineMessages)
-    let anchors__ = hasAnchorsResult(id, anchored, schemas, #dimension)
+    let anchored_dimensions =
+      filterAnchored(ModelNode.Kind.Dimension, (_, d) =>
+        switch d {
+        | Result.Error(e) => {
+            anchoredDimCount := anchoredDimCount.contents + 1
+            Some(Result.Error(e))
+          }
+        | Result.Ok(Schema.Dimension(d)) => {
+            anchoredDimCount := anchoredDimCount.contents + 1
+            Some(Result.Ok(d))
+          }
+        | _ => None
+        }
+      )
+      ->Result.all(combineMessages)
+      ->Result.map(List.fromArray)
 
-    let at_least_one_token_or_dimension__ = if tokCount.contents + dimCount.contents >= 1 {
+    let badDimAnchorError = (id', kind) =>
+      ModelError.create(
+        ~nodes=[id, id'],
+        ~message={"R-dimensions must not have anchored " ++ kind ++ " schemas."},
+        ~details={
+          "R-dimensions are allowed an anchored child only when that child is itself an R-dimension. However, this anchored child is " ++
+          if kind->String.startsWith("R-") {
+            "an "
+          } else {
+            "a "
+          } ++
+          kind ++ "schema."
+        },
+        ~suggestion={
+          "Remove this anchoring connection, and consider replacing it with a regular hierarchical connection."
+        },
+        (),
+      )
+
+    let anchored_representations__ =
+      filterAnchored(ModelNode.Kind.Representation, (id', _) => Some(
+        Result.Error([badDimAnchorError(id', "Representation")], []),
+      ))->Result.allUnit(combineMessages)
+    let anchored_schemes__ =
+      filterAnchored(ModelNode.Kind.Scheme, (id', _) => Some(
+        Result.Error([badDimAnchorError(id', "R-Scheme")], []),
+      ))->Result.allUnit(combineMessages)
+    let anchored_tokens__ =
+      filterAnchored(ModelNode.Kind.Token, (id', _) => Some(
+        Result.Error([badDimAnchorError(id', "R-Symbol")], []),
+      ))->Result.allUnit(combineMessages)
+
+    let anchors__ =
+      [anchored_representations__, anchored_schemes__, anchored_tokens__]->Result.allUnit(
+        combineMessages,
+      )
+
+    let at_least_one_token_or_dimension__ = if (
+      tokCount.contents + dimCount.contents + anchoredDimCount.contents >= 1
+    ) {
       Result.Ok()
     } else {
       Result.Error(
@@ -483,8 +539,8 @@ module Conv = {
           ModelError.create(
             ~nodes=[id],
             ~message="R-dimensions must have at least one child.",
-            ~details="R-dimensions must contain at least one R-symbol, or must split into sub-R-dimensions (or both). This R-dimension has no R-symbol children and no sub-R-dimensions.",
-            ~suggestion="Add an R-symbol or a sub-R-dimension below this R-dimension.",
+            ~details="R-dimensions must contain at least one R-symbol, or must split into sub-R-dimensions, or have anchored R-dimensions, (or some combination of the preceding). This R-dimension has no R-symbol children, no sub-R-dimensions, and no anchored R-dimensions.",
+            ~suggestion="Add an R-symbol, a sub-R-dimension, or an anchored R-dimension below this R-dimension.",
             (),
           ),
         ],
@@ -512,10 +568,11 @@ module Conv = {
       scope,
       tokens,
       dimensions,
+      anchored_dimensions,
       organisation,
       checks,
     )
-    ->Result.both13(combineMessages)
+    ->Result.both14(combineMessages)
     ->Result.map(((
       concept,
       concept_scale,
@@ -528,6 +585,7 @@ module Conv = {
       scope,
       tokens,
       dimensions,
+      anchored_dimensions,
       organisation,
       (),
     )) => Schema.Dimension({
@@ -543,6 +601,7 @@ module Conv = {
       scope: scope,
       tokens: tokens,
       dimensions: dimensions,
+      anchored_dimensions: anchored_dimensions,
       organisation: organisation,
     }))
   }

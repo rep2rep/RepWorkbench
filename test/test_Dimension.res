@@ -12,6 +12,7 @@ let json = %raw(`{
 "explicit": false,
 "dimensions": [],
 "tokens": [ "1" ],
+"anchored_dimensions": [],
 "organisation": "Organisation"
 },
 "1": Test_Token.json["1"]
@@ -30,6 +31,7 @@ let d = {
   explicit: false,
   dimensions: list{},
   tokens: list{Test_Token.t},
+  anchored_dimensions: list{},
   organisation: "Organisation",
 }
 

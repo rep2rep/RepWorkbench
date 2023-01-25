@@ -34,6 +34,7 @@ and dimension = {
   explicit: bool,
   dimensions: list<dimension>,
   tokens: list<token>,
+  anchored_dimensions: list<dimension>,
   organisation: string,
 }
 and token = {

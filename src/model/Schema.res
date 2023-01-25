@@ -31,6 +31,7 @@ and Dimension: {
     explicit: bool,
     dimensions: list<t>,
     tokens: list<Schema_intf.token>,
+    anchored_dimensions: list<t>,
     organisation: string,
   }
 

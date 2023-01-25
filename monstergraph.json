@@ -48,6 +48,7 @@
           "7",
           "8"
         ],
+        "anchored_dimensions": [],
         "organisation": "???"
       },
       "3": {
@@ -66,6 +67,7 @@
           "7",
           "8"
         ],
+        "anchored_dimensions": [],
         "organisation": "???"
       },
       "4": {
@@ -84,6 +86,7 @@
           "7",
           "8"
         ],
+        "anchored_dimensions": [],
         "organisation": "???"
       },
       "5": {
@@ -103,6 +106,7 @@
           "8",
           "8a"
         ],
+        "anchored_dimensions": [],
         "organisation": "???"
       },
       "5a": {
@@ -120,6 +124,7 @@
           "8a",
           "9"
         ],
+        "anchored_dimensions": [],
         "organisation": "???"
       },
       "6": {
@@ -202,6 +207,7 @@
           "11",
           "12"
         ],
+        "anchored_dimensions": [],
         "organisation": "Sides of bell"
       },
       "11": {
@@ -249,6 +255,7 @@
           "16",
           "17"
         ],
+        "anchored_dimensions": [],
         "organisation": "Regions"
       },
       "14": {
@@ -315,6 +322,7 @@
         "tokens": [
           "19"
         ],
+        "anchored_dimensions": [],
         "organisation": "Horizontal axis"
       },
       "19": {
@@ -343,6 +351,7 @@
         "tokens": [
           "21"
         ],
+        "anchored_dimensions": [],
         "organisation": "rectangles"
       },
       "21": {
@@ -389,6 +398,7 @@
         "tokens": [
           "31"
         ],
+        "anchored_dimensions": [],
         "organisation": "???"
       },
       "23a": {
@@ -405,6 +415,7 @@
         "tokens": [
           "32"
         ],
+        "anchored_dimensions": [],
         "organisation": "???"
       },
       "24": {
@@ -424,6 +435,7 @@
           "28",
           "29"
         ],
+        "anchored_dimensions": [],
         "organisation": "Form a rectangle"
       },
       "25": {
@@ -440,6 +452,7 @@
         "tokens": [
           "30"
         ],
+        "anchored_dimensions": [],
         "organisation": "Form a rectangle"
       },
       "26": {
@@ -554,6 +567,7 @@
         "tokens": [
           "34"
         ],
+        "anchored_dimensions": [],
         "organisation": "Computation"
       },
       "34": {
@@ -582,6 +596,7 @@
         "tokens": [
           "36"
         ],
+        "anchored_dimensions": [],
         "organisation": "Computation"
       },
       "36": {
